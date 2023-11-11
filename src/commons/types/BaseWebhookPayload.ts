@@ -1,0 +1,3 @@
+interface BaseWebhookPayload {
+  taskId: string;
+}
