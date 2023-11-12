@@ -1,6 +1,6 @@
-import { Prisma } from "@prisma/client";
+import { User } from '@prisma/client';
 
-export class User implements Prisma.UserUncheckedCreateInput{
+export class UserEntity implements User{
     id: number;
     email: string;
     username: string;
@@ -8,11 +8,11 @@ export class User implements Prisma.UserUncheckedCreateInput{
     signature: string;
     signedMessage: string;
     signDate: Date;
-    createdAt?: Date | string;
-    updatedAt?: Date | string;
 
     constructor(partial: Partial<User>) {
         Object.assign(this, partial);
     }
+    createdAt: Date;
+    updatedAt: Date;
     signer: string;
 }

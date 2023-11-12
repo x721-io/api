@@ -23,17 +23,6 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.use(cookieParser());
-  app.use(
-    session({
-      secret: 'my-secret', // You should use a strong random secret
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-      },
-    }),
-  );
 
   app.enableCors({
     origin: function (origin, callback) {
@@ -46,8 +35,8 @@ async function bootstrap() {
     credentials: true,
   });
   app.use(compression());
-  // const redisConnectFn = Redis.getClient();
-  // await redisConnectFn;
+  const redisConnectFn = Redis.getClient();
+  await redisConnectFn;
   await app.listen(8888);
 }
 bootstrap();

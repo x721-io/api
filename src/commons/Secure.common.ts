@@ -1,11 +1,10 @@
 import RedisCommon from '../database/Redis.db';
-import { JwtService } from '@nestjs/jwt';
-import { User } from '@prisma/client';
 import logger from './Logger.common';
+import { UserEntity } from 'src/modules/user/entities/user.entity';
 
 class SecureUtil {
   public async storeSession(
-    userInfo: User,
+    userInfo: UserEntity,
     refreshToken: string,
   ): Promise<number> {
     const expire = Math.floor(Date.now() + 604800000);

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class UserService {
@@ -10,19 +11,31 @@ export class UserService {
   async findByPublicKey(publicKey: string) {
     const account = await this.prisma.user.findFirst({
       where: {
-        signature: publicKey
+        publicKey: publicKey
       }
     })
     if (!account) {
-      throw new NotFoundException('Account not found')
+      return null;
     }
     return account;
   }
 
-  async updateProfile(input: UpdateUserDto) {
-    await this.prisma.user.update({
+  async findOne(id: number) {
+    const user = await this.prisma.user.findUnique({
       where: {
-        id: input.id
+        id,
+      },
+    });
+    if (!user) {
+      throw new NotFoundException(`User #${id} not found`);
+    }
+    return user;
+  }
+
+  async updateProfile(input: UpdateUserDto, user: User) {
+    return await this.prisma.user.update({
+      where: {
+        id: user.id
       },
       data: {
         email: input.email,

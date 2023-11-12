@@ -7,22 +7,26 @@ import { create } from 'ipfs-http-client';
 export class CommonService {
   private ipfs;
   constructor() {
-    this.ipfs = create({ host: "https://testnet-ipfs.uniultra.xyz", protocol: 'https'})
+    this.ipfs = create({ host: "testnet-ipfs.uniultra.xyz", protocol: 'https'})
   }
   async uploadIpfs(files: Express.Multer.File[], metadata: any) {
-    const fileResults = await Promise.all(
-      files.map(file => this.ipfs.add(file.buffer))
-    );
+    try {
+      const fileResults = await Promise.all(
+        files.map(file => this.ipfs.add(file.buffer))
+      );
 
-    const fileHashes = fileResults.map(result => result.path);
-    const updatedMetadata = { ...metadata, fileHashes };
+      const fileHashes = fileResults.map(result => result.path);
+      const updatedMetadata = { ...metadata, fileHashes };
 
-    const metadataResult = await this.ipfs.add(JSON.stringify(updatedMetadata));
+      const metadataResult = await this.ipfs.add(JSON.stringify(updatedMetadata));
 
-    return {
-      fileHashes: fileHashes,
-      metadataHash: metadataResult.path
-    };
+      return {
+        fileHashes: fileHashes,
+        metadataHash: metadataResult.path
+      };
+    } catch (err) {
+      console.log('err: ', err)
+    }
   }
 
   findAll() {

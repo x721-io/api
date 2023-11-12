@@ -9,14 +9,16 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('connect')
-  async login(@Body() body: loginDto, @Session() session: Record<string, any>) {
-    // body should contain the publicKey and signature
+  async login(@Body() body: loginDto) {
     const user = await this.authService.validateUser(body);
     if (user) {
-      await this.authService.login(user, session);
-      return { message: 'Logged in successfully' };
+      return await this.authService.login(user);
     } else {
       return { message: 'Authentication failed' };
     }
+  }
+  @Post('refresh')
+  async refresh(@Body('refresh_token') token: string) {
+    return this.authService.refreshTokens(token);
   }
 }

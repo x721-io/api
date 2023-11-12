@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, UploadedFiles } from '@nestjs/common';
 import { CommonService } from './common.service';
 import { CreateCommonDto } from './dto/create-common.dto';
 import { UpdateCommonDto } from './dto/update-common.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { CreateFileDto } from './dto/create-file.dto';
 
 @Controller('common')
@@ -10,9 +10,10 @@ export class CommonController {
   constructor(private readonly commonService: CommonService) {}
 
   @Post('upload-ipfs')
-  @UseInterceptors(FileInterceptor('file'))
-  uploadIpfs(@UploadedFile() files: Express.Multer.File[], @Body() createFileDto: CreateFileDto) {
-    return this.commonService.uploadIpfs(files, createFileDto.metadata);
+  @UseInterceptors(FilesInterceptor('files'))
+  async uploadIpfs(@UploadedFiles() files: Express.Multer.File[], @Body() createFileDto: CreateFileDto) {
+    console.log(files, createFileDto)
+    return await this.commonService.uploadIpfs(files, createFileDto.metadata);
   }
 
   @Get()
