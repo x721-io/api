@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -8,6 +8,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { GetCurrentUser } from 'src/decorators/get-current-user.decorator';
 import { User } from '@prisma/client';
 import { AuthenticationGuard } from '../auth/guards/auth.guard';
+import { GetAllUser } from './dto/get-all-user.dto';
 
 @Controller('user')
 export class UserController {
@@ -18,4 +19,15 @@ export class UserController {
   async updateProfile(@Body() updateProfile: UpdateUserDto, @GetCurrentUser() user: User) {
     return await this.userService.updateProfile(updateProfile, user);
   }
+
+  @Get('profile/:id')
+  async getProfile(@Param('id') signer: string) {
+    return await this.userService.findOneByWallet(signer);
+  }
+
+  @Get('all')
+  async getAllUser(@Query() filter: GetAllUser) {
+    return await this.userService.findAll(filter);
+  }
+
 }

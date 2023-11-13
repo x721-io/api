@@ -3,6 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { User } from '@prisma/client';
+import { GetAllUser } from './dto/get-all-user.dto';
 
 @Injectable()
 export class UserService {
@@ -30,6 +31,45 @@ export class UserService {
       throw new NotFoundException(`User #${id} not found`);
     }
     return user;
+  }
+
+  async findOneByWallet(address: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        signer: address,
+      }
+    })
+    if (!user) {
+      throw new NotFoundException(`User #${address} not found`);
+    }
+    return user;
+  }
+
+  async findAll(filter: GetAllUser) {
+    const limit = (filter.limit || 12) as number;
+    const cursor = filter.cursor;
+    // @ts-ignore
+    const take: number = limit && limit > 0 ? parseInt(limit) + 1: 13
+
+    const users = await this.prisma.user.findMany({
+      orderBy: {
+        createdAt: filter.order,
+      },
+      where: {
+        username: { not: null }
+      },
+      // skip: (filter.page - 1) * filter.limit,
+      take: take,
+      cursor: cursor ? { id: parseInt(cursor) } : undefined,
+      skip: cursor ? 1 : 0,
+    });
+
+    let nextCursor: number | null = null;
+    if (users.length > limit) {
+      const nextUser = users.pop();
+      nextCursor = nextUser.id;
+    }
+    return { users, nextCursor }
   }
 
   async updateProfile(input: UpdateUserDto, user: User) {

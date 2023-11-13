@@ -15,7 +15,6 @@ export class AuthService {
 
   async validateUser(validateInfo: loginDto): Promise<UserEntity> {
     const loginMessage = LOGIN_MESSAGE(validateInfo.date)
-    console.log(loginMessage, validateInfo.signature, validateInfo.publicKey)
     const isSignatureValid = await this.isSignatureValid(loginMessage, validateInfo.signature, validateInfo.publicKey);
     if (!isSignatureValid) {
       throw new BadRequestException('Signature invalid');
@@ -106,7 +105,6 @@ export class AuthService {
   async isSignatureValid (message, signature, address) {
     try {
       const signerAddr = await ethers.verifyMessage(message, signature);
-      console.log('he: ', signerAddr, address)
       if (signerAddr !== address) {
         return false;
       }
@@ -122,7 +120,6 @@ export class AuthService {
     // Set user information in the session
     const { accessToken, refreshToken, accessTokenExpire, refreshTokenExpire, userId } =
       await this.getTokens(user.signer, user.id.toString());
-      console.log(accessToken)
     await this.updateRefreshTokenCaching(user, refreshToken, false);
     if (!accessToken) 
       throw new InternalServerErrorException();
