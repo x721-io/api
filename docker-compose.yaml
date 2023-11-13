@@ -7,8 +7,8 @@ services:
       dockerfile: Dockerfile
     restart: always
     ports:
-      - '12345:8888'
-      - '5556:5555'
+      - '8888:8888'
+      - '5555:5555'
     volumes:
       - ../logs/u2u-marketplace-api:/usr/src/app/u2u-server/logs
     networks:
