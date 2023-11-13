@@ -16,7 +16,6 @@ export class UserController {
   @Post('profile')
   @UseGuards(AuthenticationGuard)
   async updateProfile(@Body() updateProfile: UpdateUserDto, @GetCurrentUser() user: User) {
-    console.log(user);
     return await this.userService.updateProfile(updateProfile, user);
   }
 }

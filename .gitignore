@@ -1,6 +1,5 @@
 # environment files
 .env*
-vucar-key.json
 oauth2.keys.json
 config.json
 # compiled output

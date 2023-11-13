@@ -1,63 +1,33 @@
 version: '3'
 services:
   ext-server:
-    container_name: vucar-server
-    image: asia-southeast1-docker.pkg.dev/web-team-380004/vucar-backend/vucar-server
+    container_name: u2u-server
     build:
       context: .
-      dockerfile: Dockerfile.production
+      dockerfile: Dockerfile
     restart: always
     ports:
       - '8888:8888'
       - '5555:5555'
     volumes:
-      - ../logs/vucar-backend-prisma:/usr/src/app/vucar-server/logs
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      SECOND_DATABASE_URL: ${SECOND_DATABASE_URL}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_SECRET: ${GOOGLE_SECRET}
-      ACCESS_KEY: ${ACCESS_KEY}
-      SECRET: ${SECRET}
-      GOOGLE_EMAIL_USERNAME: ${GOOGLE_EMAIL_USERNAME}
-      GOOGLE_EMAIL_PASSWORD: ${GOOGLE_EMAIL_PASSWORD}
-      REDIS_CLUSTER_NODE: ${REDIS_CLUSTER_NODE}
-      REDIS_CLUSTER: ${REDIS_CLUSTER}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      REDIS_PREFIX: ${REDIS_PREFIX}
-      REDISDB_HOST: ${REDISDB_HOST}
-      REDISDB_PORT: ${REDISDB_PORT}
-      BUCKET_NAME: ${BUCKET_NAME}
-      CDN_URL: ${CDN_URL}
-      REBRANDER_UPLOAD_KEY: ${REBRANDER_UPLOAD_KEY}
-      WEBHOOK_API_KEY: ${WEBHOOK_API_KEY}
-      REBRANDER_URL: ${REBRANDER_URL}
-      XEZII_URL: ${XEZII_URL}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
-      PLAUSIBLE_URL: ${PLAUSIBLE_URL}
-      PLAUSIBLE_TOKEN: ${PLAUSIBLE_TOKEN}
-      VAP_URL: ${VAP_URL}
-      CASSO_KEY: ${CASSO_KEY}
-      ZALO_APP_ID: ${ZALO_APP_ID}
-      ZALO_SECRET_KEY: ${ZALO_SECRET_KEY}
-      GOOGLE_AUTH_REDIRECT: ${GOOGLE_AUTH_REDIRECT}
+      - ../logs/u2u-marketplace-api:/usr/src/app/u2u-server/logs
     networks:
-      - vucar-nw
-    logging:
-      driver: gcplogs
-      options:
-        gcp-project: web-team-380004
+      - u2u-nw
+    # logging:
+    #   driver: gcplogs
+    #   options:
+    #     gcp-project: web-team-380004
   redis:
     image: redis
     command: >
-      --requirepass ${REDIS_PASSWORD}
+      --requirepass u2umarketplace
     networks:
-      - vucar-nw
+      - u2u-nw
     volumes:
       - redis-data:/data
 networks:
-  vucar-nw:
+  u2u-nw:
     external: false
-    name: vucar-nw
+    name: u2u-nw
 volumes:
   redis-data:

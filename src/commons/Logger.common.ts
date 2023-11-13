@@ -28,7 +28,7 @@ class LoggerUtil {
         winston.format.json(),
       ),
       defaultMeta: {
-        service: 'vucar-service',
+        service: 'u2u-service',
       },
       transports:
         process.env.NODE_ENV === 'production'
@@ -68,7 +68,7 @@ class LoggerUtil {
     ) {
       // eslint-disable-next-line no-console
       console.log(
-        `VUCAR LOGS PATH: ${process.env.LOG_PATH || '/logs'}/${logID}`,
+        `U2U LOGS PATH: ${process.env.LOG_PATH || '/logs'}/${logID}`,
       );
     }
   }

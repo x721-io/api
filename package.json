@@ -1,5 +1,5 @@
 {
-  "name": "vucar-backend-prisma",
+  "name": "u2u-marketplace-api",
   "version": "0.0.1",
   "description": "",
   "author": "",
@@ -47,6 +47,7 @@
     "express-session": "^1.17.3",
     "helmet": "^7.0.0",
     "ioredis": "^4.28.1",
+    "ipfs-cluster-api": "^0.0.9",
     "ipfs-http-client": "^56.0.0",
     "passport": "^0.6.0",
     "passport-google-oauth20": "^2.0.0",

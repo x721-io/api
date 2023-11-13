@@ -1,9 +1,9 @@
 import { EErrorCode } from './enums/Error.enum';
 
 const ERROR_SERVER = 'Something went wrong';
-const QUEUE_CONNECTING = 'Vucar queue connecting';
-const QUEUE_CONNECTED = 'Vucar queue connected';
-const QUEUE_CONNECT_ERROR = 'Vucar queue cannot connect';
+const QUEUE_CONNECTING = 'U2U queue connecting';
+const QUEUE_CONNECTED = 'U2U queue connected';
+const QUEUE_CONNECT_ERROR = 'U2U queue cannot connect';
 
 const SERVER_MESSAGE = {
   REDIS_CONNECTING: 'Redis database connecting',

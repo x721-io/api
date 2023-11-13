@@ -18,7 +18,7 @@ class GCPCommonCommon {
   private init() {
     this.storage = new Storage({
       projectId: 'congtroi',
-      keyFilename: 'vucar-key.json',
+      keyFilename: 'u2u-key.json',
       //   secretAccessKey: process.env.AWS_SECRET_KEY,
     });
   }
@@ -143,13 +143,13 @@ class GCPCommonCommon {
 
   public async deleteAsset(fileName) {
     try {
-      await this.storage.bucket('vucar-user-assets').file(fileName).delete();
+      await this.storage.bucket('u2u-user-assets').file(fileName).delete();
       logger.info(
-        `Successfully deleted ${fileName} from ${'vucar-user-assets'}`,
+        `Successfully deleted ${fileName} from ${'u2u-user-assets'}`,
       );
     } catch (error) {
       logger.info(
-        `Failed to delete ${fileName} from ${'vucar-user-assets'}`,
+        `Failed to delete ${fileName} from ${'u2u-user-assets'}`,
         error,
       );
       throw error;
