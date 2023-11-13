@@ -25,17 +25,6 @@ services:
       - u2u-nw
     volumes:
       - redis-data:/data
-  postgres:
-    image: postgres:14
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: BbbksIcxadJwQ8
-      POSTGRES_DB: local-marketplace
-    networks:
-      - u2u-nw
-    volumes:
-      - ./data:/var/lib/postgresql/data
-    restart: always
 networks:
   u2u-nw:
     external: false
