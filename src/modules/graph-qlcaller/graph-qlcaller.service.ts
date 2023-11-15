@@ -22,19 +22,6 @@ export class GraphQlcallerService {
       throw err; 
     }
   }
-  // async getCollections() {
-  //   try {
-  //     const variables = { first: 1 };
-  //     const res = await axios.post(this.endpoint, {
-  //       query: GET_COLLECTION_QUERY,
-  //       variables
-  //     });
-  //     console.log(res.data)
-  //     return res.data; 
-  //   } catch (err) {
-  //     console.log(err)
-  //   }
-  // }
   
   create(createGraphQlcallerDto: CreateGraphQlcallerDto) {
     return 'This action adds a new graphQlcaller';

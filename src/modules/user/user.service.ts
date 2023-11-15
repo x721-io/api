@@ -21,7 +21,7 @@ export class UserService {
     return account;
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const user = await this.prisma.user.findUnique({
       where: {
         id,
@@ -60,11 +60,11 @@ export class UserService {
       },
       // skip: (filter.page - 1) * filter.limit,
       take: take,
-      cursor: cursor ? { id: parseInt(cursor) } : undefined,
+      cursor: cursor ? { id: cursor } : undefined,
       skip: cursor ? 1 : 0,
     });
 
-    let nextCursor: number | null = null;
+    let nextCursor: string | null = null;
     if (users.length > limit) {
       const nextUser = users.pop();
       nextCursor = nextUser.id;
