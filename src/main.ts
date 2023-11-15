@@ -6,6 +6,7 @@ import * as session from 'express-session';
 import * as cookieParser from 'cookie-parser';
 // import helmet from 'helmet';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 // import { GraphQLErrorFilter } from './commons/errors/ExceptionFilter';
 function matchRegexArray(arr: string[], str: string): boolean {
   for (const pattern of arr) {
@@ -35,6 +36,14 @@ async function bootstrap() {
     credentials: true,
   });
   app.use(compression());
+  const config = new DocumentBuilder()
+    .setTitle('NFT marketplace')
+    .setDescription('The API description')
+    .setVersion('1.0')
+    .addTag('NFT Marketplace')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
   const redisConnectFn = Redis.getClient();
   await redisConnectFn;
   await app.listen(8888);
