@@ -1,0 +1,11 @@
+# src/graph-query/getCollections.graphql
+
+query GetCollections($first: Int!) {
+    collections(first: $first) {
+      id
+      owner
+      txCreation
+      name
+      symbol
+    }
+  }   

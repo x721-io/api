@@ -8,6 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 import { CommonModule } from './modules/common/common.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
+import { GraphQlcallerModule } from './modules/graph-qlcaller/graph-qlcaller.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { UserModule } from './modules/user/user.module';
     CommonModule,
     AuthModule,
     UserModule,
+    GraphQlcallerModule,
   ],
   providers: [
     PrismaService,

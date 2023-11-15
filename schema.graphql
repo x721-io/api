@@ -1,0 +1,442 @@
+enum DealType {
+  Order
+  Bid
+}
+
+enum ContractType {
+  ExchangeV2
+  ERC721Factory
+  ERC721Proxy
+  ERC1155Factory
+  ERC1155Proxy
+  NFTTransferProxies
+  Royalties
+}
+
+type Block @entity {
+  id: ID!
+  number: BigInt
+  time: BigInt
+}
+
+# type NFT @entity {
+#   id: ID!
+#   creators: [String!]
+#   mintedAt: BigInt!
+#   lastUpdatedAt: BigInt!
+#   deleted: Boolean!
+#   sellers: Int
+#   collection: Collection
+#   contract: String
+#   tokenId: BigInt
+#   meta: String
+#   totalStock: Int
+#   owner: String!
+# }
+
+type Collection @entity {
+  id: ID!
+  type: String
+  name: String
+  features: String
+  parent: ID
+  symbol: String
+  minters: [String!]
+  meta: String
+  owner: String
+  bestBidOrder: String
+  bestSellOrder: String
+  txCreation: String!
+}
+
+type Account @entity {
+	id: String!
+	asERC1155: ERC1155Contract
+	ERC1155balances: [ERC1155Balance!]! @derivedFrom(field: "account")
+	ERC1155operatorOwner: [ERC1155Operator!]! @derivedFrom(field: "owner")
+	ERC1155operatorOperator: [ERC1155Operator!]! @derivedFrom(field: "operator")
+	ERC1155transferFromEvent: [ERC1155Transfer!]! @derivedFrom(field: "from")
+	ERC1155transferToEvent: [ERC1155Transfer!]! @derivedFrom(field: "to")
+	# ERC1155transferOperatorEvent: [ERC1155Transfer!]! @derivedFrom(field: "operator")
+	events: [Event!]! @derivedFrom(field: "emitter")
+  asERC721: ERC721Contract
+	ERC721tokens: [ERC721Token!]! @derivedFrom(field: "owner")
+	ERC721operatorOwner: [ERC721Operator!]! @derivedFrom(field: "owner")
+	ERC721operatorOperator: [ERC721Operator!]! @derivedFrom(field: "operator")
+	ERC721transferFromEvent: [ERC721Transfer!]! @derivedFrom(field: "from")
+	ERC721transferToEvent: [ERC721Transfer!]! @derivedFrom(field: "to")
+}
+type ERC721Contract @entity(immutable: true) {
+	id: String!
+	asAccount: Account!
+	supportsMetadata: Boolean
+	name: String
+	symbol: String
+	tokens: [ERC721Token!]! @derivedFrom(field: "contract")
+	operators: [ERC721Operator!]! @derivedFrom(field: "contract")
+	transfers: [ERC721Transfer!]! @derivedFrom(field: "contract")
+}
+type ERC721Token @entity {
+	id: ID!
+	contract: ERC721Contract!
+	identifier: BigInt!
+	owner: Account!
+	approval: Account!
+	uri: String
+	transfers: [ERC721Transfer!]! @derivedFrom(field: "token")
+  	creators: [ERC721Creator!]! @derivedFrom(field: "collection")
+	txCreation: String!
+}
+type ERC721Operator @entity {
+	id: ID!
+	contract: ERC721Contract!
+	owner: Account!
+	operator: Account!
+	approved: Boolean!
+}
+type ERC721Transfer implements Event @entity(immutable: true) {
+	id: ID!
+	emitter: Account!
+	transaction: Transaction!
+	timestamp: BigInt!
+	contract: ERC721Contract!
+	token: ERC721Token!
+	from: Account!
+	to: Account!
+}
+
+type ERC1155Contract @entity(immutable: true) {
+	id: String!
+	asAccount: Account!
+	tokens: [ERC1155Token!]! @derivedFrom(field: "contract")
+	balances: [ERC1155Balance!]! @derivedFrom(field: "contract")
+	operators: [ERC1155Operator!]! @derivedFrom(field: "contract")
+	transfers: [ERC1155Transfer!]! @derivedFrom(field: "contract")
+}
+
+type ERC1155Creator @entity {
+  id: ID! # Combination of collectionId and creatorId
+  collection: ERC1155Token!
+  creator: Creator!
+  share: BigInt! # The creator's share in the collection
+}
+type ERC721Creator @entity {
+  id: ID! # Combination of collectionId and creatorId
+  collection: ERC721Token!
+  creator: Creator!
+  share: BigInt! # The creator's share in the collection
+}
+
+type Creator @entity {
+  id: ID!
+  token1155: [ERC1155Creator!]! @derivedFrom(field: "creator")
+  token721: [ERC721Creator!]! @derivedFrom(field: "creator")
+}
+
+type ERC1155Token @entity {
+	id: ID!
+	contract: ERC1155Contract!
+	identifier: BigInt!
+	uri: String
+	totalSupply: ERC1155Balance!
+	balances: [ERC1155Balance!]! @derivedFrom(field: "token")
+	transfers: [ERC1155Transfer!]! @derivedFrom(field: "token")
+  	creators: [ERC1155Creator!]! @derivedFrom(field: "collection")
+	txCreation: String!
+}
+type ERC1155Balance @entity {
+	id: ID!
+	contract: ERC1155Contract
+	token: ERC1155Token!
+	account: Account
+	value: BigDecimal!
+	valueExact: BigInt!
+	transferFromEvent: [ERC1155Transfer!]! @derivedFrom(field: "fromBalance")
+	transferToEvent: [ERC1155Transfer!]! @derivedFrom(field: "toBalance")
+}
+type ERC1155Operator @entity {
+	id: ID!
+	contract: ERC1155Contract!
+	owner: Account!
+	operator: Account!
+	approved: Boolean!
+}
+type ERC1155Transfer implements Event @entity(immutable: true) {
+	id: ID!
+	emitter: Account!
+	transaction: Transaction!
+	timestamp: BigInt!
+	contract: ERC1155Contract!
+	token: ERC1155Token!
+	# operator: Account!
+	from: Account
+	fromBalance: ERC1155Balance
+	to: Account
+	toBalance: ERC1155Balance
+	value: BigDecimal!
+	valueExact: BigInt!
+}
+interface Event {
+	id: ID!
+	transaction: Transaction!
+	emitter: Account!
+	timestamp: BigInt!
+}
+type Transaction @entity(immutable: true) {
+	id: ID!
+	timestamp: BigInt!
+	blockNumber: BigInt!
+	events: [Event!]! @derivedFrom(field: "transaction")
+}
+
+
+# type Deal @entity {
+#   id: ID!
+#   type: DealType!
+#   seller: Bytes!
+#   buyer: Bytes!
+#   sellTokenId: BigInt!
+#   sellToken: Bytes!
+#   buyToken: Bytes!
+#   sellAmount: BigInt!
+#   buyAmount: BigInt!
+#   price: BigInt!
+#   fee: BigDecimal!
+#   txHash: Bytes!
+#   blockNumber: BigInt!
+#   blockTime: BigInt!
+#   contractAddress: Bytes!
+# }
+
+# pending confirmation
+# type Order @entity {
+#   id: ID!
+#   fill: Int!
+#   status: String
+#   makeStock: Int!
+#   cancelled: Boolean!
+#   createdAt: BigInt!
+#   lastUpdatedAt: BigInt!
+#   maker: String!
+#   make
+#   take
+#   salt: Int!
+#   data: String!
+#   startedAt: BigInt
+#   endedAt: BigInt
+#   makePrice: BigInt
+#   takePrice: BigInt
+#   taker: String
+#   signature: String
+# }
+
+# const make: {
+#     assetType: {
+#         assetClass: any;
+#         data: any;
+#     };
+#     value: any;
+# }
+# enum ActionType {
+#   BURN
+#   MINT
+# }
+
+enum ActionState {
+  PENDING
+  EXECUTED
+}
+
+# type Action @entity {
+#   id: ID!
+#   type: ActionType!
+#   token: String!
+#   tokenId: String! 
+#   createdAt: String!
+#   lastUpdatedAt: String!
+#   state: ActionState!
+#   actionAt: String!
+# }
+
+# type Part @entity {
+#   id: ID!
+#   account: String!
+#   value: Int!
+# }
+
+
+# type NFT @entity {
+#   id: ID! 
+#   token: String! 
+#   tokenId: String! 
+#   creators: [Part!]! 
+#   creatorsFinal: Boolean!
+#   supply: String! 
+#   # lazySupply: String! 
+#   royalties: [Part!]! 
+#   owners: [String!]! 
+#   date: String! 
+#   mintedAt: String 
+#   deleted: Boolean!
+#   # lastLazyEventTimestamp: BigInt 
+#   isRaribleContract: Boolean
+#   collection: Collection
+#   # revertableEvents: [ItemEvent!]! 
+#   contractType: [ContractType!]!
+# }
+
+# # type ItemMintEvent {
+# #   id: ID!
+# #   entityId: String!
+# #   log: String!
+# #   compact: Boolean!
+# #   supply: String! 
+# #   owner: String! 
+# #   tokenUri: String
+# # }
+
+# type Ownership @entity {
+#   id: ID!
+#   token: String!
+#   tokenId: String!
+#   owner: String!
+#   creators: [Part!]!
+#   blockNumber: BigInt
+#   value: String!
+#   # lazyValue: String
+#   lastUpdatedAt: String
+#   deleted: Boolean!
+#   # lastLazyEventTimestamp: BigInt
+# }
+
+# type Collection @entity {
+#   id: ID!
+#   slug: String!
+#   owners: String!
+#   name: String!
+#   avatar: String!
+#   banner: String
+#   description: String
+#   contract: String!
+#   # meta: JSON!
+#   createdAt: BigInt!
+#   lastUpdatedAt: BigInt!
+# }
+
+# # enum class InconsistentItemStatus {
+# #     NEW,
+# #     FIXED,
+# #     UNFIXED,
+# #     RELAPSED,
+# # }
+
+# # enum class ItemProblemType {
+# #     NOT_FOUND,
+# #     SUPPLY_MISMATCH
+# # }
+
+# # type InconsistentItem @entity {
+# #   token: String!
+# #   tokenId: String!
+# #   status: InconsistentItemStatus
+# #   type: ItemProblemType!
+# #   fixVersionApplied: Int
+# #   lastUpdatedAt: String!
+# #   supply: String
+# #   ownerships: String
+# #   ownershipsValue: BigInt
+# #   relaspeCount: Int
+# # }
+
+# type Royalty @entity {
+#   id: ID!
+#   address: String!
+#   tokenId: String!
+#   royalty: [Part!]!
+# }
+
+# type Transaction @entity {
+#   " hash-nftAddress-id "
+#   id: ID!
+#   nftSide: String
+#   hash: String
+#   from: Bytes
+#   to: Bytes
+#   nftAddress: Bytes
+#   nftId: BigInt
+#   paymentTokenAddress: Bytes
+#   paymentAmount: BigInt
+#   " Values related to amt "
+#   nftValue: BigInt
+#   nftTakeValue: BigInt
+#   paymentValue: BigInt
+#   paymentTakeValue: BigInt
+#   originFee: BigInt
+
+#   " Fee related data "
+#   nftData: String
+#   nftDataLength: BigInt
+
+#   paymentData: String
+#   paymentDataLength: BigInt
+#   blockHeight: BigInt
+#   exchange: String
+#   total: BigInt
+#   # protocolFees: BigInt
+# }
+# type DirectTransaction @entity {
+#   " hash-nftAddress-id "
+#   id: ID!
+#   nftSide: String
+#   hash: String
+#   from: Bytes
+#   to: Bytes
+#   nftAddress: Bytes
+#   nftId: BigInt
+#   paymentTokenAddress: Bytes
+#   paymentAmount: BigInt
+#   " Values related to amt "
+#   nftValue: BigInt
+#   nftTakeValue: BigInt
+#   paymentValue: BigInt
+#   paymentTakeValue: BigInt
+#   originFee: BigInt
+
+#   " Fee related data "
+#   nftData: String
+#   nftDataLength: BigInt
+
+#   paymentData: String
+#   paymentDataLength: BigInt
+#   blockHeight: BigInt
+#   exchange: String
+#   total: BigInt
+#   # protocolFees: BigInt
+# }
+
+type DirectPurchase @entity {
+  id: ID!
+  blockNumber: BigInt
+  sellOrderMaker: Bytes
+  sellOrderNftAmount: BigInt
+  nftAssetClass: Bytes
+  nftData: Bytes
+  sellOrderPaymentAmount: BigInt
+  paymentToken: Bytes
+  sellOrderSalt: BigInt
+  sellOrderStart: BigInt
+  sellOrderEnd: BigInt
+  sellOrderDataType: Bytes
+  sellOrderData: Bytes
+  sellOrderSignature: Bytes
+  buyOrderPaymentAmount: BigInt
+  buyOrderNftAmount: BigInt
+  buyOrderData: Bytes
+
+  nftId: BigInt
+  nftAddress: Bytes
+}
+type DirectAcceptBid @entity {
+  id: ID!
+  blockNumber: BigInt
+}
