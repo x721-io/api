@@ -3,8 +3,6 @@ import { CreateCollectionDto } from './dto/create-collection.dto';
 import { UpdateCollectionDto } from './dto/update-collection.dto';
 import {CollectionEntity} from './entities/collection.entity';
 import { PrismaService } from 'src/prisma/prisma.service';
-let moment = require("moment-timezone");
-moment().tz("Asia/Ho_Chi_Minh").format();
 
 
 @Injectable()
