@@ -80,6 +80,7 @@ export class UserService {
       data: {
         email: input.email,
         username: input.username,
+        acceptedTerms: input.acceptedTerms
       }
     })
   }

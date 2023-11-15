@@ -12,6 +12,7 @@ export class UserEntity implements User{
     constructor(partial: Partial<User>) {
         Object.assign(this, partial);
     }
+    acceptedTerms: boolean;
     avatar: string;
     createdAt: Date;
     updatedAt: Date;

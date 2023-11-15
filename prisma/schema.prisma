@@ -18,6 +18,7 @@ model User {
   signer        String    @unique
   publicKey     String?
   signDate      DateTime?
+  acceptedTerms Boolean   @default(false)
   nftCreator    NFT[]
   nftsOwnership UserNFT[]
   nftCollection UserCollection[]

@@ -4,4 +4,5 @@ import { CreateUserDto } from './create-user.dto';
 export class UpdateUserDto  {
     email: string;
     username: string;
+    acceptedTerms: boolean;
 }
