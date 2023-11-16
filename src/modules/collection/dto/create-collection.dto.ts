@@ -26,7 +26,6 @@ export class CreateCollectionDto {
   @IsEnum(TXSTATUS)
   status : TX_STATUS;
 
-  @IsOptional()
   @IsEnum(CONTRACTTYPE)
   type : CONTRACT_TYPE;
 
