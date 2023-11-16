@@ -25,6 +25,7 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
+  app.useGlobalPipes(new ValidationPipe());
   app.enableCors({
     origin: function (origin, callback) {
       if (!origin || matchRegexArray(whitelist, origin)) {
