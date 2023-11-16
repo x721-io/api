@@ -3,8 +3,9 @@ import { CreateCollectionDto } from './dto/create-collection.dto';
 import { UpdateCollectionDto } from './dto/update-collection.dto';
 import { CollectionEntity } from './entities/collection.entity';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { User } from '@prisma/client'
+import { TX_STATUS, User } from '@prisma/client'
 import { validate as isValidUUID } from 'uuid'
+import { Redis } from 'src/database';
 
 
 @Injectable()
@@ -30,7 +31,7 @@ export class CollectionService {
             name: input.name,
             symbol: input.symbol,
             description: input.description,
-            status: (input.status || 'PENDING'),
+            status: (TX_STATUS.PENDING),
             type: input.type,
             categoryId: Number(input.categoryId),
           }
@@ -42,6 +43,7 @@ export class CollectionService {
             collectionId: collection.id
           }
         })
+        await Redis.publish('collection-channel', JSON.stringify({ txCreation: collection.txCreationHash }))
         return collection;
       }
     } catch (error) {

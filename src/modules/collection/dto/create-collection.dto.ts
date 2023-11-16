@@ -23,10 +23,10 @@ export class CreateCollectionDto {
   description : string;
 
   @IsOptional()
-  @IsEnum(TXSTATUS)
+  @IsEnum(TX_STATUS)
   status : TX_STATUS;
 
-  @IsEnum(CONTRACTTYPE)
+  @IsEnum(CONTRACT_TYPE)
   type : CONTRACT_TYPE;
 
   @IsOptional()

@@ -58,7 +58,6 @@ export class UserService {
       where: {
         username: { not: null }
       },
-      // skip: (filter.page - 1) * filter.limit,
       take: take,
       cursor: cursor ? { id: cursor } : undefined,
       skip: cursor ? 1 : 0,
