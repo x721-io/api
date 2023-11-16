@@ -9,6 +9,7 @@ import { CommonModule } from './modules/common/common.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { GraphQlcallerModule } from './modules/graph-qlcaller/graph-qlcaller.module';
+import { CollectionModule } from './modules/collection/collection.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { GraphQlcallerModule } from './modules/graph-qlcaller/graph-qlcaller.mod
     AuthModule,
     UserModule,
     GraphQlcallerModule,
+    CollectionModule,
   ],
   providers: [
     PrismaService,

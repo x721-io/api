@@ -15,6 +15,7 @@ export class AuthService {
 
   async validateUser(validateInfo: loginDto): Promise<UserEntity> {
     const loginMessage = LOGIN_MESSAGE(validateInfo.date)
+    console.log(loginMessage)
     const isSignatureValid = await this.isSignatureValid(loginMessage, validateInfo.signature, validateInfo.publicKey);
     if (!isSignatureValid) {
       throw new BadRequestException('Signature invalid');
