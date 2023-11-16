@@ -16,3 +16,13 @@ export class CollectionEntity implements Collection {
     Object.assign(this, partial);
   }
 }
+export enum TXSTATUS {
+  PENDING = "PENDING",
+  SUCCESS = "SUCCESS",
+  FAILED = "FAILED"
+}
+
+export enum CONTRACTTYPE {
+  ERC1155 = "ERC1155",
+  ERC721 = "ERC721"
+}

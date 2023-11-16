@@ -1,4 +1,4 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 import { CreateCollectionDto } from './dto/create-collection.dto';
 import { UpdateCollectionDto } from './dto/update-collection.dto';
 import { CollectionEntity } from './entities/collection.entity';
@@ -79,7 +79,7 @@ export class CollectionService {
       }
       let checkExist = await this.prisma.collection.findFirst({ where: { id: id } });
       if (!checkExist) {
-        throw new Error('Cannot find Collection. Please try again !')
+        throw new NotFoundException()
       }
       return this.prisma.collection.findUnique({
         where: {
@@ -173,7 +173,7 @@ export class CollectionService {
       }
       let checkExist = await this.prisma.collection.findFirst({ where: { id: id } })
       if (!checkExist) {
-        throw new Error('Cannot find Collection. Please try again !')
+        throw new NotFoundException()
       }
       return this.prisma.collection.update({
         where: { id: id },
