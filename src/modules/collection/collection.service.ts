@@ -187,6 +187,7 @@ export class CollectionService {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
+
   async remove(id: string): Promise<any> {
     try{
       throw new Error('Coming Soon');
@@ -195,7 +196,7 @@ export class CollectionService {
       //   throw new Error('Cannot find Collection. Please try again !');
       // }
       // return this.prisma.collection.delete({
-      //   where: {
+      //   where: {ss
       //     id: id
       //   }
       // });
