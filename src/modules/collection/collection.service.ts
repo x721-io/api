@@ -204,6 +204,51 @@ export class CollectionService {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
+
+  async findWithUserID(id : string) : Promise<any []>{
+    try{
+      if (!isValidUUID(id)) {
+        throw new Error('Invalid User. Please try again !');
+      }
+      let checkExist = await this.prisma.user.findFirst({ where: { id: id } });
+      if (!checkExist) {
+        throw new NotFoundException()
+      }
+      return this.prisma.user.findMany({
+        where : {
+          id : id
+        },
+        include : {
+          nftCollection : {
+            select : {
+              collection : {
+                select : {
+                  id : true,
+                  txCreationHash : true,
+                  name : true,
+                  symbol : true,
+                  description : true,
+                  status : true,
+                  type : true,
+                  categoryId : true,
+                  createdAt : true,
+                  category : {
+                    select : {
+                      id : true,
+                      name : true,
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      })
+
+    }catch(error){
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
 }
 
 
