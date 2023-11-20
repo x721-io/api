@@ -9,72 +9,75 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(uuid()) @db.Uuid
-  email         String?   @unique
+  id            String           @id @default(uuid()) @db.Uuid
+  email         String?          @unique
   avatar        String?
-  username      String?   @unique
-  signature     String?   @unique
+  username      String?          @unique
+  signature     String?          @unique
   signedMessage String?
-  signer        String    @unique
+  signer        String           @unique
   publicKey     String?
   signDate      DateTime?
-  acceptedTerms Boolean   @default(false)
+  acceptedTerms Boolean          @default(false)
   nftCreator    NFT[]
   nftsOwnership UserNFT[]
   nftCollection UserCollection[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 }
 
 model NFT {
-  id           String     @id @db.VarChar(255)
-  name         String     @unique
-  ipfsHash     String
-  traits       String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  status       TX_STATUS
-  tokenUri     String
-  txCreationHash  String  @unique
-  owners       UserNFT[]
-  creatorId   String      @db.Uuid
-  creator     User        @relation(fields: [creatorId], references: [id])
-  collectionId String     @db.Uuid
-  collection   Collection @relation(fields: [collectionId], references: [id])
+  id             String     @id @db.VarChar(255)
+  name           String     @unique
+  ipfsHash       String
+  traits         String
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  status         TX_STATUS
+  tokenUri       String
+  txCreationHash String     @unique
+  owners         UserNFT[]
+  creatorId      String     @db.Uuid
+  creator        User       @relation(fields: [creatorId], references: [id])
+  collectionId   String     @db.Uuid
+  collection     Collection @relation(fields: [collectionId], references: [id])
 }
 
 model UserNFT {
-  userId  String  @db.Uuid
-  nftId   String  @db.VarChar(255)
-  quantity  Int   @default(1)
-  user      User  @relation(fields: [userId], references: [id])
-  nft       NFT   @relation(fields: [nftId], references: [id])
-  @@id([userId,nftId])
+  userId   String @db.Uuid
+  nftId    String @db.VarChar(255)
+  quantity Int    @default(1)
+  user     User   @relation(fields: [userId], references: [id])
+  nft      NFT    @relation(fields: [nftId], references: [id])
+
+  @@id([userId, nftId])
 }
+
 model Collection {
-  id             String        @id @default(uuid()) @db.Uuid
-  txCreationHash String        @unique
-  name           String        @unique
-  symbol         String        @unique
+  id             String           @id @default(uuid()) @db.Uuid
+  txCreationHash String           @unique
+  name           String           @unique
+  symbol         String           @unique
   description    String?
+  address        String?
   status         TX_STATUS
   type           CONTRACT_TYPE
   categoryId     Int
-  category       Category      @relation(fields: [categoryId], references: [id])
+  category       Category         @relation(fields: [categoryId], references: [id])
   nfts           NFT[]
-  creators      UserCollection[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  creators       UserCollection[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 }
 
 model UserCollection {
-  userId  String  @db.Uuid
-  collectionId   String   @db.Uuid
-  user      User  @relation(fields: [userId], references: [id])
-  collection       Collection   @relation(fields: [collectionId], references: [id])
-  @@id([userId,collectionId])
-}
+  userId       String     @db.Uuid
+  collectionId String     @db.Uuid
+  user         User       @relation(fields: [userId], references: [id])
+  collection   Collection @relation(fields: [collectionId], references: [id])
 
+  @@id([userId, collectionId])
+}
 
 model Category {
   id         Int          @id @default(autoincrement())

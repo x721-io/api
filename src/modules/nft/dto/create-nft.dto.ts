@@ -1,8 +1,6 @@
-import { InputType, Int, Field } from '@nestjs/graphql';
 import { TX_STATUS } from '@prisma/client';
 import { IsNotEmpty, IsString , IsOptional, IsEnum } from 'class-validator';
 
-@InputType()
 export class CreateNftDto {
 
   @IsString({message : 'ID NFT is invalid'})
@@ -20,10 +18,6 @@ export class CreateNftDto {
   @IsString({message : 'Traits is invalid'})
   @IsNotEmpty({ message: 'Please Enter Traits ' })
   traits : string;
-
-  @IsOptional()
-  @IsEnum(TX_STATUS)
-  status : TX_STATUS;
 
   @IsString({message : 'Token Uri is invalid'})
   @IsNotEmpty({ message: 'Please Enter Token Uri ' })

@@ -1,10 +1,11 @@
 import { CreateNftDto } from './dto/create-nft.dto';
 import { UpdateNftDto } from './dto/update-nft.dto';
-import { TX_STATUS, User } from '@prisma/client'
+import { CONTRACT_TYPE, TX_STATUS, User } from '@prisma/client'
 import { PrismaService } from 'src/prisma/prisma.service';
 import { NftDto } from './dto/nft.dto';
 import { Injectable, HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 import { validate as isValidUUID } from 'uuid';
+import { Redis } from 'src/database';
 
 @Injectable()
 export class NftService {
@@ -52,6 +53,12 @@ export class NftService {
           nftId: input.id,
         }
       })
+      const collectionType = await this.prisma.collection.findUnique({
+        where: {
+          id: input.collectionId,
+        },
+      })
+      await Redis.publish('nft-channel', JSON.stringify({ txCreation: nft.txCreationHash, type: collectionType.type }))
       return nft;
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
