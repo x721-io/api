@@ -36,7 +36,7 @@ export class UserService {
   async findOneByWallet(address: string) {
     const user = await this.prisma.user.findUnique({
       where: {
-        signer: address,
+        signer: address.toLowerCase(),
       }
     })
     if (!user) {
