@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query , UseGuards} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query , UseGuards, Put} from '@nestjs/common';
 import { CollectionService } from './collection.service';
-import {CreateCollectionDto} from './dto/create-collection.dto';
+import { CreateCollectionDto} from './dto/create-collection.dto';
 import { UpdateCollectionDto } from './dto/update-collection.dto';
 import { AuthenticationGuard } from '../auth/guards/auth.guard';
 import { GetCurrentUser } from 'src/decorators/get-current-user.decorator';
@@ -23,10 +23,11 @@ export class CollectionController {
 
   @Get(':id')
   findOne(@Param('id') id : string){
+    console.log(id)
     return this.collectionService.findOne(id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   update(@Param('id') id : string, @Body() updateCollectionDto : UpdateCollectionDto ){
     return this.collectionService.update(id, updateCollectionDto);
   }
@@ -36,4 +37,8 @@ export class CollectionController {
     return this.collectionService.remove(id);
   }
   
+  @Get("/user/:id")
+  findByUserID(@Param('id') id : string){
+    return this.collectionService.findWithUserID(id);
+  }
 }

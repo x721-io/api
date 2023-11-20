@@ -10,6 +10,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { GraphQlcallerModule } from './modules/graph-qlcaller/graph-qlcaller.module';
 import { CollectionModule } from './modules/collection/collection.module';
+import { NftModule } from './modules/nft/nft.module';
 
 @Module({
   imports: [
@@ -27,7 +28,8 @@ import { CollectionModule } from './modules/collection/collection.module';
     AuthModule,
     UserModule,
     GraphQlcallerModule,
-    CollectionModule
+    CollectionModule,
+    NftModule
   ],
   providers: [
     PrismaService,
