@@ -1,0 +1,15 @@
+query GetNFTsHistory ($id: String!) {
+  marketEvent721S(
+    where: {nftId_contains: $id}
+    orderBy: timestamp
+  ) {
+    id
+    event
+    nftId {
+      id
+    }
+    price
+    to
+    from
+  }
+}

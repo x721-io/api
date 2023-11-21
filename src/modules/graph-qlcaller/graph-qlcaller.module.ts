@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { GraphQlcallerService } from './graph-qlcaller.service';
-import { GraphQlcallerController } from './graph-qlcaller.controller';
+// import { GraphQlcallerController } from './graph-qlcaller.controller';
 import { GraphQLModule } from '@nestjs/graphql';
 
 @Module({
-  controllers: [GraphQlcallerController],
+  // controllers: [GraphQlcallerController],
   providers: [GraphQlcallerService],
 })
 export class GraphQlcallerModule {}

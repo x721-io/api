@@ -1,5 +1,6 @@
 import { TX_STATUS } from '@prisma/client';
 import { IsNotEmpty, IsString , IsOptional, IsEnum } from 'class-validator';
+import { CreateTraitDto } from './create-traits.dto';
 
 export class CreateNftDto {
 
@@ -15,9 +16,8 @@ export class CreateNftDto {
   @IsNotEmpty({ message: 'Please Enter IPFS ' })
   ipfsHash : string;
 
-  @IsString({message : 'Traits is invalid'})
   @IsNotEmpty({ message: 'Please Enter Traits ' })
-  traits : string;
+  traits : CreateTraitDto[];
 
   @IsString({message : 'Token Uri is invalid'})
   @IsNotEmpty({ message: 'Please Enter Token Uri ' })
@@ -27,11 +27,6 @@ export class CreateNftDto {
   @IsString({message : 'Transaction Hash is invalid'})
   @IsNotEmpty({ message: 'Please Enter Transaction Hash' })
   txCreationHash : string;
-
-
-  @IsString({message : 'User is invalid'})
-  @IsNotEmpty({message : 'Please Enter User'})
-  creatorId : string;
 
   @IsString({message : 'Collection is invalid'})
   @IsNotEmpty({message : 'Please Enter Collection ID'})

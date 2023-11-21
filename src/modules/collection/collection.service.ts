@@ -6,11 +6,12 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma, TX_STATUS, User } from '@prisma/client'
 import { validate as isValidUUID } from 'uuid'
 import { Redis } from 'src/database';
+import { TraitService } from '../nft/trait.service';
 
 
 @Injectable()
 export class CollectionService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService, private traitService: TraitService) { }
   async create(input: CreateCollectionDto, user: User): Promise<any> {
     try {
       let checkExist = await this.prisma.collection.findFirst({
@@ -34,7 +35,8 @@ export class CollectionService {
             status: (TX_STATUS.PENDING),
             type: input.type,
             shortUrl: input.shortUrl,
-            categoryId: Number(input.categoryId),
+            // categoryId: ...(input.categoryId  Number(input.categoryId),
+            ...(input.categoryId && { categoryId: Number(input.categoryId)})
           }
         })
 
@@ -75,7 +77,7 @@ export class CollectionService {
     })
   }
 
-  async findOne(id: string): Promise<CollectionEntity> {
+  async findOne(id: string): Promise<{collection: CollectionEntity, traitAvailable: string[]}> {
     try{
       let whereCondition: Prisma.CollectionWhereInput ;
       if (!isValidUUID(id)) {
@@ -89,7 +91,7 @@ export class CollectionService {
         }
       }
       
-      const collection = this.prisma.collection.findFirst({
+      const collection = await this.prisma.collection.findFirst({
         where: whereCondition,
         include: {
           category: {
@@ -122,7 +124,6 @@ export class CollectionService {
               id: true,
               name: true,
               ipfsHash: true,
-              traits: true,
               createdAt: true,
               status: true,
               tokenUri: true,
@@ -133,12 +134,7 @@ export class CollectionService {
                   email: true,
                   avatar: true,
                   username: true,
-                  signature: true,
-                  signedMessage: true,
-                  signer: true,
                   publicKey: true,
-                  signDate: true,
-                  acceptedTerms: true,
                   createdAt: true
                 },
               },
@@ -152,12 +148,7 @@ export class CollectionService {
                       email: true,
                       avatar: true,
                       username: true,
-                      signature: true,
-                      signedMessage: true,
-                      signer: true,
                       publicKey: true,
-                      signDate: true,
-                      acceptedTerms: true,
                       createdAt: true
                     }
                   }
@@ -170,7 +161,8 @@ export class CollectionService {
       if (!collection) {
         throw new NotFoundException()
       }
-      return collection;
+      const traitsAvailable = await this.traitService.findUniqueTraitsInCollection(collection.id);
+      return {collection, traitAvailable: traitsAvailable};
     }catch(error){
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     } 

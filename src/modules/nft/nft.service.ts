@@ -1,15 +1,17 @@
 import { CreateNftDto } from './dto/create-nft.dto';
 import { UpdateNftDto } from './dto/update-nft.dto';
-import { CONTRACT_TYPE, TX_STATUS, User } from '@prisma/client'
+import { Prisma, TX_STATUS, User } from '@prisma/client'
 import { PrismaService } from 'src/prisma/prisma.service';
 import { NftDto } from './dto/nft.dto';
 import { Injectable, HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 import { validate as isValidUUID } from 'uuid';
 import { Redis } from 'src/database';
+import { GetAllNftDto } from './dto/get-all-nft.dto';
+import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
 
 @Injectable()
 export class NftService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService, private readonly GraphqlService: GraphQlcallerService) { }
   async create(input: CreateNftDto, user: User): Promise<NftDto> {
     try {
       let checkExist = await this.prisma.nFT.findFirst({
@@ -22,9 +24,9 @@ export class NftService {
         }
       });
 
-      if (!isValidUUID(input.creatorId)) {
-        throw new Error('Invalid Creator ID. Please try again !');
-      }
+      // if (!isValidUUID(input.creatorId)) {
+      //   throw new Error('Invalid Creator ID. Please try again !');
+      // }
 
       if (!isValidUUID(input.collectionId)) {
         throw new Error('Invalid Collection ID. Please try again !');
@@ -39,12 +41,18 @@ export class NftService {
           id: input.id,
           name: input.name,
           ipfsHash: input.name,
-          traits: input.traits,
+          traits: {
+            create: input.traits,
+          },
           status: TX_STATUS.PENDING,
           tokenUri: input.tokenUri,
           txCreationHash: input.txCreationHash,
-          creatorId: input.creatorId,
+          creatorId: user.id,
           collectionId: input.collectionId
+        },
+        include: {
+          traits: true,
+          collection: true,
         }
       });
       await this.prisma.userNFT.create({
@@ -53,21 +61,37 @@ export class NftService {
           nftId: input.id,
         }
       })
-      const collectionType = await this.prisma.collection.findUnique({
-        where: {
-          id: input.collectionId,
-        },
-      })
-      await Redis.publish('nft-channel', JSON.stringify({ txCreation: nft.txCreationHash, type: collectionType.type }))
+      await Redis.publish('nft-channel', JSON.stringify({ txCreation: nft.txCreationHash, type: nft.collection.type }))
       return nft;
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
 
-  async findAll(): Promise<NftDto[]> {
+  async findAll(filter: GetAllNftDto): Promise<NftDto[]> {
     try {
-      return this.prisma.nFT.findMany({
+      let whereCondition: Prisma.NFTWhereInput = {
+        AND: [
+          ...filter.traits.map(trait => ({
+            traits: {
+              some: {
+                trait_type: trait.trait_type,
+                ...(trait.value && { value: trait.value}),
+                ...(trait.display_type && { display_type: trait.display_type}),
+              }
+            }
+          })),
+        ],
+        ...(filter.creatorAddress && { creator: {
+          publicKey: filter.creatorAddress
+        }}),
+        ...(filter.collectionAddress && { collection: {
+          address: filter.collectionAddress
+        }}),
+        ...(filter.name && { name: filter.name})
+      }
+      const nfts = await this.prisma.nFT.findMany({
+        where: whereCondition,
         include: {
           creator: {
             select: {
@@ -95,14 +119,19 @@ export class NftService {
                 }
               }
             }
-          }
+          },
+          traits: true,
         }
       })
+      const response = await this.GraphqlService.getNFTsHistory(nfts[0].id)
+      // TODO: filter by sell status
+      // TODO: filter by price if available
+      return nfts;
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
-
+  
   async findOne(id: string): Promise<NftDto> {
     try {
       let checkExist = await this.prisma.nFT.findFirst({ where: { id: id } });
@@ -164,7 +193,8 @@ export class NftService {
                 }
               }
             }
-          }
+          },
+          traits: true,
         }
       })
     } catch (error) {

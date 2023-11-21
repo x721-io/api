@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreateGraphQlcallerDto } from './dto/create-graph-qlcaller.dto';
 import { UpdateGraphQlcallerDto } from './dto/update-graph-qlcaller.dto';
-import { getSdk, GetCollectionsQueryVariables } from '../../generated/graphql'
+import { getSdk, GetCollectionsQueryVariables, GetNfTsHistoryQuery, GetNfTsHistoryQueryVariables } from '../../generated/graphql'
 import { GraphQLClient } from 'graphql-request';
 @Injectable()
 export class GraphQlcallerService {
@@ -22,24 +22,15 @@ export class GraphQlcallerService {
       throw err; 
     }
   }
-  
-  create(createGraphQlcallerDto: CreateGraphQlcallerDto) {
-    return 'This action adds a new graphQlcaller';
-  }
-
-  findAll() {
-    return `This action returns all graphQlcaller`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} graphQlcaller`;
-  }
-
-  update(id: number, updateGraphQlcallerDto: UpdateGraphQlcallerDto) {
-    return `This action updates a #${id} graphQlcaller`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} graphQlcaller`;
-  }
+  async getNFTsHistory(id: string) {
+    const client = this.getGraphqlClient();
+    const sdk = getSdk(client);
+    const variables: GetNfTsHistoryQueryVariables = { id };
+    try {
+      const response = await sdk.GetNFTsHistory(variables);
+      return response;
+    } catch (err) {
+      throw err;
+    }
+  } 
 }
