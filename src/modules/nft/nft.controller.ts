@@ -25,8 +25,8 @@ export class NftController {
     return this.tokenService.generateTokenId(user.publicKey, input.collectionAddress);
   }
 
-  @Get()
-  findall(@Query() query: GetAllNftDto){
+  @Post('/search')
+  findall(@Body() query: GetAllNftDto){
     return this.nftService.findAll(query);
   }
 

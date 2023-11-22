@@ -827,6 +827,7 @@ export enum Erc721Creator_OrderBy {
   Collection = 'collection',
   CollectionId = 'collection__id',
   CollectionIdentifier = 'collection__identifier',
+  CollectionSellStatus = 'collection__sellStatus',
   CollectionTxCreation = 'collection__txCreation',
   CollectionUri = 'collection__uri',
   Creator = 'creator',
@@ -948,6 +949,7 @@ export type Erc721Token = {
   id: Scalars['ID']['output'];
   identifier: Scalars['BigInt']['output'];
   owner: Account;
+  sellStatus?: Maybe<Scalars['String']['output']>;
   transfers: Array<Erc721Transfer>;
   txCreation: Scalars['String']['output'];
   uri?: Maybe<Scalars['String']['output']>;
@@ -1056,6 +1058,26 @@ export type Erc721Token_Filter = {
   owner_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
   owner_starts_with?: InputMaybe<Scalars['String']['input']>;
   owner_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  sellStatus?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_contains?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_ends_with?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_gt?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_gte?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  sellStatus_lt?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_lte?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_not?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_not_contains?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  sellStatus_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_starts_with?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
   transfers_?: InputMaybe<Erc721Transfer_Filter>;
   txCreation?: InputMaybe<Scalars['String']['input']>;
   txCreation_contains?: InputMaybe<Scalars['String']['input']>;
@@ -1112,6 +1134,7 @@ export enum Erc721Token_OrderBy {
   Identifier = 'identifier',
   Owner = 'owner',
   OwnerId = 'owner__id',
+  SellStatus = 'sellStatus',
   Transfers = 'transfers',
   TxCreation = 'txCreation',
   Uri = 'uri'
@@ -1295,6 +1318,7 @@ export enum Erc721Transfer_OrderBy {
   Token = 'token',
   TokenId = 'token__id',
   TokenIdentifier = 'token__identifier',
+  TokenSellStatus = 'token__sellStatus',
   TokenTxCreation = 'token__txCreation',
   TokenUri = 'token__uri',
   Transaction = 'transaction',
@@ -1438,6 +1462,7 @@ export enum Erc1155Balance_OrderBy {
   Token = 'token',
   TokenId = 'token__id',
   TokenIdentifier = 'token__identifier',
+  TokenSellStatus = 'token__sellStatus',
   TokenTxCreation = 'token__txCreation',
   TokenUri = 'token__uri',
   TransferFromEvent = 'transferFromEvent',
@@ -1631,6 +1656,7 @@ export enum Erc1155Creator_OrderBy {
   Collection = 'collection',
   CollectionId = 'collection__id',
   CollectionIdentifier = 'collection__identifier',
+  CollectionSellStatus = 'collection__sellStatus',
   CollectionTxCreation = 'collection__txCreation',
   CollectionUri = 'collection__uri',
   Creator = 'creator',
@@ -1748,6 +1774,7 @@ export type Erc1155Token = {
   creators: Array<Erc1155Creator>;
   id: Scalars['ID']['output'];
   identifier: Scalars['BigInt']['output'];
+  sellStatus?: Maybe<Scalars['String']['output']>;
   totalSupply: Erc1155Balance;
   transfers: Array<Erc1155Transfer>;
   txCreation: Scalars['String']['output'];
@@ -1825,6 +1852,26 @@ export type Erc1155Token_Filter = {
   identifier_not?: InputMaybe<Scalars['BigInt']['input']>;
   identifier_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
   or?: InputMaybe<Array<InputMaybe<Erc1155Token_Filter>>>;
+  sellStatus?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_contains?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_ends_with?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_gt?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_gte?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  sellStatus_lt?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_lte?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_not?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_not_contains?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  sellStatus_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_starts_with?: InputMaybe<Scalars['String']['input']>;
+  sellStatus_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
   totalSupply?: InputMaybe<Scalars['String']['input']>;
   totalSupply_?: InputMaybe<Erc1155Balance_Filter>;
   totalSupply_contains?: InputMaybe<Scalars['String']['input']>;
@@ -1896,6 +1943,7 @@ export enum Erc1155Token_OrderBy {
   Creators = 'creators',
   Id = 'id',
   Identifier = 'identifier',
+  SellStatus = 'sellStatus',
   TotalSupply = 'totalSupply',
   TotalSupplyId = 'totalSupply__id',
   TotalSupplyValue = 'totalSupply__value',
@@ -2150,6 +2198,7 @@ export enum Erc1155Transfer_OrderBy {
   Token = 'token',
   TokenId = 'token__id',
   TokenIdentifier = 'token__identifier',
+  TokenSellStatus = 'token__sellStatus',
   TokenTxCreation = 'token__txCreation',
   TokenUri = 'token__uri',
   Transaction = 'transaction',
@@ -2469,6 +2518,7 @@ export enum MarketEvent721_OrderBy {
   NftId = 'nftId',
   NftIdId = 'nftId__id',
   NftIdIdentifier = 'nftId__identifier',
+  NftIdSellStatus = 'nftId__sellStatus',
   NftIdTxCreation = 'nftId__txCreation',
   NftIdUri = 'nftId__uri',
   Price = 'price',
@@ -2714,6 +2764,7 @@ export enum MarketEvent1155_OrderBy {
   NftId = 'nftId',
   NftIdId = 'nftId__id',
   NftIdIdentifier = 'nftId__identifier',
+  NftIdSellStatus = 'nftId__sellStatus',
   NftIdTxCreation = 'nftId__txCreation',
   NftIdUri = 'nftId__uri',
   Price = 'price',
@@ -3924,6 +3975,7 @@ export type Erc721TokenResolvers<ContextType = any, ParentType extends Resolvers
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   identifier?: Resolver<ResolversTypes['BigInt'], ParentType, ContextType>;
   owner?: Resolver<ResolversTypes['Account'], ParentType, ContextType>;
+  sellStatus?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   transfers?: Resolver<Array<ResolversTypes['ERC721Transfer']>, ParentType, ContextType, RequireFields<Erc721TokenTransfersArgs, 'first' | 'skip'>>;
   txCreation?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   uri?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -3987,6 +4039,7 @@ export type Erc1155TokenResolvers<ContextType = any, ParentType extends Resolver
   creators?: Resolver<Array<ResolversTypes['ERC1155Creator']>, ParentType, ContextType, RequireFields<Erc1155TokenCreatorsArgs, 'first' | 'skip'>>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   identifier?: Resolver<ResolversTypes['BigInt'], ParentType, ContextType>;
+  sellStatus?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   totalSupply?: Resolver<ResolversTypes['ERC1155Balance'], ParentType, ContextType>;
   transfers?: Resolver<Array<ResolversTypes['ERC1155Transfer']>, ParentType, ContextType, RequireFields<Erc1155TokenTransfersArgs, 'first' | 'skip'>>;
   txCreation?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -4210,8 +4263,14 @@ export const GetCollectionsDocument = gql`
 }
     `;
 export const GetNfTsHistoryDocument = gql`
-    query GetNFTsHistory($id: String!) {
-  marketEvent721S(where: {nftId_contains: $id}, orderBy: timestamp) {
+    query GetNFTsHistory($id: String!, $first: Int!, $skip: Int!, $minPrice: BigInt, $maxPrice: BigInt) {
+  marketEvent721S(
+    where: {nftId_contains: $id, price_gte: $minPrice, price_lte: $maxPrice}
+    first: $first
+    skip: $skip
+    orderBy: timestamp
+    orderDirection: desc
+  ) {
     id
     event
     nftId {
@@ -4249,6 +4308,10 @@ export type GetCollectionsQuery = { __typename?: 'Query', collections: Array<{ _
 
 export type GetNfTsHistoryQueryVariables = Exact<{
   id: Scalars['String']['input'];
+  first: Scalars['Int']['input'];
+  skip: Scalars['Int']['input'];
+  minPrice?: InputMaybe<Scalars['BigInt']['input']>;
+  maxPrice?: InputMaybe<Scalars['BigInt']['input']>;
 }>;
 
 

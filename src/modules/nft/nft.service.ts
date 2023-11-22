@@ -70,18 +70,23 @@ export class NftService {
 
   async findAll(filter: GetAllNftDto): Promise<NftDto[]> {
     try {
+      let traitsConditions = [];
+
+      // TODO: if price and status are included, then use subgraph as main source and use other to eliminate 
+
+      if (filter.traits) {
+        traitsConditions = filter.traits.map(trait => ({
+          traits: {
+            some: {
+              trait_type: trait.trait_type,
+              ...(trait.value && { value: trait.value }),
+              ...(trait.display_type && { display_type: trait.display_type }),
+            },
+          },
+        }));
+      }
       let whereCondition: Prisma.NFTWhereInput = {
-        AND: [
-          ...filter.traits.map(trait => ({
-            traits: {
-              some: {
-                trait_type: trait.trait_type,
-                ...(trait.value && { value: trait.value}),
-                ...(trait.display_type && { display_type: trait.display_type}),
-              }
-            }
-          })),
-        ],
+        AND: traitsConditions,
         ...(filter.creatorAddress && { creator: {
           publicKey: filter.creatorAddress
         }}),
@@ -123,9 +128,9 @@ export class NftService {
           traits: true,
         }
       })
-      const response = await this.GraphqlService.getNFTsHistory(nfts[0].id)
-      // TODO: filter by sell status
-      // TODO: filter by price if available
+      // const response = await this.GraphqlService.getNFTsHistory(nfts[0].id, 10)
+      // console.log(response.marketEvent721S)
+      // const lastNFTStatus = response.marketEvent721S[response.marketEvent721S.length - 1];
       return nfts;
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);

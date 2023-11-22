@@ -22,10 +22,10 @@ export class GraphQlcallerService {
       throw err; 
     }
   }
-  async getNFTsHistory(id: string) {
+  async getNFTsHistory(id: string, first: number, skip, minPrice, maxPrice) {
     const client = this.getGraphqlClient();
     const sdk = getSdk(client);
-    const variables: GetNfTsHistoryQueryVariables = { id };
+    const variables: GetNfTsHistoryQueryVariables = { id, first, skip, minPrice, maxPrice };
     try {
       const response = await sdk.GetNFTsHistory(variables);
       return response;

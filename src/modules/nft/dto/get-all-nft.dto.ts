@@ -1,8 +1,9 @@
 import { IsEnum, IsNumber, IsOptional } from "class-validator";
 import { QueryTraitDto } from "./query-trait.dto";
 import { sellStatus } from "src/constants/enums/SellStatus.enum";
+import { OffsetPaginationDto } from "src/commons/definitions/OffsetPagination.input";
 
-export class GetAllNftDto {
+export class GetAllNftDto extends OffsetPaginationDto {
 
     @IsOptional()
     traits: QueryTraitDto[];
@@ -13,7 +14,11 @@ export class GetAllNftDto {
 
     @IsOptional()
     @IsNumber()
-    price: number;
+    priceMax: number;
+
+    @IsOptional()
+    @IsNumber()
+    priceMin: number;
 
     @IsOptional()
     collectionAddress: string;
