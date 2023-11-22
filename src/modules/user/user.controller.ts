@@ -45,4 +45,9 @@ export class UserController {
     return await this.userServiceExtend.getCollectionByUser(id);
   }
 
+  @Get('/collection/:id')
+  async getCollectionWithUserID(@Param('id') id : string){
+    return await this.userServiceExtend.getCollectionByUser(id);
+  }
+
 }
