@@ -119,10 +119,7 @@ export class NftService {
                 email: true,
                 avatar: true,
                 username: true,
-                signature: true,
-                signer: true,
                 publicKey: true,
-                acceptedTerms: true,
               }
             },
             collection: {
@@ -166,10 +163,7 @@ export class NftService {
                   email: true,
                   avatar: true,
                   username: true,
-                  signature: true,
-                  signer: true,
                   publicKey: true,
-                  acceptedTerms: true,
                 }
               },
               collection: {
@@ -229,13 +223,7 @@ export class NftService {
                   email: true,
                   avatar: true,
                   username: true,
-                  signature: true,
-                  signedMessage: true,
-                  signer: true,
                   publicKey: true,
-                  signDate: true,
-                  acceptedTerms: true,
-                  createdAt: true
                 }
               }
             }
@@ -246,13 +234,7 @@ export class NftService {
               email: true,
               avatar: true,
               username: true,
-              signature: true,
-              signedMessage: true,
-              signer: true,
               publicKey: true,
-              signDate: true,
-              acceptedTerms: true,
-              createdAt: true
             },
           },
           collection: {
@@ -318,13 +300,8 @@ export class NftService {
                       email: true,
                       avatar: true,
                       username: true,
-                      signature: true,
-                      signedMessage: true,
                       signer: true,
                       publicKey: true,
-                      signDate: true,
-                      acceptedTerms: true,
-                      createdAt: true
                     },
                   },
                   collection: {

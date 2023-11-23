@@ -65,10 +65,7 @@ export class CollectionService {
                 email: true,
                 avatar: true,
                 username: true,
-                signature: true,
-                signer: true,
                 publicKey: true,
-                acceptedTerms: true,
               },
             },
           }
@@ -108,12 +105,7 @@ export class CollectionService {
                   email: true,
                   avatar: true,
                   username: true,
-                  signature: true,
-                  signedMessage: true,
-                  signer: true,
                   publicKey: true,
-                  signDate: true,
-                  acceptedTerms: true,
                   createdAt: true
                 },
               },
