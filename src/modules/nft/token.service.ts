@@ -21,21 +21,31 @@ export class TokenService {
             throw new NotFoundException('Collection address not found');
         }
         // Remove '0x' prefix and convert the minter address to BigInt
-        const minterBigInt = BigInt("0xf24c359B22728Ce712b81ee018344B58CEb55d51");
+        // const minterBigInt = BigInt("0xf24c359B22728Ce712b81ee018344B58CEb55d51");
 
         // Shift the minter address 96 bits to the left
-        let tokenIdBigInt = minterBigInt << 96n;
+        // let tokenIdBigInt = minterBigInt << 96n;
 
         // Extract a portion of the collection address and current timestamp for uniqueness
         // Ensure that they together fit within 96 bits
         // const collectionPart = collectionAddress.slice(-12); // Last 12 characters (48 bits)
         // const timestamp = Date.now(); // Milliseconds timestamp (usually less than 48 bits)
-        const additionalData = this.prisma.nFT.count();
+        // const additionalData = this.prisma.nFT.count();
 
         // Combine the shifted minter address with the additional data
         // tokenIdBigInt |= additionalData;
 
         // Return the tokenId
-        return tokenIdBigInt.toString();
+        // return tokenIdBigInt.toString();
+
+        const current = await this.prisma.nFT.count({
+            where: {
+                collection: {
+                    address: collectionAddress
+                }
+            }
+        });
+        const nextId = current + 1
+        return minterAddress + nextId.toString().padStart(24, '0')
     }
 }
