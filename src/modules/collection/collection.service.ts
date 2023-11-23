@@ -9,6 +9,8 @@ import { Redis } from 'src/database';
 import { TraitService } from '../nft/trait.service';
 import { GetAllCollectionDto } from './dto/get-all-collection.dto';
 import { GetCollectionMarketData } from '../graph-qlcaller/getCollectionMarketData.service';
+import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
+import { SellStatus } from 'src/generated/graphql';
 
 interface CollectionGeneral {
   totalOwner: number;
@@ -68,14 +70,10 @@ export class CollectionService {
     const count = await this.collectionData.getCollectionTokens(collectionAddress);
     if (type === 'ERC721') {
       const sum = respose.marketEvent721S.reduce((acc, obj) => acc + BigInt(obj.price), BigInt(0));
-      console.log('volumn721: ', sum.toString())
       // const count1= await this.collectionData.getCollectionTokens('0x73039bafa89e6f17f9a6b0b953a01af5ecabacd2');
-      console.log('count721: ', count.erc721Tokens.length)
       const uniqueOwnerIdsCount = new Set(count.erc721Tokens.map(obj => obj.owner.id)).size;
-      console.log('total owner721: ', uniqueOwnerIdsCount)
       const filterSelling = respose.marketEvent721S.filter(obj => obj.event === "AskNew");
       const floorPrice = filterSelling.length > 0 ? filterSelling.reduce((min, obj) => BigInt(obj.price) < BigInt(min) ? BigInt(obj.price) : BigInt(min), BigInt(filterSelling[0].price)) : BigInt(0);
-      console.log('floor721: ', floorPrice)
       return {
         volumn: sum.toString(),
         totalOwner: uniqueOwnerIdsCount,
@@ -89,15 +87,12 @@ export class CollectionService {
       const uniqueOwnerIdsCount = owners.erc1155Balances.filter(obj => BigInt(obj.value) > BigInt(0) && !!obj.account).length;
       // volumn
       const sum = respose.marketEvent1155S.reduce((acc, obj) => acc + BigInt(obj.price), BigInt(0));
-      console.log('volumn1155: ', sum.toString())
       // count total items
-      console.log('count1155: ', count.erc1155Tokens.length)
       
       // filter floor price
       const filterSelling = respose.marketEvent1155S.filter(obj => obj.event === "AskNew");
       const floorPrice = filterSelling.length > 0 ? filterSelling.reduce((min, obj) => BigInt(obj.price) < BigInt(min) ? BigInt(obj.price) : BigInt(min), BigInt(filterSelling[0].price)) : BigInt(0);
       // filter name
-      console.log('floor1155: ', floorPrice)
       return {
         volumn: sum.toString(),
         totalOwner: uniqueOwnerIdsCount,
@@ -108,11 +103,13 @@ export class CollectionService {
   }
 
   async findAll(input: GetAllCollectionDto): Promise<CollectionEntity[]> {
-    // const generalInfo = await this.getGeneralCollectionData()
-    
+    // TODO: get all collection from subgraph first, got the id and map it back to local collection
     const collections = await this.prisma.collection.findMany({
       where: {
-        ...(input.name && { name: input.name})
+        ...(input.name && { name: {
+          contains: input.name,
+          mode: 'insensitive'
+        }})
       },
       include : {
         creators : {
@@ -130,12 +127,21 @@ export class CollectionService {
         }
       }
     })
-    const returnCollection = collections.map(async (item) => {
+
+    const subgraphCollection = collections.map(async (item) => {
       const generalInfo = await this.getGeneralCollectionData(item.address, item.type);
-      console.log(item, generalInfo)
       return { ... item, ...generalInfo}
     })
-    const dataArray = Promise.all(returnCollection);
+    const dataArray = Promise.all(subgraphCollection);
+    if (input.max || input.min) {
+      const filterPriceCollection = (await dataArray).filter(item => {
+        const price = item.floorPrice;
+        const meetsMinCondition = input.min !== undefined ? price >= input.min : true;
+        const meetsMaxCondition = input.max !== undefined ? price <= input.max : true;
+        return meetsMinCondition && meetsMaxCondition;
+      }) 
+      return filterPriceCollection;
+    }
 
     return dataArray;
   }

@@ -7,12 +7,10 @@ import { Type } from 'class-transformer';
 @InputType()
 export class GetAllCollectionDto {
   // id: string;
-  @IsNumberString()
   @Type(() => Number)
   @IsOptional()
   min: string;
 
-  @IsNumberString()
   @Type(() => Number)
   @IsOptional()
   max: string;
