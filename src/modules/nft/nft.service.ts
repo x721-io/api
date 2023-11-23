@@ -53,6 +53,7 @@ export class NftService {
           id: input.id,
           name: input.name,
           ipfsHash: input.name,
+          imageHash: input.imageHash,
           traits: {
             create: input.traits,
           },
@@ -107,6 +108,7 @@ export class NftService {
         }}),
         ...(filter.name && { name: filter.name})
       }
+      // TODO: add first / skip to these 2 for pagination
       const { marketEvent721S } = await this.GraphqlService.getNFTsHistory721(filter.priceMin,filter.priceMax, filter.sellStatus);
       const { marketEvent1155S } = await this.GraphqlService.getNFTsHistory1155(filter.priceMin,filter.priceMax, filter.sellStatus);
       if (!filter.priceMin && !filter.priceMax && !filter.sellStatus) {

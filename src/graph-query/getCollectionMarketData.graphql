@@ -1,0 +1,68 @@
+query GetCollectionsData($collectionAddress: String) {
+  marketEvent1155S(where: {address: $collectionAddress}) {
+    address
+    netPrice
+    price
+    quoteToken
+    to
+    nftId {
+      contract {
+        id
+      }
+    }
+    event
+  }
+  marketEvent721S(where: {address: $collectionAddress}) {
+    id
+    nftId {
+      contract {
+        id
+      }
+    }
+    address
+    price
+    quoteToken
+    event
+    to
+  }
+}
+
+query GetCollectionHolders($collectionAddress: String) {
+  erc1155Balances(
+    where: {contract_: {id: $collectionAddress}}
+  ) {
+    id
+    value
+    contract {
+      id
+    }
+    account {
+      id
+    }
+  }
+}
+
+query GetCollectionTokens($collectionAddress: String) {
+  erc1155Tokens(
+    where: {contract_: {id: $collectionAddress}}
+  ) {
+    id
+    balances {
+      value
+      account {
+        id
+      }
+      contract {
+        id
+      }
+    }
+  }
+  erc721Tokens(
+    where: {contract_: {id: $collectionAddress}}
+  ) {
+    id
+    owner {
+      id
+    }
+  }
+}

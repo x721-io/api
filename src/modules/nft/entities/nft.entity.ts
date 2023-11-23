@@ -18,6 +18,7 @@ export class NftEntity implements NFT{
   constructor(partial: Partial<NFT>) {
     Object.assign(this, partial);
   }
+  imageHash: string;
 }
  
 export enum TXSTATUS {
