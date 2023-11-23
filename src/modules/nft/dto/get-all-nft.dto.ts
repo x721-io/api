@@ -2,6 +2,7 @@ import { IsEnum, IsNumber, IsOptional } from "class-validator";
 import { QueryTraitDto } from "./query-trait.dto";
 import { sellStatus } from "src/constants/enums/SellStatus.enum";
 import { OffsetPaginationDto } from "src/commons/definitions/OffsetPagination.input";
+import { SellStatus } from "src/generated/graphql";
 
 export class GetAllNftDto extends OffsetPaginationDto {
 
@@ -9,8 +10,8 @@ export class GetAllNftDto extends OffsetPaginationDto {
     traits: QueryTraitDto[];
 
     @IsOptional()
-    @IsEnum(sellStatus)
-    sellStatus: sellStatus;
+    @IsEnum(SellStatus)
+    sellStatus: SellStatus;
 
     @IsOptional()
     @IsNumber()

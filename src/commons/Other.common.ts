@@ -258,6 +258,10 @@ class OtherCommon {
 
     return isFieldPresent(info.fieldNodes[0].selectionSet, fieldName as string);
   }
+
+  mapSubgraphToNft(subgraphData, localData) {
+
+  }
 }
 
 export default new OtherCommon();

@@ -1,36 +1,103 @@
 import { Injectable } from '@nestjs/common';
 import { CreateGraphQlcallerDto } from './dto/create-graph-qlcaller.dto';
 import { UpdateGraphQlcallerDto } from './dto/update-graph-qlcaller.dto';
-import { getSdk, GetCollectionsQueryVariables, GetNfTsHistoryQuery, GetNfTsHistoryQueryVariables } from '../../generated/graphql'
-import { GraphQLClient } from 'graphql-request';
+import { getSdk, GetNfTsHistory721QueryVariables, GetNfTsHistory1155QueryVariables, SellStatus, GetNfTsHistory721Query, GetNfTsHistory1155Query } from '../../generated/graphql'
+import { GraphQLClient, gql } from 'graphql-request';
 @Injectable()
 export class GraphQlcallerService {
   private readonly endpoint = process.env.SUBGRAPH_URL;
+  private graphqlClient: GraphQLClient;
+
+  constructor() {
+    this.graphqlClient = new GraphQLClient(this.endpoint);
+
+  }
 
   private getGraphqlClient() {
     return new GraphQLClient(this.endpoint);
   }
-  async getCollections(first: number) {
-    const client = this.getGraphqlClient();
-    const sdk = getSdk(client);
-    const variables: GetCollectionsQueryVariables = { first };
-    try {
-      const response = await sdk.GetCollections(variables);
-      return response;
-    } catch (err) {
-      console.error(err);
-      throw err; 
+
+  async getNFTsHistory721(minPrice?, maxPrice?, event?: SellStatus) {
+    let whereConditions = [];
+    let variables = {};
+
+    // Add conditions based on parameters
+    if (minPrice !== undefined && minPrice !== null) {
+      whereConditions.push('price_gte: $minPrice');
+      variables['minPrice'] = minPrice;
     }
+    if (maxPrice !== undefined && maxPrice !== null) {
+      whereConditions.push('price_lte: $maxPrice');
+      variables['maxPrice'] = maxPrice;
+    }
+    if (event !== undefined && event !== null) {
+      whereConditions.push('event: $event');
+      variables['event'] = event;
+    }
+
+    // Construct the query
+    const query = gql`
+      query GetNFTsHistory721($minPrice: BigInt, $maxPrice: BigInt, $event: SellStatus) {
+        marketEvent721S(
+          where: {${whereConditions.join(', ')}}
+          orderBy: timestamp
+          orderDirection: desc
+        ) {
+          id
+          event
+          nftId {
+            id
+          }
+          price
+          to
+          from
+        }
+      }
+    `;
+
+    // Execute the query with dynamic variables
+    return this.graphqlClient.request(query, variables) as unknown as GetNfTsHistory721Query;
   }
-  async getNFTsHistory(id: string, first: number, skip, minPrice, maxPrice) {
-    const client = this.getGraphqlClient();
-    const sdk = getSdk(client);
-    const variables: GetNfTsHistoryQueryVariables = { id, first, skip, minPrice, maxPrice };
-    try {
-      const response = await sdk.GetNFTsHistory(variables);
-      return response;
-    } catch (err) {
-      throw err;
+
+  async getNFTsHistory1155(minPrice?, maxPrice?, event?: SellStatus) {
+    let whereConditions = [];
+    let variables = {};
+
+    // Add conditions based on parameters
+    if (minPrice !== undefined && minPrice !== null) {
+      whereConditions.push('price_gte: $minPrice');
+      variables['minPrice'] = minPrice;
     }
+    if (maxPrice !== undefined && maxPrice !== null) {
+      whereConditions.push('price_lte: $maxPrice');
+      variables['maxPrice'] = maxPrice;
+    }
+    if (event !== undefined && event !== null) {
+      whereConditions.push('event: $event');
+      variables['event'] = event;
+    }
+
+    // Construct the query
+    const query = gql`
+      query GetNFTsHistory1155($minPrice: BigInt, $maxPrice: BigInt, $event: SellStatus) {
+        marketEvent1155S(
+          where: {${whereConditions.join(', ')}}
+          orderBy: timestamp
+          orderDirection: desc
+        ) {
+          id
+          event
+          nftId {
+            id
+          }
+          price
+          to
+          from
+        }
+      }
+    `;
+
+    // Execute the query with dynamic variables
+    return this.graphqlClient.request(query, variables) as unknown as GetNfTsHistory1155Query;
   } 
 }

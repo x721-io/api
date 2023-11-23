@@ -1,8 +1,23 @@
-query GetNFTsHistory ($id: String!, $first: Int!, $skip: Int!, $minPrice: BigInt, $maxPrice: BigInt) {
+query GetNFTsHistory721 ($minPrice: BigInt, $maxPrice: BigInt, $event: SellStatus) {
   marketEvent721S(
-    where: {nftId_contains: $id, price_gte: $minPrice, price_lte: $maxPrice}
-    first: $first
-    skip: $skip
+    where: {price_gte: $minPrice, price_lte: $maxPrice, event: $event}
+    orderBy: timestamp
+    orderDirection: desc
+  ) {
+    id
+    event
+    nftId {
+      id
+    }
+    price
+    to
+    from
+  }
+}
+
+query GetNFTsHistory1155 ($minPrice: BigInt, $maxPrice: BigInt, $event: SellStatus) {
+  marketEvent1155S(
+    where: {price_gte: $minPrice, price_lte: $maxPrice, event: $event}
     orderBy: timestamp
     orderDirection: desc
   ) {

@@ -46,7 +46,7 @@ export class CollectionService {
             collectionId: collection.id
           }
         })
-        await Redis.publish('collection-channel', JSON.stringify({ txCreation: collection.txCreationHash }))
+        await Redis.publish('collection-channel', JSON.stringify({ txCreation: collection.txCreationHash, type: collection.type }))
         return collection;
       }
     } catch (error) {

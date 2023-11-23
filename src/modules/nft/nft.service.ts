@@ -8,6 +8,7 @@ import { validate as isValidUUID } from 'uuid';
 import { Redis } from 'src/database';
 import { GetAllNftDto } from './dto/get-all-nft.dto';
 import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
+import { SellStatus } from 'src/generated/graphql';
 
 @Injectable()
 export class NftService {
@@ -24,9 +25,20 @@ export class NftService {
         }
       });
 
+      let collection = await this.prisma.collection.findFirst({
+        where: {
+          address: {
+            mode: 'insensitive',
+            contains: input.collectionId
+          }
+        }
+      })
       // if (!isValidUUID(input.creatorId)) {
       //   throw new Error('Invalid Creator ID. Please try again !');
       // }
+
+      if (!collection)
+        throw new NotFoundException('Collection not found');
 
       if (!isValidUUID(input.collectionId)) {
         throw new Error('Invalid Collection ID. Please try again !');
@@ -48,7 +60,7 @@ export class NftService {
           tokenUri: input.tokenUri,
           txCreationHash: input.txCreationHash,
           creatorId: user.id,
-          collectionId: input.collectionId
+          collectionId: collection.id
         },
         include: {
           traits: true,
@@ -71,9 +83,9 @@ export class NftService {
   async findAll(filter: GetAllNftDto): Promise<NftDto[]> {
     try {
       let traitsConditions = [];
-
+      
       // TODO: if price and status are included, then use subgraph as main source and use other to eliminate 
-
+      
       if (filter.traits) {
         traitsConditions = filter.traits.map(trait => ({
           traits: {
@@ -95,43 +107,83 @@ export class NftService {
         }}),
         ...(filter.name && { name: filter.name})
       }
+      if (!filter.priceMin && !filter.priceMax && !filter.sellStatus) {
       const nfts = await this.prisma.nFT.findMany({
         where: whereCondition,
         include: {
           creator: {
-            select: {
-              id: true,
-              email: true,
-              avatar: true,
-              username: true,
-              signature: true,
-              signer: true,
-              publicKey: true,
-              acceptedTerms: true,
-            }
-          },
-          collection: {
-            select: {
-              id: true,
-              txCreationHash: true,
-              name: true,
-              status: true,
-              type: true,
-              category: {
-                select: {
-                  id: true,
-                  name: true
+              select: {
+                id: true,
+                email: true,
+                avatar: true,
+                username: true,
+                signature: true,
+                signer: true,
+                publicKey: true,
+                acceptedTerms: true,
+              }
+            },
+            collection: {
+              select: {
+                id: true,
+                txCreationHash: true,
+                name: true,
+                status: true,
+                type: true,
+                category: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
                 }
               }
+            },
+            traits: true,
+          }
+        })
+        return nfts;
+      } else {
+        const { marketEvent721S } = await this.GraphqlService.getNFTsHistory721(filter.priceMin,filter.priceMax, filter.sellStatus);
+        const { marketEvent1155S } = await this.GraphqlService.getNFTsHistory1155(filter.priceMin,filter.priceMax, filter.sellStatus);
+        console.log(marketEvent721S, marketEvent1155S);
+        whereCondition = {...whereCondition, id: {
+          in: marketEvent721S.map(item => item.nftId.id).concat(marketEvent1155S.map(item => item.nftId.id))
+        }}
+        const nfts = await this.prisma.nFT.findMany({
+          where: whereCondition,
+          include: {
+            creator: {
+                select: {
+                  id: true,
+                  email: true,
+                  avatar: true,
+                  username: true,
+                  signature: true,
+                  signer: true,
+                  publicKey: true,
+                  acceptedTerms: true,
+                }
+              },
+              collection: {
+                select: {
+                  id: true,
+                  txCreationHash: true,
+                  name: true,
+                  status: true,
+                  type: true,
+                  category: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  }
+                }
+              },
+              traits: true,
             }
-          },
-          traits: true,
-        }
-      })
-      // const response = await this.GraphqlService.getNFTsHistory(nfts[0].id, 10)
-      // console.log(response.marketEvent721S)
-      // const lastNFTStatus = response.marketEvent721S[response.marketEvent721S.length - 1];
-      return nfts;
+          })
+          return nfts;
+      }
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
