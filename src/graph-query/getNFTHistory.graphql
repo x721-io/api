@@ -1,0 +1,64 @@
+query GetNFTsHistory721 ($minPrice: BigInt, $maxPrice: BigInt, $event: SellStatus) {
+  marketEvent721S(
+    where: {price_gte: $minPrice, price_lte: $maxPrice, event: $event}
+    orderBy: timestamp
+    orderDirection: desc
+  ) {
+    id
+    event
+    nftId {
+      id
+    }
+    price
+    to
+    from
+  }
+}
+
+query GetNFTsHistory1155 ($minPrice: BigInt, $maxPrice: BigInt, $event: SellStatus) {
+  marketEvent1155S(
+    where: {price_gte: $minPrice, price_lte: $maxPrice, event: $event}
+    orderBy: timestamp
+    orderDirection: desc
+  ) {
+    id
+    event
+    nftId {
+      id
+    }
+    price
+    to
+    from
+  }
+}
+
+query GetOneNFTSellInfo($nftId: String!) {
+  marketEvent1155S(
+    where: {nftId_contains: $nftId}
+    orderBy: timestamp
+    orderDirection: desc
+  ) {
+    id
+    event
+    nftId {
+      id
+    }
+    price
+    to
+    from
+  }
+  marketEvent721S(
+    where: {nftId_contains: $nftId}
+    orderBy: timestamp
+    orderDirection: desc
+  ) {
+    id
+    event
+    nftId {
+      id
+    }
+    price
+    to
+    from
+  }
+}

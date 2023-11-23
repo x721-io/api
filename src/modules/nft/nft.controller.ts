@@ -7,6 +7,7 @@ import { NftService } from './nft.service';
 import { AuthenticationGuard } from '../auth/guards/auth.guard';
 import { GetTokenIdDto } from './dto/get-token-id.dto';
 import { TokenService } from './token.service';
+import { GetAllNftDto } from './dto/get-all-nft.dto';
 
 @Controller('nft')
 export class NftController {
@@ -24,9 +25,9 @@ export class NftController {
     return this.tokenService.generateTokenId(user.publicKey, input.collectionAddress);
   }
 
-  @Get()
-  findall(){
-    return this.nftService.findAll();
+  @Post('/search')
+  findall(@Body() query: GetAllNftDto){
+    return this.nftService.findAll(query);
   }
 
   @Get(':id')
