@@ -16,6 +16,10 @@ export class CreateNftDto {
   @IsNotEmpty({ message: 'Please Enter IPFS ' })
   ipfsHash : string;
 
+  @IsString({message : 'IPFS Hash is invalid'})
+  @IsNotEmpty({ message: 'Please Enter IPFS ' })
+  imageHash : string;
+
   @IsNotEmpty({ message: 'Please Enter Traits ' })
   traits : CreateTraitDto[];
 

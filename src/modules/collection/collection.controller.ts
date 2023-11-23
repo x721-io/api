@@ -5,6 +5,7 @@ import { UpdateCollectionDto } from './dto/update-collection.dto';
 import { AuthenticationGuard } from '../auth/guards/auth.guard';
 import { GetCurrentUser } from 'src/decorators/get-current-user.decorator';
 import { User } from '@prisma/client';
+import { GetAllCollectionDto } from './dto/get-all-collection.dto';
 
 @Controller('collection')
 export class CollectionController {
@@ -17,8 +18,8 @@ export class CollectionController {
   }
 
   @Get()
-  findAll(){
-    return this.collectionService.findAll();
+  findAll(@Query() input: GetAllCollectionDto){
+    return this.collectionService.findAll(input);
   }
 
   @Get(':id')

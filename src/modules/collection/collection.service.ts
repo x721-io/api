@@ -3,15 +3,24 @@ import { CreateCollectionDto } from './dto/create-collection.dto';
 import { UpdateCollectionDto } from './dto/update-collection.dto';
 import { CollectionEntity } from './entities/collection.entity';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma, TX_STATUS, User } from '@prisma/client'
+import { CONTRACT_TYPE, Collection, Prisma, TX_STATUS, User } from '@prisma/client'
 import { validate as isValidUUID } from 'uuid'
 import { Redis } from 'src/database';
 import { TraitService } from '../nft/trait.service';
+import { GetAllCollectionDto } from './dto/get-all-collection.dto';
+import { GetCollectionMarketData } from '../graph-qlcaller/getCollectionMarketData.service';
 
+interface CollectionGeneral {
+  totalOwner: number;
+  volumn: string;
+  totalNft: number;
+  floorPrice: string;
+}
 
 @Injectable()
 export class CollectionService {
-  constructor(private prisma: PrismaService, private traitService: TraitService) { }
+  constructor(private prisma: PrismaService, private traitService: TraitService, private readonly collectionData: GetCollectionMarketData) { }
+
   async create(input: CreateCollectionDto, user: User): Promise<any> {
     try {
       let checkExist = await this.prisma.collection.findFirst({
@@ -54,8 +63,57 @@ export class CollectionService {
     }
   }
 
-  async findAll(): Promise<CollectionEntity[]> {
-    return this.prisma.collection.findMany({
+  async getGeneralCollectionData(collectionAddress: string, type: CONTRACT_TYPE): Promise<CollectionGeneral> {
+    const respose = await this.collectionData.getCollectionSumData(collectionAddress)
+    const count = await this.collectionData.getCollectionTokens(collectionAddress);
+    if (type === 'ERC721') {
+      const sum = respose.marketEvent721S.reduce((acc, obj) => acc + BigInt(obj.price), BigInt(0));
+      console.log('volumn721: ', sum.toString())
+      // const count1= await this.collectionData.getCollectionTokens('0x73039bafa89e6f17f9a6b0b953a01af5ecabacd2');
+      console.log('count721: ', count.erc721Tokens.length)
+      const uniqueOwnerIdsCount = new Set(count.erc721Tokens.map(obj => obj.owner.id)).size;
+      console.log('total owner721: ', uniqueOwnerIdsCount)
+      const filterSelling = respose.marketEvent721S.filter(obj => obj.event === "AskNew");
+      const floorPrice = filterSelling.length > 0 ? filterSelling.reduce((min, obj) => BigInt(obj.price) < BigInt(min) ? BigInt(obj.price) : BigInt(min), BigInt(filterSelling[0].price)) : BigInt(0);
+      console.log('floor721: ', floorPrice)
+      return {
+        volumn: sum.toString(),
+        totalOwner: uniqueOwnerIdsCount,
+        totalNft: count.erc721Tokens.length,
+        floorPrice: floorPrice.toString()
+      }
+    } else {
+      // const respose = await this.collectionData.getCollectionSumData('0xc2587c1b945b1a7be4be5423c24f1bbf54495daa')
+      // count owners
+      const owners = await this.collectionData.getCollectionHolder('0xc2587c1b945b1a7be4be5423c24f1bbf54495daa')
+      const uniqueOwnerIdsCount = owners.erc1155Balances.filter(obj => BigInt(obj.value) > BigInt(0) && !!obj.account).length;
+      // volumn
+      const sum = respose.marketEvent1155S.reduce((acc, obj) => acc + BigInt(obj.price), BigInt(0));
+      console.log('volumn1155: ', sum.toString())
+      // count total items
+      console.log('count1155: ', count.erc1155Tokens.length)
+      
+      // filter floor price
+      const filterSelling = respose.marketEvent1155S.filter(obj => obj.event === "AskNew");
+      const floorPrice = filterSelling.length > 0 ? filterSelling.reduce((min, obj) => BigInt(obj.price) < BigInt(min) ? BigInt(obj.price) : BigInt(min), BigInt(filterSelling[0].price)) : BigInt(0);
+      // filter name
+      console.log('floor1155: ', floorPrice)
+      return {
+        volumn: sum.toString(),
+        totalOwner: uniqueOwnerIdsCount,
+        totalNft: count.erc1155Tokens.length,
+        floorPrice: floorPrice.toString()
+      }
+    }
+  }
+
+  async findAll(input: GetAllCollectionDto): Promise<CollectionEntity[]> {
+    // const generalInfo = await this.getGeneralCollectionData()
+    
+    const collections = await this.prisma.collection.findMany({
+      where: {
+        ...(input.name && { name: input.name})
+      },
       include : {
         creators : {
           select : {
@@ -72,6 +130,14 @@ export class CollectionService {
         }
       }
     })
+    const returnCollection = collections.map(async (item) => {
+      const generalInfo = await this.getGeneralCollectionData(item.address, item.type);
+      console.log(item, generalInfo)
+      return { ... item, ...generalInfo}
+    })
+    const dataArray = Promise.all(returnCollection);
+
+    return dataArray;
   }
 
   async findOne(id: string): Promise<{collection: CollectionEntity, traitAvailable: string[]}> {

@@ -18,6 +18,11 @@ export class CollectionEntity implements Collection {
   metadata: string;
   shortUrl: string;
   address: string;
+  totalOwner?: number;
+  floorPrice?: string;
+  totalNft?: number;
+  volumn?: string;
+
 }
 export enum TXSTATUS {
   PENDING = "PENDING",

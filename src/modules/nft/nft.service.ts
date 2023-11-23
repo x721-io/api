@@ -53,6 +53,7 @@ export class NftService {
           id: input.id,
           name: input.name,
           ipfsHash: input.name,
+          imageHash: input.imageHash,
           traits: {
             create: input.traits,
           },

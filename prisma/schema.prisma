@@ -30,6 +30,7 @@ model NFT {
   id             String     @id @db.VarChar(255)
   name           String     @unique
   ipfsHash       String
+  imageHash      String?
   traits         Trait[]
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
