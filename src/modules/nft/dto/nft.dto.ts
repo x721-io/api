@@ -14,4 +14,5 @@ export class NftDto {
   creatorId : string;
   collectionId : string;
   owners? : Array<UserNFT>
+  sellInfo?: unknown;
 }

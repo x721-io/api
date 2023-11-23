@@ -107,6 +107,8 @@ export class NftService {
         }}),
         ...(filter.name && { name: filter.name})
       }
+      const { marketEvent721S } = await this.GraphqlService.getNFTsHistory721(filter.priceMin,filter.priceMax, filter.sellStatus);
+      const { marketEvent1155S } = await this.GraphqlService.getNFTsHistory1155(filter.priceMin,filter.priceMax, filter.sellStatus);
       if (!filter.priceMin && !filter.priceMax && !filter.sellStatus) {
       const nfts = await this.prisma.nFT.findMany({
         where: whereCondition,
@@ -141,11 +143,17 @@ export class NftService {
             traits: true,
           }
         })
-        return nfts;
+        const mergedArray = nfts.map(item => {
+          const foundItem1 = marketEvent721S.find(obj => obj.nftId.id === item.id);
+          const foundItem2 = marketEvent1155S.find(obj => obj.nftId.id === item.id)
+          return {
+            ...item,
+            ...(foundItem1 && { price: foundItem1.price, sellStatus: foundItem1.event }),
+            ...(foundItem2 && { price: foundItem2.price, sellStatus: foundItem2.event }),
+          };          
+        });
+        return mergedArray;
       } else {
-        const { marketEvent721S } = await this.GraphqlService.getNFTsHistory721(filter.priceMin,filter.priceMax, filter.sellStatus);
-        const { marketEvent1155S } = await this.GraphqlService.getNFTsHistory1155(filter.priceMin,filter.priceMax, filter.sellStatus);
-        console.log(marketEvent721S, marketEvent1155S);
         whereCondition = {...whereCondition, id: {
           in: marketEvent721S.map(item => item.nftId.id).concat(marketEvent1155S.map(item => item.nftId.id))
         }}
@@ -182,7 +190,18 @@ export class NftService {
               traits: true,
             }
           })
-          return nfts;
+
+          const mergedArray = nfts.map(item => {
+            const foundItem1 = marketEvent721S.find(obj => obj.nftId.id === item.id);
+            const foundItem2 = marketEvent1155S.find(obj => obj.nftId.id === item.id)
+            return {
+              ...item,
+              ...(foundItem1 && { price: foundItem1.price, sellStatus: foundItem1.event }),
+              ...(foundItem2 && { price: foundItem2.price, sellStatus: foundItem2.event }),
+            };          
+          });
+          
+          return mergedArray;
       }
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
@@ -195,7 +214,7 @@ export class NftService {
       if (!checkExist) {
         throw new NotFoundException()
       }
-      return this.prisma.nFT.findUnique({
+      const nft = await this.prisma.nFT.findUnique({
         where: {
           id: id
         },
@@ -254,6 +273,12 @@ export class NftService {
           traits: true,
         }
       })
+      if (!nft) {
+        throw new NotFoundException('No NFT found');
+      }
+      const sellInfo = await this.GraphqlService.getOneNFTSellStatus(id);
+      const returnNft: NftDto = {...nft, sellInfo }
+      return returnNft;
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }

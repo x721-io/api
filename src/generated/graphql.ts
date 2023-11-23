@@ -3644,6 +3644,38 @@ export const GetNfTsHistory1155Document = gql`
   }
 }
     `;
+export const GetOneNftSellInfoDocument = gql`
+    query GetOneNFTSellInfo($nftId: String!) {
+  marketEvent1155S(
+    where: {nftId_contains: $nftId}
+    orderBy: timestamp
+    orderDirection: desc
+  ) {
+    id
+    event
+    nftId {
+      id
+    }
+    price
+    to
+    from
+  }
+  marketEvent721S(
+    where: {nftId_contains: $nftId}
+    orderBy: timestamp
+    orderDirection: desc
+  ) {
+    id
+    event
+    nftId {
+      id
+    }
+    price
+    to
+    from
+  }
+}
+    `;
 
 export type SdkFunctionWrapper = <T>(action: (requestHeaders?:Record<string, string>) => Promise<T>, operationName: string, operationType?: string) => Promise<T>;
 
@@ -3657,6 +3689,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     GetNFTsHistory1155(variables?: GetNfTsHistory1155QueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetNfTsHistory1155Query> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetNfTsHistory1155Query>(GetNfTsHistory1155Document, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetNFTsHistory1155', 'query');
+    },
+    GetOneNFTSellInfo(variables: GetOneNftSellInfoQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetOneNftSellInfoQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetOneNftSellInfoQuery>(GetOneNftSellInfoDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetOneNFTSellInfo', 'query');
     }
   };
 }
@@ -3678,3 +3713,10 @@ export type GetNfTsHistory1155QueryVariables = Exact<{
 
 
 export type GetNfTsHistory1155Query = { __typename?: 'Query', marketEvent1155S: Array<{ __typename?: 'MarketEvent1155', id: string, event: SellStatus, price?: any | null, to?: string | null, from?: string | null, nftId?: { __typename?: 'ERC1155Token', id: string } | null }> };
+
+export type GetOneNftSellInfoQueryVariables = Exact<{
+  nftId: Scalars['String']['input'];
+}>;
+
+
+export type GetOneNftSellInfoQuery = { __typename?: 'Query', marketEvent1155S: Array<{ __typename?: 'MarketEvent1155', id: string, event: SellStatus, price?: any | null, to?: string | null, from?: string | null, nftId?: { __typename?: 'ERC1155Token', id: string } | null }>, marketEvent721S: Array<{ __typename?: 'MarketEvent721', id: string, event: SellStatus, price?: any | null, to?: string | null, from: string, nftId: { __typename?: 'ERC721Token', id: string } }> };
