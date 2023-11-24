@@ -13,10 +13,6 @@ services:
       - ../logs/u2u-marketplace-api:/usr/src/app/u2u-server/logs
     networks:
       - u2u-nw
-    # logging:
-    #   driver: gcplogs
-    #   options:
-    #     gcp-project: web-team-380004
   redis:
     image: redis
     command: >
