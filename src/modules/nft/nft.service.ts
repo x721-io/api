@@ -40,9 +40,9 @@ export class NftService {
       if (!collection)
         throw new NotFoundException('Collection not found');
 
-      if (!isValidUUID(input.collectionId)) {
-        throw new Error('Invalid Collection ID. Please try again !');
-      }
+      // if (!isValidUUID(input.collectionId)) {
+      //   throw new Error('Invalid Collection ID. Please try again !');
+      // }
 
       if (checkExist) {
         throw new Error('Transaction hash or name or ID already exists')

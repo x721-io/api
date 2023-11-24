@@ -5,8 +5,8 @@ export class OffsetPaginationDto {
     @IsOptional()
     @IsInt()
     @Type(() => Number)
-    @Min(0)
-    page?: number = 0;
+    @Min(1)
+    page?: number = 1;
   
     @IsOptional()
     @IsInt()
