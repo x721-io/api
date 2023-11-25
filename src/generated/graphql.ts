@@ -2075,15 +2075,14 @@ export type MarketEvent1155 = {
   event: SellStatus;
   from?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
-  metadata?: Maybe<Scalars['String']['output']>;
   netPrice?: Maybe<Scalars['BigInt']['output']>;
   nftId?: Maybe<Erc1155Token>;
-  operationId: Scalars['BigInt']['output'];
+  operation: Operation;
   price?: Maybe<Scalars['BigInt']['output']>;
   quoteToken?: Maybe<Scalars['String']['output']>;
   timestamp: Scalars['BigInt']['output'];
   to?: Maybe<Scalars['String']['output']>;
-  txHash: Scalars['String']['output'];
+  txHash?: Maybe<Scalars['String']['output']>;
 };
 
 export type MarketEvent1155_Filter = {
@@ -2150,26 +2149,6 @@ export type MarketEvent1155_Filter = {
   id_lte?: InputMaybe<Scalars['ID']['input']>;
   id_not?: InputMaybe<Scalars['ID']['input']>;
   id_not_in?: InputMaybe<Array<Scalars['ID']['input']>>;
-  metadata?: InputMaybe<Scalars['String']['input']>;
-  metadata_contains?: InputMaybe<Scalars['String']['input']>;
-  metadata_contains_nocase?: InputMaybe<Scalars['String']['input']>;
-  metadata_ends_with?: InputMaybe<Scalars['String']['input']>;
-  metadata_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
-  metadata_gt?: InputMaybe<Scalars['String']['input']>;
-  metadata_gte?: InputMaybe<Scalars['String']['input']>;
-  metadata_in?: InputMaybe<Array<Scalars['String']['input']>>;
-  metadata_lt?: InputMaybe<Scalars['String']['input']>;
-  metadata_lte?: InputMaybe<Scalars['String']['input']>;
-  metadata_not?: InputMaybe<Scalars['String']['input']>;
-  metadata_not_contains?: InputMaybe<Scalars['String']['input']>;
-  metadata_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
-  metadata_not_ends_with?: InputMaybe<Scalars['String']['input']>;
-  metadata_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
-  metadata_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
-  metadata_not_starts_with?: InputMaybe<Scalars['String']['input']>;
-  metadata_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
-  metadata_starts_with?: InputMaybe<Scalars['String']['input']>;
-  metadata_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
   netPrice?: InputMaybe<Scalars['BigInt']['input']>;
   netPrice_gt?: InputMaybe<Scalars['BigInt']['input']>;
   netPrice_gte?: InputMaybe<Scalars['BigInt']['input']>;
@@ -2199,14 +2178,10 @@ export type MarketEvent1155_Filter = {
   nftId_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
   nftId_starts_with?: InputMaybe<Scalars['String']['input']>;
   nftId_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
-  operationId?: InputMaybe<Scalars['BigInt']['input']>;
-  operationId_gt?: InputMaybe<Scalars['BigInt']['input']>;
-  operationId_gte?: InputMaybe<Scalars['BigInt']['input']>;
-  operationId_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
-  operationId_lt?: InputMaybe<Scalars['BigInt']['input']>;
-  operationId_lte?: InputMaybe<Scalars['BigInt']['input']>;
-  operationId_not?: InputMaybe<Scalars['BigInt']['input']>;
-  operationId_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  operation?: InputMaybe<Operation>;
+  operation_in?: InputMaybe<Array<Operation>>;
+  operation_not?: InputMaybe<Operation>;
+  operation_not_in?: InputMaybe<Array<Operation>>;
   or?: InputMaybe<Array<InputMaybe<MarketEvent1155_Filter>>>;
   price?: InputMaybe<Scalars['BigInt']['input']>;
   price_gt?: InputMaybe<Scalars['BigInt']['input']>;
@@ -2292,19 +2267,23 @@ export enum MarketEvent1155_OrderBy {
   Event = 'event',
   From = 'from',
   Id = 'id',
-  Metadata = 'metadata',
   NetPrice = 'netPrice',
   NftId = 'nftId',
   NftIdId = 'nftId__id',
   NftIdIdentifier = 'nftId__identifier',
   NftIdTxCreation = 'nftId__txCreation',
   NftIdUri = 'nftId__uri',
-  OperationId = 'operationId',
+  Operation = 'operation',
   Price = 'price',
   QuoteToken = 'quoteToken',
   Timestamp = 'timestamp',
   To = 'to',
   TxHash = 'txHash'
+}
+
+export enum Operation {
+  Ask = 'Ask',
+  Offer = 'Offer'
 }
 
 /** Defines the order direction, either ascending or descending */
@@ -3207,6 +3186,7 @@ export type ResolversTypes = {
   MarketEvent1155: ResolverTypeWrapper<MarketEvent1155>;
   MarketEvent1155_filter: MarketEvent1155_Filter;
   MarketEvent1155_orderBy: MarketEvent1155_OrderBy;
+  Operation: Operation;
   OrderDirection: OrderDirection;
   Query: ResolverTypeWrapper<{}>;
   SellStatus: SellStatus;
@@ -3468,15 +3448,14 @@ export type MarketEvent1155Resolvers<ContextType = any, ParentType extends Resol
   event?: Resolver<ResolversTypes['SellStatus'], ParentType, ContextType>;
   from?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  metadata?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   netPrice?: Resolver<Maybe<ResolversTypes['BigInt']>, ParentType, ContextType>;
   nftId?: Resolver<Maybe<ResolversTypes['ERC1155Token']>, ParentType, ContextType>;
-  operationId?: Resolver<ResolversTypes['BigInt'], ParentType, ContextType>;
+  operation?: Resolver<ResolversTypes['Operation'], ParentType, ContextType>;
   price?: Resolver<Maybe<ResolversTypes['BigInt']>, ParentType, ContextType>;
   quoteToken?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   timestamp?: Resolver<ResolversTypes['BigInt'], ParentType, ContextType>;
   to?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  txHash?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  txHash?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -3622,6 +3601,7 @@ export const GetCollectionsDataDocument = gql`
       }
     }
     event
+    amounts
   }
   marketEvent721S(where: {address: $collectionAddress}) {
     id
@@ -3710,6 +3690,7 @@ export const GetNfTsHistory721Document = gql`
     price
     to
     from
+    quoteToken
   }
 }
     `;
@@ -3722,12 +3703,14 @@ export const GetNfTsHistory1155Document = gql`
   ) {
     id
     event
+    amounts
     nftId {
       id
     }
     price
     to
     from
+    quoteToken
   }
 }
     `;
@@ -3746,6 +3729,7 @@ export const GetOneNftSellInfoDocument = gql`
     price
     to
     from
+    amounts
   }
   marketEvent721S(
     where: {nftId_contains: $nftId}
@@ -3878,7 +3862,7 @@ export type GetCollectionsDataQueryVariables = Exact<{
 }>;
 
 
-export type GetCollectionsDataQuery = { __typename?: 'Query', marketEvent1155S: Array<{ __typename?: 'MarketEvent1155', address?: string | null, netPrice?: any | null, price?: any | null, quoteToken?: string | null, to?: string | null, event: SellStatus, nftId?: { __typename?: 'ERC1155Token', contract: { __typename?: 'ERC1155Contract', id: string } } | null }>, marketEvent721S: Array<{ __typename?: 'MarketEvent721', id: string, address: string, price?: any | null, quoteToken?: string | null, event: SellStatus, to?: string | null, nftId: { __typename?: 'ERC721Token', contract: { __typename?: 'ERC721Contract', id: string } } }> };
+export type GetCollectionsDataQuery = { __typename?: 'Query', marketEvent1155S: Array<{ __typename?: 'MarketEvent1155', address?: string | null, netPrice?: any | null, price?: any | null, quoteToken?: string | null, to?: string | null, event: SellStatus, amounts: any, nftId?: { __typename?: 'ERC1155Token', contract: { __typename?: 'ERC1155Contract', id: string } } | null }>, marketEvent721S: Array<{ __typename?: 'MarketEvent721', id: string, address: string, price?: any | null, quoteToken?: string | null, event: SellStatus, to?: string | null, nftId: { __typename?: 'ERC721Token', contract: { __typename?: 'ERC721Contract', id: string } } }> };
 
 export type GetCollectionHoldersQueryVariables = Exact<{
   collectionAddress?: InputMaybe<Scalars['String']['input']>;
@@ -3911,7 +3895,7 @@ export type GetNfTsHistory721QueryVariables = Exact<{
 }>;
 
 
-export type GetNfTsHistory721Query = { __typename?: 'Query', marketEvent721S: Array<{ __typename?: 'MarketEvent721', id: string, event: SellStatus, price?: any | null, to?: string | null, from: string, nftId: { __typename?: 'ERC721Token', id: string } }> };
+export type GetNfTsHistory721Query = { __typename?: 'Query', marketEvent721S: Array<{ __typename?: 'MarketEvent721', id: string, event: SellStatus, price?: any | null, to?: string | null, from: string, quoteToken?: string | null, nftId: { __typename?: 'ERC721Token', id: string } }> };
 
 export type GetNfTsHistory1155QueryVariables = Exact<{
   minPrice?: InputMaybe<Scalars['BigInt']['input']>;
@@ -3920,7 +3904,7 @@ export type GetNfTsHistory1155QueryVariables = Exact<{
 }>;
 
 
-export type GetNfTsHistory1155Query = { __typename?: 'Query', marketEvent1155S: Array<{ __typename?: 'MarketEvent1155', id: string, event: SellStatus, price?: any | null, to?: string | null, from?: string | null, nftId?: { __typename?: 'ERC1155Token', id: string } | null }> };
+export type GetNfTsHistory1155Query = { __typename?: 'Query', marketEvent1155S: Array<{ __typename?: 'MarketEvent1155', id: string, event: SellStatus, amounts: any, price?: any | null, to?: string | null, from?: string | null, quoteToken?: string | null, nftId?: { __typename?: 'ERC1155Token', id: string } | null }> };
 
 export type GetOneNftSellInfoQueryVariables = Exact<{
   nftId: Scalars['String']['input'];

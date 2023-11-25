@@ -12,6 +12,7 @@ query GetNFTsHistory721 ($minPrice: BigInt, $maxPrice: BigInt, $event: SellStatu
     price
     to
     from
+    quoteToken
   }
 }
 
@@ -23,12 +24,14 @@ query GetNFTsHistory1155 ($minPrice: BigInt, $maxPrice: BigInt, $event: SellStat
   ) {
     id
     event
+    amounts
     nftId {
       id
     }
     price
     to
     from
+    quoteToken
   }
 }
 
@@ -46,6 +49,7 @@ query GetOneNFTSellInfo($nftId: String!) {
     price
     to
     from
+    amounts
   }
   marketEvent721S(
     where: {nftId_contains: $nftId}

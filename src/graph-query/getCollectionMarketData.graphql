@@ -11,6 +11,7 @@ query GetCollectionsData($collectionAddress: String) {
       }
     }
     event
+    amounts
   }
   marketEvent721S(where: {address: $collectionAddress}) {
     id
