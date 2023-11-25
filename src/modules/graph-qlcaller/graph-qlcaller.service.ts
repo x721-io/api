@@ -1,7 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { CreateGraphQlcallerDto } from './dto/create-graph-qlcaller.dto';
 import { UpdateGraphQlcallerDto } from './dto/update-graph-qlcaller.dto';
-import { getSdk, GetNfTsHistory721QueryVariables, GetNfTsHistory1155QueryVariables, SellStatus, GetNfTsHistory721Query, GetNfTsHistory1155Query, GetOneNftSellInfoQueryVariables } from '../../generated/graphql'
+import {
+  getSdk,
+  GetNfTsHistory721QueryVariables,
+  GetNfTsHistory1155QueryVariables,
+  SellStatus,
+  GetNfTsHistory721Query,
+  GetNfTsHistory1155Query,
+  GetOneNftSellInfoQueryVariables,
+} from '../../generated/graphql';
 import { GraphQLClient, gql } from 'graphql-request';
 @Injectable()
 export class GraphQlcallerService {
@@ -10,7 +18,6 @@ export class GraphQlcallerService {
 
   constructor() {
     this.graphqlClient = new GraphQLClient(this.endpoint);
-
   }
 
   private getGraphqlClient() {
@@ -18,8 +25,8 @@ export class GraphQlcallerService {
   }
 
   async getNFTsHistory721(minPrice?, maxPrice?, event?: SellStatus) {
-    let whereConditions = [];
-    let variables = {};
+    const whereConditions = [];
+    const variables = {};
 
     // Add conditions based on parameters
     if (minPrice !== undefined && minPrice !== null) {
@@ -51,17 +58,21 @@ export class GraphQlcallerService {
           price
           to
           from
+          quoteToken
         }
       }
     `;
 
     // Execute the query with dynamic variables
-    return this.graphqlClient.request(query, variables) as unknown as GetNfTsHistory721Query;
+    return this.graphqlClient.request(
+      query,
+      variables,
+    ) as unknown as GetNfTsHistory721Query;
   }
 
   async getNFTsHistory1155(minPrice?, maxPrice?, event?: SellStatus) {
-    let whereConditions = [];
-    let variables = {};
+    const whereConditions = [];
+    const variables = {};
 
     // Add conditions based on parameters
     if (minPrice !== undefined && minPrice !== null) {
@@ -87,24 +98,29 @@ export class GraphQlcallerService {
         ) {
           id
           event
+          amounts
           nftId {
             id
           }
           price
           to
           from
+          quoteToken
         }
       }
     `;
 
     // Execute the query with dynamic variables
-    return this.graphqlClient.request(query, variables) as unknown as GetNfTsHistory1155Query;
-  } 
+    return this.graphqlClient.request(
+      query,
+      variables,
+    ) as unknown as GetNfTsHistory1155Query;
+  }
 
   async getOneNFTSellStatus(nftId) {
     const client = this.getGraphqlClient();
     const sdk = getSdk(client);
-    console.log('let see: ', nftId)
+    console.log('let see: ', nftId);
     const variables: GetOneNftSellInfoQueryVariables = { nftId };
     const response = sdk.GetOneNFTSellInfo(variables);
     return response;
