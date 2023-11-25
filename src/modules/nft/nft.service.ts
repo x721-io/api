@@ -137,6 +137,7 @@ export class NftService {
         filter.sellStatus,
       );
       if (!filter.priceMin && !filter.priceMax && !filter.sellStatus) {
+
         const nfts = await this.prisma.nFT.findMany({
           skip: (filter.page - 1) * filter.limit,
           take: filter.limit,
