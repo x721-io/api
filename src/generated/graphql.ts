@@ -3665,6 +3665,36 @@ export const GetCollectionTokensDocument = gql`
   }
 }
     `;
+export const GetNftOwnersInfo1155Document = gql`
+    query GetNFTOwnersInfo1155($nftId: String) {
+  erc1155Balances(where: {token: $nftId}) {
+    value
+    account {
+      id
+    }
+    token {
+      id
+    }
+    contract {
+      id
+    }
+  }
+}
+    `;
+export const GetNftOwnersInfo721Document = gql`
+    query GetNFTOwnersInfo721($nftId: ID) {
+  erc721Tokens(where: {id: $nftId}) {
+    id
+    txCreation
+    contract {
+      id
+    }
+    owner {
+      id
+    }
+  }
+}
+    `;
 export const GetErc1155ContractsDocument = gql`
     query getERC1155Contracts {
   erc1155Contracts {
@@ -3842,6 +3872,12 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     GetCollectionTokens(variables?: GetCollectionTokensQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetCollectionTokensQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetCollectionTokensQuery>(GetCollectionTokensDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetCollectionTokens', 'query');
     },
+    GetNFTOwnersInfo1155(variables?: GetNftOwnersInfo1155QueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetNftOwnersInfo1155Query> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetNftOwnersInfo1155Query>(GetNftOwnersInfo1155Document, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetNFTOwnersInfo1155', 'query');
+    },
+    GetNFTOwnersInfo721(variables?: GetNftOwnersInfo721QueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetNftOwnersInfo721Query> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetNftOwnersInfo721Query>(GetNftOwnersInfo721Document, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetNFTOwnersInfo721', 'query');
+    },
     getERC1155Contracts(variables?: GetErc1155ContractsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetErc1155ContractsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetErc1155ContractsQuery>(GetErc1155ContractsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'getERC1155Contracts', 'query');
     },
@@ -3889,6 +3925,20 @@ export type GetCollectionTokensQueryVariables = Exact<{
 
 
 export type GetCollectionTokensQuery = { __typename?: 'Query', erc1155Tokens: Array<{ __typename?: 'ERC1155Token', id: string, balances: Array<{ __typename?: 'ERC1155Balance', value: any, account?: { __typename?: 'Account', id: string } | null, contract?: { __typename?: 'ERC1155Contract', id: string } | null }> }>, erc721Tokens: Array<{ __typename?: 'ERC721Token', id: string, owner: { __typename?: 'Account', id: string } }> };
+
+export type GetNftOwnersInfo1155QueryVariables = Exact<{
+  nftId?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type GetNftOwnersInfo1155Query = { __typename?: 'Query', erc1155Balances: Array<{ __typename?: 'ERC1155Balance', value: any, account?: { __typename?: 'Account', id: string } | null, token: { __typename?: 'ERC1155Token', id: string }, contract?: { __typename?: 'ERC1155Contract', id: string } | null }> };
+
+export type GetNftOwnersInfo721QueryVariables = Exact<{
+  nftId?: InputMaybe<Scalars['ID']['input']>;
+}>;
+
+
+export type GetNftOwnersInfo721Query = { __typename?: 'Query', erc721Tokens: Array<{ __typename?: 'ERC721Token', id: string, txCreation: string, contract: { __typename?: 'ERC721Contract', id: string }, owner: { __typename?: 'Account', id: string } }> };
 
 export type GetErc1155ContractsQueryVariables = Exact<{ [key: string]: never; }>;
 

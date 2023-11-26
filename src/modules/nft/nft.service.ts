@@ -13,7 +13,9 @@ import { validate as isValidUUID } from 'uuid';
 import { Redis } from 'src/database';
 import { GetAllNftDto } from './dto/get-all-nft.dto';
 import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
-import { SellStatus } from 'src/generated/graphql';
+import { ZERO_ADDR } from 'src/constants/web3Const/messages';
+import { UserEntity } from '../user/entities/user.entity';
+import { OwnerOutputDto } from '../user/dto/owners.dto';
 
 @Injectable()
 export class NftService {
@@ -290,30 +292,11 @@ export class NftService {
 
   async findOne(id: string): Promise<NftDto> {
     try {
-      // const checkExist = await this.prisma.nFT.findFirst({ where: { id: id } });
-      // if (!checkExist) {
-      //   throw new NotFoundException();
-      // }
       const nft = await this.prisma.nFT.findUnique({
         where: {
           id: id,
         },
         include: {
-          owners: {
-            select: {
-              userId: true,
-              nftId: true,
-              quantity: true,
-              user: {
-                select: {
-                  email: true,
-                  avatar: true,
-                  username: true,
-                  publicKey: true,
-                },
-              },
-            },
-          },
           creator: {
             select: {
               id: true,
@@ -345,6 +328,57 @@ export class NftService {
       if (!nft) {
         throw new NotFoundException('No NFT found');
       }
+      let owners: OwnerOutputDto[] = [];
+      if (nft.collection.type === 'ERC1155') {
+        const nftInfoWithOwner =
+          await this.GraphqlService.getOneNFTOwnersInfo1155(id);
+        const ownerAddresses = nftInfoWithOwner.erc1155Balances
+          .map((i) => {
+            if (i.account && i.account.id !== ZERO_ADDR) return i.account.id;
+          })
+          .filter((i) => !!i);
+        const ownersFromLocal = await this.prisma.user.findMany({
+          where: {
+            signer: { in: ownerAddresses },
+          },
+          select: {
+            email: true,
+            avatar: true,
+            username: true,
+            signer: true,
+            publicKey: true,
+          },
+        });
+        owners = ownersFromLocal.map((item2) => {
+          const item1 = nftInfoWithOwner.erc1155Balances.find(
+            (i1) => i1.account.id === item2.signer,
+          );
+          if (item1) {
+            return {
+              ...item2,
+              quantity: item1.value, // Add other fields from item1 as needed
+            };
+          }
+          return item2;
+        });
+      } else {
+        const nftInfoWithOwner =
+          await this.GraphqlService.getOneNFTOwnersInfo721(id);
+        owners = await this.prisma.user.findMany({
+          where: {
+            signer: nftInfoWithOwner.erc721Tokens[0].owner.id,
+          },
+          select: {
+            email: true,
+            avatar: true,
+            username: true,
+            signer: true,
+            publicKey: true,
+          },
+        });
+      }
+      // @ts-ignore
+      nft.owners = owners;
       const sellInfo = await this.GraphqlService.getOneNFTSellStatus(id);
       const returnNft: NftDto = { ...nft, sellInfo };
       return returnNft;

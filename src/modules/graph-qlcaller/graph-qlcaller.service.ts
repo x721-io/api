@@ -9,8 +9,13 @@ import {
   GetNfTsHistory721Query,
   GetNfTsHistory1155Query,
   GetOneNftSellInfoQueryVariables,
+  GetNftOwnersInfo1155QueryVariables,
+  GetNftOwnersInfo721QueryVariables,
+  GetNftOwnersInfo721Query,
+  GetNftOwnersInfo1155Query,
 } from '../../generated/graphql';
 import { GraphQLClient, gql } from 'graphql-request';
+import { CONTRACT_TYPE } from '@prisma/client';
 @Injectable()
 export class GraphQlcallerService {
   private readonly endpoint = process.env.SUBGRAPH_URL;
@@ -123,6 +128,28 @@ export class GraphQlcallerService {
     console.log('let see: ', nftId);
     const variables: GetOneNftSellInfoQueryVariables = { nftId };
     const response = sdk.GetOneNFTSellInfo(variables);
+    return response;
+  }
+
+  async getOneNFTOwnersInfo1155(
+    nftId: string,
+  ): Promise<GetNftOwnersInfo1155Query> {
+    const client = this.getGraphqlClient();
+    const sdk = getSdk(client);
+    console.log('let see: ', nftId);
+    const variables: GetNftOwnersInfo1155QueryVariables = { nftId };
+    const response = sdk.GetNFTOwnersInfo1155(variables);
+    return response;
+  }
+
+  async getOneNFTOwnersInfo721(
+    nftId: string,
+  ): Promise<GetNftOwnersInfo721Query> {
+    const client = this.getGraphqlClient();
+    const sdk = getSdk(client);
+    console.log('let see: ', nftId);
+    const variables: GetNftOwnersInfo721QueryVariables = { nftId };
+    const response = sdk.GetNFTOwnersInfo721(variables);
     return response;
   }
 }
