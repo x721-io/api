@@ -259,6 +259,15 @@ class OtherCommon {
     return isFieldPresent(info.fieldNodes[0].selectionSet, fieldName as string);
   }
 
+  convertBufferToFile<T>(buffer : any){
+    try{
+      const bufferData = Buffer.from(buffer, 'utf-8');
+      return bufferData
+    }catch(err){
+      throw(err);
+    }
+  }
+
   mapSubgraphToNft(subgraphData, localData) {
 
   }

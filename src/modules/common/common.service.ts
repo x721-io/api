@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { CreateCommonDto } from './dto/create-common.dto';
 import { UpdateCommonDto } from './dto/update-common.dto';
 import { create } from 'ipfs-http-client';
-
+import OtherCommon from 'src/commons/Other.common';
+import { Response } from 'express';
+import * as fileType from 'file-type';
 @Injectable()
 export class CommonService {
   private ipfs;
@@ -50,6 +52,30 @@ export class CommonService {
         // If it's not JSON, return it as a file
         return { data: buffer, type: 'file' };
       }
+    } catch (err) {
+      console.error('Error retrieving content from IPFS:', err);
+      throw err;
+    }
+  }
+
+  async getFileFromIpfs(hash: string , res : Response){
+    try {
+      const content = [];
+      for await (const chunk of this.ipfs.cat(hash)) {
+        content.push(chunk);
+      }
+      const buffer = Buffer.concat(content);
+      let filetype = await fileType.fromBuffer(buffer);
+      let {ext,mime} = filetype
+      let result = OtherCommon.convertBufferToFile(buffer);
+      // Set response headers
+      res.set({
+        'Content-Type': `${mime}`,
+        'Content-Disposition': `attachment; filename=${hash}.${ext}`,
+      });
+
+      // // Send the Blob as the response
+      res.send(result);
     } catch (err) {
       console.error('Error retrieving content from IPFS:', err);
       throw err;
