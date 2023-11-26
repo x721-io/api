@@ -51,6 +51,7 @@ query GetOneNFTSellInfo($nftId: String!) {
     from
     amounts
     quoteToken
+    operationId
   }
   marketEvent721S(
     where: {nftId_contains: $nftId}

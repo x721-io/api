@@ -2078,6 +2078,7 @@ export type MarketEvent1155 = {
   netPrice?: Maybe<Scalars['BigInt']['output']>;
   nftId?: Maybe<Erc1155Token>;
   operation: Operation;
+  operationId?: Maybe<Scalars['BigInt']['output']>;
   price?: Maybe<Scalars['BigInt']['output']>;
   quoteToken?: Maybe<Scalars['String']['output']>;
   timestamp: Scalars['BigInt']['output'];
@@ -2179,6 +2180,14 @@ export type MarketEvent1155_Filter = {
   nftId_starts_with?: InputMaybe<Scalars['String']['input']>;
   nftId_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
   operation?: InputMaybe<Operation>;
+  operationId?: InputMaybe<Scalars['BigInt']['input']>;
+  operationId_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  operationId_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  operationId_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  operationId_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  operationId_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  operationId_not?: InputMaybe<Scalars['BigInt']['input']>;
+  operationId_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
   operation_in?: InputMaybe<Array<Operation>>;
   operation_not?: InputMaybe<Operation>;
   operation_not_in?: InputMaybe<Array<Operation>>;
@@ -2274,6 +2283,7 @@ export enum MarketEvent1155_OrderBy {
   NftIdTxCreation = 'nftId__txCreation',
   NftIdUri = 'nftId__uri',
   Operation = 'operation',
+  OperationId = 'operationId',
   Price = 'price',
   QuoteToken = 'quoteToken',
   Timestamp = 'timestamp',
@@ -3451,6 +3461,7 @@ export type MarketEvent1155Resolvers<ContextType = any, ParentType extends Resol
   netPrice?: Resolver<Maybe<ResolversTypes['BigInt']>, ParentType, ContextType>;
   nftId?: Resolver<Maybe<ResolversTypes['ERC1155Token']>, ParentType, ContextType>;
   operation?: Resolver<ResolversTypes['Operation'], ParentType, ContextType>;
+  operationId?: Resolver<Maybe<ResolversTypes['BigInt']>, ParentType, ContextType>;
   price?: Resolver<Maybe<ResolversTypes['BigInt']>, ParentType, ContextType>;
   quoteToken?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   timestamp?: Resolver<ResolversTypes['BigInt'], ParentType, ContextType>;
@@ -3731,6 +3742,7 @@ export const GetOneNftSellInfoDocument = gql`
     from
     amounts
     quoteToken
+    operationId
   }
   marketEvent721S(
     where: {nftId_contains: $nftId}
@@ -3911,7 +3923,7 @@ export type GetOneNftSellInfoQueryVariables = Exact<{
 }>;
 
 
-export type GetOneNftSellInfoQuery = { __typename?: 'Query', marketEvent1155S: Array<{ __typename?: 'MarketEvent1155', id: string, event: SellStatus, price?: any | null, to?: string | null, from?: string | null, amounts: any, quoteToken?: string | null, nftId?: { __typename?: 'ERC1155Token', id: string } | null }>, marketEvent721S: Array<{ __typename?: 'MarketEvent721', id: string, event: SellStatus, price?: any | null, to?: string | null, from: string, quoteToken?: string | null, nftId: { __typename?: 'ERC721Token', id: string } }> };
+export type GetOneNftSellInfoQuery = { __typename?: 'Query', marketEvent1155S: Array<{ __typename?: 'MarketEvent1155', id: string, event: SellStatus, price?: any | null, to?: string | null, from?: string | null, amounts: any, quoteToken?: string | null, operationId?: any | null, nftId?: { __typename?: 'ERC1155Token', id: string } | null }>, marketEvent721S: Array<{ __typename?: 'MarketEvent721', id: string, event: SellStatus, price?: any | null, to?: string | null, from: string, quoteToken?: string | null, nftId: { __typename?: 'ERC721Token', id: string } }> };
 
 export type GetNfTwithAccountIdQueryVariables = Exact<{
   id: Scalars['ID']['input'];
