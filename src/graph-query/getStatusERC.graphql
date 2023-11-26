@@ -6,7 +6,6 @@ query getStatusERC1155S{
     quoteToken
     price
     netPrice
-    metadata
     id
     from
     event
@@ -32,7 +31,6 @@ query getStatusERC721S{
     event
     address
     netPrice
-    metadata
     nftId {
       uri
       txCreation

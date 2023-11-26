@@ -290,10 +290,10 @@ export class NftService {
 
   async findOne(id: string): Promise<NftDto> {
     try {
-      const checkExist = await this.prisma.nFT.findFirst({ where: { id: id } });
-      if (!checkExist) {
-        throw new NotFoundException();
-      }
+      // const checkExist = await this.prisma.nFT.findFirst({ where: { id: id } });
+      // if (!checkExist) {
+      //   throw new NotFoundException();
+      // }
       const nft = await this.prisma.nFT.findUnique({
         where: {
           id: id,

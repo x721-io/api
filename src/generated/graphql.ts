@@ -3730,6 +3730,7 @@ export const GetOneNftSellInfoDocument = gql`
     to
     from
     amounts
+    quoteToken
   }
   marketEvent721S(
     where: {nftId_contains: $nftId}
@@ -3744,6 +3745,7 @@ export const GetOneNftSellInfoDocument = gql`
     price
     to
     from
+    quoteToken
   }
 }
     `;
@@ -3777,7 +3779,6 @@ export const GetStatusErc1155SDocument = gql`
     quoteToken
     price
     netPrice
-    metadata
     id
     from
     event
@@ -3804,7 +3805,6 @@ export const GetStatusErc721SDocument = gql`
     event
     address
     netPrice
-    metadata
     nftId {
       uri
       txCreation
@@ -3911,7 +3911,7 @@ export type GetOneNftSellInfoQueryVariables = Exact<{
 }>;
 
 
-export type GetOneNftSellInfoQuery = { __typename?: 'Query', marketEvent1155S: Array<{ __typename?: 'MarketEvent1155', id: string, event: SellStatus, price?: any | null, to?: string | null, from?: string | null, nftId?: { __typename?: 'ERC1155Token', id: string } | null }>, marketEvent721S: Array<{ __typename?: 'MarketEvent721', id: string, event: SellStatus, price?: any | null, to?: string | null, from: string, nftId: { __typename?: 'ERC721Token', id: string } }> };
+export type GetOneNftSellInfoQuery = { __typename?: 'Query', marketEvent1155S: Array<{ __typename?: 'MarketEvent1155', id: string, event: SellStatus, price?: any | null, to?: string | null, from?: string | null, amounts: any, quoteToken?: string | null, nftId?: { __typename?: 'ERC1155Token', id: string } | null }>, marketEvent721S: Array<{ __typename?: 'MarketEvent721', id: string, event: SellStatus, price?: any | null, to?: string | null, from: string, quoteToken?: string | null, nftId: { __typename?: 'ERC721Token', id: string } }> };
 
 export type GetNfTwithAccountIdQueryVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -3923,9 +3923,9 @@ export type GetNfTwithAccountIdQuery = { __typename?: 'Query', account?: { __typ
 export type GetStatusErc1155SQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetStatusErc1155SQuery = { __typename?: 'Query', marketEvent1155S: Array<{ __typename?: 'MarketEvent1155', txHash: string, to?: string | null, timestamp: any, quoteToken?: string | null, price?: any | null, netPrice?: any | null, metadata?: string | null, id: string, from?: string | null, event: SellStatus, amounts: any, address?: string | null, nftId?: { __typename?: 'ERC1155Token', id: string, txCreation: string, uri?: string | null } | null }> };
+export type GetStatusErc1155SQuery = { __typename?: 'Query', marketEvent1155S: Array<{ __typename?: 'MarketEvent1155', txHash?: string | null, to?: string | null, timestamp: any, quoteToken?: string | null, price?: any | null, netPrice?: any | null, id: string, from?: string | null, event: SellStatus, amounts: any, address?: string | null, nftId?: { __typename?: 'ERC1155Token', id: string, txCreation: string, uri?: string | null } | null }> };
 
 export type GetStatusErc721SQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetStatusErc721SQuery = { __typename?: 'Query', marketEvent721S: Array<{ __typename?: 'MarketEvent721', txHash: string, to?: string | null, timestamp: any, quoteToken?: string | null, price?: any | null, id: string, from: string, event: SellStatus, address: string, netPrice?: any | null, metadata?: string | null, nftId: { __typename?: 'ERC721Token', uri?: string | null, txCreation: string, id: string } }> };
+export type GetStatusErc721SQuery = { __typename?: 'Query', marketEvent721S: Array<{ __typename?: 'MarketEvent721', txHash: string, to?: string | null, timestamp: any, quoteToken?: string | null, price?: any | null, id: string, from: string, event: SellStatus, address: string, netPrice?: any | null, nftId: { __typename?: 'ERC721Token', uri?: string | null, txCreation: string, id: string } }> };
