@@ -247,4 +247,26 @@ export class GraphQlcallerService {
     const response = sdk.GetNFTOwnersInfo721(variables);
     return response;
   }
+
+  async getOneNFTOwnersInfo1155(
+    nftId: string,
+  ): Promise<GetNftOwnersInfo1155Query> {
+    const client = this.getGraphqlClient();
+    const sdk = getSdk(client);
+    console.log('let see: ', nftId);
+    const variables: GetNftOwnersInfo1155QueryVariables = { nftId };
+    const response = sdk.GetNFTOwnersInfo1155(variables);
+    return response;
+  }
+
+  async getOneNFTOwnersInfo721(
+    nftId: string,
+  ): Promise<GetNftOwnersInfo721Query> {
+    const client = this.getGraphqlClient();
+    const sdk = getSdk(client);
+    console.log('let see: ', nftId);
+    const variables: GetNftOwnersInfo721QueryVariables = { nftId };
+    const response = sdk.GetNFTOwnersInfo721(variables);
+    return response;
+  }
 }

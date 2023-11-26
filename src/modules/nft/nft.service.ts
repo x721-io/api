@@ -13,6 +13,8 @@ import { validate as isValidUUID } from 'uuid';
 import { Redis } from 'src/database';
 import { GetAllNftDto } from './dto/get-all-nft.dto';
 import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
+import { MarketplaceService } from './nft-marketplace.service';
+import { SellStatus } from 'src/generated/graphql';
 import { ZERO_ADDR } from 'src/constants/web3Const/messages';
 import { UserEntity } from '../user/entities/user.entity';
 import { OwnerOutputDto } from '../user/dto/owners.dto';
@@ -22,6 +24,7 @@ export class NftService {
   constructor(
     private prisma: PrismaService,
     private readonly GraphqlService: GraphQlcallerService,
+    private readonly eventService: MarketplaceService,
   ) {}
   async create(input: CreateNftDto, user: User): Promise<NftDto> {
     try {
@@ -290,7 +293,11 @@ export class NftService {
     }
   }
 
-  async findOne(id: string): Promise<NftDto> {
+  async findOne(
+    id: string,
+    bidPage: number,
+    bidListLimit: number,
+  ): Promise<NftDto> {
     try {
       const nft = await this.prisma.nFT.findUnique({
         where: {
@@ -379,8 +386,26 @@ export class NftService {
       }
       // @ts-ignore
       nft.owners = owners;
-      // const sellInfo = await this.GraphqlService.getNFTSellStatus(page : 0 , from : '' , from '' );
-      const returnNft: NftDto = { ...nft};
+      const sellInfo = await this.eventService.findEvents({
+        nftId: nft.id,
+        event: SellStatus.AskNew,
+        type: nft.collection.type,
+        page: 1,
+        limit: 1,
+      });
+
+      const bidInfo = await this.eventService.findEvents({
+        nftId: nft.id,
+        event: SellStatus.Bid,
+        type: nft.collection.type,
+        page: bidPage,
+        limit: bidListLimit,
+      });
+      const returnNft: NftDto = {
+        ...nft,
+        sellInfo: sellInfo,
+        bidInfo: bidInfo,
+      };
       return returnNft;
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
