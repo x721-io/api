@@ -139,6 +139,8 @@ export class GraphQlcallerService {
     // const response = sdk.GetOneNFTSellInfo(variables);
     // return response;
 
+
+
     const whereConditions = [];
     const variables = {};
     // Add conditions based on parameters
@@ -163,7 +165,6 @@ export class GraphQlcallerService {
       variables['event'] = event;
     }
     const isWhereEmpty = Object.keys(whereConditions).length === 0;
-
     // Construct the query
     const query = gql`
       query GetNFTSellInfo(

@@ -7,16 +7,16 @@ import { CONTRACT_TYPE } from '@prisma/client';
 export class GetEventMarketplace extends OffsetPaginationDto {
   @IsOptional()
   @IsString()
-  nftId: string;
+  nftId?: string;
   @IsString()
   @IsOptional()
-  from: string;
+  from?: string;
   @IsString()
   @IsOptional()
-  to: string;
+  to?: string;
   @IsString()
   @IsOptional()
-  quoteToken: string;
+  quoteToken?: string;
 
   @IsOptional()
   @IsEnum(SellStatus)

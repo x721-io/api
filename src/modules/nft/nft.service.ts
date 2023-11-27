@@ -379,8 +379,8 @@ export class NftService {
       }
       // @ts-ignore
       nft.owners = owners;
-      const sellInfo = await this.GraphqlService.getOneNFTSellStatus(id);
-      const returnNft: NftDto = { ...nft, sellInfo };
+      // const sellInfo = await this.GraphqlService.getNFTSellStatus(page : 0 , from : '' , from '' );
+      const returnNft: NftDto = { ...nft};
       return returnNft;
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);

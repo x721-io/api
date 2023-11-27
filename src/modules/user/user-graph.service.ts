@@ -11,7 +11,11 @@ import { getSdk, GetNfTwithAccountIdQueryVariables } from '../../generated/graph
 import { validate as isValidUUID } from 'uuid'
 import { NFTTab } from 'src/constants/enums/NFTTab.enum'
 import { SellStatus } from '../../generated/graphql';
-import {CollectionService} from '../collection/collection.service';
+import { CollectionService } from '../collection/collection.service';
+import { MarketplaceService } from '../nft/nft-marketplace.service';
+import { GetEventMarketplace } from '../nft/dto/event-marketplace.dto';
+import { CONTRACT_TYPE } from '@prisma/client';
+import { NFTIsBid } from '../../constants/enums/NFTTab.enum';
 interface NFT {
   id?: string;
   name?: string;
@@ -68,39 +72,45 @@ export interface Result {
 
 
 @Injectable()
-export class UserServiceExtend { 
+export class UserServiceExtend {
   private readonly prisma: PrismaService;
   private readonly collectionService: CollectionService;
+  private readonly marketplaceService: MarketplaceService;
 
-  constructor(prisma: PrismaService, collectionService: CollectionService) {
+  constructor(prisma: PrismaService, collectionService: CollectionService, marketplaceService: MarketplaceService) {
     this.prisma = prisma;
     this.collectionService = collectionService;
+    this.marketplaceService = marketplaceService;
   }
 
   private readonly endpoint = process.env.SUBGRAPH_URL;
 
   private client = this.getGraphqlClient();
 
-  private readonly allowedEvents = [SellStatus.AskNew, SellStatus.AskCancel, SellStatus.Trade];
-  
+  private sdk = getSdk(this.client);
+
+  // private readonly allowedEventsOnSales = [SellStatus.AskNew, SellStatus.AskCancel, SellStatus.Trade];
+
+  // private readonly allowedEventsBid = [SellStatus.Bid];
+
   private getGraphqlClient() {
     return new GraphQLClient(this.endpoint);
   }
-  // Remove few prop secret
-  private minifyUserObjecct(user: any): any {
-    const propertiesToRemove = ['signature', 'signer', 'signedMessage', 'nftsOwnership' , 'nftCreator' , 'nftCollection'];
-    const minifiedUser = { ...user };
-    for (const property in minifiedUser) {
-      if (propertiesToRemove.includes(property)) {
-        delete minifiedUser[property];
-      }
-    }
-    return minifiedUser;
-  }
+  // // Remove few prop secret
+  // private minifyUserObjecct(user: any): any {
+  //   const propertiesToRemove = ['signature', 'signer', 'signedMessage', 'nftsOwnership', 'nftCreator', 'nftCollection'];
+  //   const minifiedUser = { ...user };
+  //   for (const property in minifiedUser) {
+  //     if (propertiesToRemove.includes(property)) {
+  //       delete minifiedUser[property];
+  //     }
+  //   }
+  //   return minifiedUser;
+  // }
 
   async getNFTByUser(id: string, filter: FilterNFTUserDetail): Promise<any> {
     try {
-      const { tab } = filter;
+      const { tab, page, limit, has_bid } = filter;
       if (!isValidUUID(id)) {
         throw new Error('Invalid ID. Please try again !');
       }
@@ -128,7 +138,7 @@ export class UserServiceExtend {
                   }
                 },
               }
-            } : false
+            } : false, 
           }
         }),
         this.prisma.nFT.findMany({
@@ -142,6 +152,29 @@ export class UserServiceExtend {
             tokenUri: true,
             txCreationHash: true,
             collectionId: true,
+            collection : {
+              select : {
+                id : true,
+                txCreationHash : true,
+                name : true,
+                symbol : true,
+                description : true,
+                address : true,
+                shortUrl : true,
+                metadata : true,
+                status : true,
+                type : true,
+                createdAt : true,
+                updatedAt : true,
+                category : {
+                  select : {
+                    id : true,
+                    name : true,
+                  }
+                },
+
+              }
+            },
             traits: {
               select: {
                 id: true,
@@ -150,7 +183,7 @@ export class UserServiceExtend {
                 trait_type: true
               }
             },
-          }
+          },
         })
       ]);
 
@@ -158,10 +191,10 @@ export class UserServiceExtend {
         throw new NotFoundException()
       }
       const { publicKey } = userData;
-      const { statusERC721S = [], statusERC1155S = [], ERC721tokens = [], ERC1155balances = [] } = await this.getDataSubgraphNFT(publicKey);
-      const {nftCreator = []} = userData;
-      const mergedERC721 = this.mergeERCData721(ERC721tokens, NFTList ,statusERC721S, nftCreator, tab);
-      const mergedERC1155 = this.mergeERCData1155(ERC1155balances, NFTList, statusERC1155S, nftCreator,tab);
+      const {ERC721tokens = [], ERC1155balances = [] } = await this.getDataSubgraphNFT(publicKey);
+      const { nftCreator = [] } = userData;
+      const mergedERC721 = await this.mergeERCData721(ERC721tokens, NFTList, nftCreator, tab, page, limit, has_bid, publicKey);
+      const mergedERC1155 = await this.mergeERCData1155(ERC1155balances, NFTList, nftCreator, tab, page, limit, has_bid, publicKey);
       return [...mergedERC721 , ...mergedERC1155]
     } catch (err) {
       console.error(err);
@@ -169,64 +202,125 @@ export class UserServiceExtend {
     }
   }
 
-  async getDataSubgraphNFT(publicKey: string): Promise<{ ERC721tokens: any[]; ERC1155balances: any[]; statusERC721S: any[]; statusERC1155S: any[] }> {
-    const sdk = getSdk(this.client);
-    const { account } = await sdk.getNFTwithAccountID({ id: publicKey });
-    const { marketEvent721S: statusERC721S = [] } = await sdk.getStatusERC721S();
-    const { marketEvent1155S: statusERC1155S = [] } = await sdk.getStatusERC1155S();
-    return { ERC721tokens: account?.ERC721tokens || [], ERC1155balances: account?.ERC1155balances || [], statusERC721S, statusERC1155S };
+  async getDataSubgraphNFT(publicKey: string): Promise<{ ERC721tokens: any[]; ERC1155balances: any[]}> {
+    const { account } = await this.sdk.getNFTwithAccountID({ id: publicKey });
+    return { ERC721tokens: account?.ERC721tokens || [], ERC1155balances: account?.ERC1155balances || []};
   }
 
-  mergeERCData1155(tokens: any[], NFTList: NFT[], status: any[], nftCreator: any[], type: NFTTab): any[] {
-    const mergeNFTAndStatus = (token: any, nftList: NFT[], statusList: any[]) => {
+  async mergeERCData1155(tokens: any[], NFTList: NFT[], nftCreator: any[], tab: NFTTab, page: number, limit: number, has_bid: NFTIsBid | null, publicKey: string | null): Promise<any> {
+    // Get data NFT with Tab Creator, On Sales, Owner  
+    const mergeNFTAndStatus = async (token: any, event: SellStatus | null) => {
       const tokenId = token?.token?.id || token.id;
-      const matchingNFT = (nftList.find(nft => nft.id === tokenId) || {});
-      const matchingNFTStatus = (statusList.find(status => status?.nftId?.id === tokenId) || {});
+      const matchingNFT = NFTList.find(nft => nft.id === tokenId) || {};
+  
+      const input: GetEventMarketplace = {
+        nftId: tokenId,
+        page,
+        limit,
+        type: CONTRACT_TYPE.ERC1155,
+        event,
+      };
+  
+      const matchingNFTStatus = await this.marketplaceService.findEvents(input);
+  
       return {
         ...token,
-        ...matchingNFTStatus,
         ...matchingNFT,
+        events: matchingNFTStatus,
       };
     };
+
+    const getNFTBid = async (event: SellStatus | null) => {
+      const input: GetEventMarketplace = {
+        page,
+        limit,
+        type: CONTRACT_TYPE.ERC1155,
+        to: publicKey,
+        event,
+      };
   
-    switch (type) {
+      const matchingNFTStatus = await this.marketplaceService.findEvents(input);
+  
+      return matchingNFTStatus.map(token => {
+        const matchingNFT = NFTList.find(nft => nft.id == token?.nftId?.id);
+        return {
+          ...token,
+          ...matchingNFT,
+        };
+      });
+    };
+
+    switch (tab) {
       case NFTTab.CREATOR:
-        return nftCreator.map(token => mergeNFTAndStatus(token, nftCreator, status));
+        return Promise.all(nftCreator.map(token => mergeNFTAndStatus(token, null)));
   
       case NFTTab.ON_SALES:
-        const tokenList = tokens.map(token => mergeNFTAndStatus(token, NFTList, status));
-        return tokenList.filter(item => this.allowedEvents.includes(item?.event));
+      case NFTTab.OWNER:
+        return Promise.all(tokens.map(token => mergeNFTAndStatus(token, tab === NFTTab.ON_SALES ? SellStatus.AskNew : SellStatus.Trade)));
   
-      default:
-        return tokens.map(token => mergeNFTAndStatus(token, NFTList, status));
+      case NFTTab.BID:
+        return has_bid === NFTIsBid.TRUE ? getNFTBid(SellStatus.Bid) : Promise.all(tokens.map(token => mergeNFTAndStatus(token, SellStatus.Bid)));
     }
   }
 
-  mergeERCData721(tokens: any[], NFTList: NFT[], status: any[], nftCreator: any[], type: NFTTab): any[] {
-    const mergeNFTAndStatus = (token: any, nftList: NFT[], statusList: any[]) => {
-      const matchingNFT = (nftList.find(nft => nft.id === token.id) || {});
-      const matchingNFTStatus = (statusList.find(status => status?.nftId?.id === token.id) || {});
+  async mergeERCData721(tokens: any[], NFTList: NFT[], nftCreator: any[], tab: NFTTab, page: number, limit: number, has_bid: NFTIsBid | null, publicKey: string | null): Promise<any> {
+
+    const mergeNFTAndStatus = async (token: any, event: SellStatus | null) => {
+      const matchingNFT = NFTList.find(nft => nft.id === token.id) || {};
+
+      const input: GetEventMarketplace = {
+        nftId: token.id,
+        page,
+        limit,
+        type: CONTRACT_TYPE.ERC721,
+        event,
+      };
+
+      const matchingNFTStatus = await this.marketplaceService.findEvents(input);
+
       return {
         ...token,
-        ...matchingNFTStatus,
         ...matchingNFT,
+        events: matchingNFTStatus,
       };
     };
+
+    const getNFTBid = async (event: SellStatus | null) => {
+      const input: GetEventMarketplace = {
+        page,
+        limit,
+        type: CONTRACT_TYPE.ERC721,
+        to: publicKey,
+        event,
+      };
   
-    switch (type) {
+      const matchingNFTStatus = await this.marketplaceService.findEvents(input);
+  
+      return matchingNFTStatus.map(token => {
+        const matchingNFT = NFTList.find(nft => nft.id == token?.nftId?.id);
+        return {
+          ...token,
+          ...matchingNFT,
+        };
+      });
+    };
+
+    switch (tab) {
       case NFTTab.CREATOR:
-        return nftCreator.map(token => mergeNFTAndStatus(token, nftCreator, status));
+        return Promise.all(nftCreator.map(token => mergeNFTAndStatus(token, null)));
   
       case NFTTab.ON_SALES:
-        const tokenList = tokens.map(token => mergeNFTAndStatus(token, NFTList, status));
-        return tokenList.filter(item => this.allowedEvents.includes(item?.event));
+      case NFTTab.OWNER:
+        return Promise.all(tokens.map(token => mergeNFTAndStatus(token, tab === NFTTab.ON_SALES ? SellStatus.AskNew : null)));
   
-      default:
-        return tokens.map(token => mergeNFTAndStatus(token, NFTList, status));
+      case NFTTab.BID:
+        return has_bid === NFTIsBid.TRUE
+          ? getNFTBid(SellStatus.Bid)
+          : Promise.all(tokens.map(token => mergeNFTAndStatus(token, SellStatus.Bid)));
     }
   }
 
-  
+
   async getCollectionByUser(id: string): Promise<any> {
     try {
       if (!isValidUUID(id)) {
@@ -245,7 +339,7 @@ export class UserServiceExtend {
                   symbol: true,
                   description: true,
                   status: true,
-                  address : true,
+                  address: true,
                   type: true,
                   categoryId: true,
                   createdAt: true,
@@ -264,11 +358,11 @@ export class UserServiceExtend {
       if (!userData) {
         throw new NotFoundException();
       }
-      let { nftCollection = [] } = userData; 
+      let { nftCollection = [] } = userData;
       const subgraphCollection = await Promise.all(nftCollection.map(async (item) => {
-        let {collection} = item;
+        let { collection } = item;
         const generalInfo = await this.collectionService.getGeneralCollectionData(collection.address, collection.type);
-        return { ... collection, ...generalInfo}
+        return { ...collection, ...generalInfo }
       }))
       return subgraphCollection
       // return { ...this.minifyUserObjecct(userData), collections : subgraphCollection };
@@ -277,26 +371,4 @@ export class UserServiceExtend {
       throw err;
     }
   }
-  // async getCollectionOnChain(): Promise<any[]> {
-  //   const sdk = getSdk(this.client);
-  //   const { erc721Contracts = [] } = await sdk.getERC721Contracts();
-  //   const { erc1155Contracts = [] } = await sdk.getERC1155Contracts();
-  //   return [erc721Contracts, erc1155Contracts]
-  // }
-
-  // mergeERC721Contracts(dataOnChain: any[], dataOffChain: any[]) {
-  //   return dataOffChain.map(off => {
-  //     let { collection } = off;
-  //     let matchingCollection = (dataOnChain || []).find(on => collection.txCreationHash == on.txCreation);
-  //     return matchingCollection ? { ...collection, dataOnChain: matchingCollection } : { ...collection, dataOnChain: {} }
-  //   })
-  // }
-
-  // mergeERC1155Contracts(dataOnChain: any[], dataOffChain: any[]) {
-  //   return dataOffChain.map(off => {
-  //     let { collection } = off;
-  //     let matchingCollection = (dataOnChain || []).find(on => collection.txCreationHash == on.txCreation);
-  //     return matchingCollection ? { ...collection, dataOnChain: matchingCollection } : { ...collection, dataOnChain: {} }
-  //   })
-  // }
 }

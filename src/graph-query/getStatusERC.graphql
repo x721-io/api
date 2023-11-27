@@ -38,3 +38,44 @@ query getStatusERC721S{
     }
   }
 }
+
+
+
+query getStatusERC1155SWithID($event: SellStatus = AskNew, $nftId: String){
+    marketEvent1155S(where: {nftId: $nftId, event: $event}) {
+      id
+      event
+      to
+      from
+      nftId {
+        id
+        uri
+        txCreation
+      }
+      price
+      amounts
+      quoteToken
+      operationId
+    }
+}
+
+query getStatusERC721SWithID($event: SellStatus = AskNew, $nftId: String){
+  marketEvent721S(where: {nftId: $nftId, event: AskNew}) {
+    txHash
+    to
+    timestamp
+    quoteToken
+    price
+    netPrice
+    metadata
+    id
+    from
+    event
+    address
+    nftId {
+      uri
+      txCreation
+      identifier
+    }
+  }
+}
