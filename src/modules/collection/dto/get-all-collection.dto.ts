@@ -1,7 +1,5 @@
 import { InputType } from '@nestjs/graphql';
-import { IsNotEmpty, IsString , IsOptional, IsEnum, IsNumberString } from 'class-validator';
-import { TX_STATUS , CONTRACT_TYPE} from '@prisma/client';
-import {TXSTATUS , CONTRACTTYPE} from '../entities/collection.entity'
+import { IsString, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 
 @InputType()
@@ -19,4 +17,7 @@ export class GetAllCollectionDto {
   @IsOptional()
   name: string;
 
+  @IsString()
+  @IsOptional()
+  creatorAddresses: string;
 }
