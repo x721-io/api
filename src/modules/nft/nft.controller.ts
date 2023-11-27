@@ -50,8 +50,12 @@ export class NftController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.nftService.findOne(id);
+  findOne(
+    @Param('id') id: string,
+    @Query('bidListPage') bidPage: number,
+    @Query('bidListLimit') bidLimit: number,
+  ) {
+    return this.nftService.findOne(id, bidPage, bidLimit);
   }
 
   @Get('/user/:id')
