@@ -1,28 +1,27 @@
-import { ObjectType, Field, Int } from '@nestjs/graphql';
-import {NFT, TX_STATUS, CONTRACT_TYPE } from "@prisma/client";
+import { NFT, TX_STATUS } from '@prisma/client';
+import { UserEntity } from 'src/modules/user/entities/user.entity';
 
-
-@ObjectType()
-export class NftEntity implements NFT{
-  id : string;
-  name : string;
-  txCreationHash : string;
-  ipfsHash : string;
-  traits : string;
-  createdAt : Date;
-  updatedAt : Date;
-  status : TX_STATUS;
-  tokenUri : string;
-  creatorId : string;
-  collectionId : string;
+export class NftEntity implements NFT {
+  id: string;
+  name: string;
+  txCreationHash: string;
+  ipfsHash: string;
+  traits: string;
+  createdAt: Date;
+  updatedAt: Date;
+  status: TX_STATUS;
+  tokenUri: string;
+  creatorId: string;
+  collectionId: string;
+  owners?: UserEntity[];
   constructor(partial: Partial<NFT>) {
     Object.assign(this, partial);
   }
   imageHash: string;
 }
- 
+
 export enum TXSTATUS {
-  PENDING = "PENDING",
-  SUCCESS = "SUCCESS",
-  FAILED = "FAILED"
+  PENDING = 'PENDING',
+  SUCCESS = 'SUCCESS',
+  FAILED = 'FAILED',
 }
