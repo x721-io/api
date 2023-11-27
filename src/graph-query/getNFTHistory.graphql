@@ -35,16 +35,21 @@ query GetNFTsHistory1155 ($minPrice: BigInt, $maxPrice: BigInt, $event: SellStat
   }
 }
 
-query GetOneNFTSellInfo($nftId: String!) {
+query GetOneNFTSellInfo($nftId: String!, $event: SellStatus, $quoteToken: String, $buyer: String, $seller: String, $page: Int, $limit: Int) {
   marketEvent1155S(
-    where: {nftId_contains: $nftId}
+    where: {nftId_contains: $nftId, from: $seller, to: $buyer, event: $event, quoteToken: $quoteToken}
     orderBy: timestamp
     orderDirection: desc
+    skip: $page
+    first: $limit
   ) {
     id
     event
     nftId {
       id
+      contract {
+        id
+      }
     }
     price
     to
@@ -54,7 +59,7 @@ query GetOneNFTSellInfo($nftId: String!) {
     operationId
   }
   marketEvent721S(
-    where: {nftId_contains: $nftId}
+    where: {nftId_contains: $nftId, from: $seller, to: $buyer, event: $event, quoteToken: $quoteToken}
     orderBy: timestamp
     orderDirection: desc
   ) {
@@ -62,6 +67,9 @@ query GetOneNFTSellInfo($nftId: String!) {
     event
     nftId {
       id
+      contract {
+        id
+      }
     }
     price
     to
