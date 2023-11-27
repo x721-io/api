@@ -13,6 +13,7 @@ import {
   GetNftOwnersInfo721QueryVariables,
   GetNftOwnersInfo721Query,
   GetNftOwnersInfo1155Query,
+  GetOneNftSellInfoQuery,
 } from '../../generated/graphql';
 import { GraphQLClient, gql } from 'graphql-request';
 import { CONTRACT_TYPE } from '@prisma/client';
@@ -122,13 +123,106 @@ export class GraphQlcallerService {
     ) as unknown as GetNfTsHistory1155Query;
   }
 
-  async getOneNFTSellStatus(nftId) {
-    const client = this.getGraphqlClient();
-    const sdk = getSdk(client);
-    console.log('let see: ', nftId);
-    const variables: GetOneNftSellInfoQueryVariables = { nftId };
-    const response = sdk.GetOneNFTSellInfo(variables);
-    return response;
+  async getNFTSellStatus(
+    page: number,
+    limit: number,
+    nftId?: string,
+    from?: string,
+    to?: string,
+    quoteToken?: string,
+    event?: SellStatus,
+  ) {
+    // const client = this.getGraphqlClient();
+    // const sdk = getSdk(client);
+    // console.log('let see: ', nftId);
+    // const variables: GetOneNftSellInfoQueryVariables = { nftId };
+    // const response = sdk.GetOneNFTSellInfo(variables);
+    // return response;
+
+    const whereConditions = [];
+    const variables = {};
+    // Add conditions based on parameters
+    if (nftId !== undefined && nftId !== null) {
+      whereConditions.push('nftId_contains: $nftId');
+      variables['nftId'] = nftId;
+    }
+    if (from !== undefined && from !== null) {
+      whereConditions.push('from: $from');
+      variables['from'] = from;
+    }
+    if (to !== undefined && to !== null) {
+      whereConditions.push('to: $to');
+      variables['to'] = to;
+    }
+    if (quoteToken !== undefined && quoteToken !== null) {
+      whereConditions.push('quoteToken: $quoteToken');
+      variables['quoteToken'] = quoteToken;
+    }
+    if (event !== undefined && event !== null) {
+      whereConditions.push('event: $event');
+      variables['event'] = event;
+    }
+    const isWhereEmpty = Object.keys(whereConditions).length === 0;
+
+    // Construct the query
+    const query = gql`
+      query GetNFTSellInfo(
+        $nftId: String
+        $event: SellStatus
+        $quoteToken: String
+        $buyer: String
+        $seller: String
+      ) {
+        marketEvent1155S(
+          ${isWhereEmpty ? '' : `where: {${whereConditions.join(', ')}}`}
+          skip: ${page}
+          first: ${limit}
+          orderBy: timestamp
+          orderDirection: desc
+        ) {
+          id
+          event
+          nftId {
+            id
+            contract {
+              id
+            }
+          }
+          price
+          to
+          from
+          amounts
+          quoteToken
+          operationId
+        }
+        marketEvent721S(
+          ${isWhereEmpty ? '' : `where: {${whereConditions.join(', ')}}`}
+          orderBy: timestamp
+          orderDirection: desc
+          skip: $page
+          first: $limit
+        ) {
+          id
+          event
+          nftId {
+            id
+            contract {
+              id
+            }
+          }
+          price
+          to
+          from
+          quoteToken
+        }
+      }
+    `;
+
+    // Execute the query with dynamic variables
+    return this.graphqlClient.request(
+      query,
+      variables,
+    ) as unknown as GetOneNftSellInfoQuery;
   }
 
   async getOneNFTOwnersInfo1155(

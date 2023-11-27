@@ -4,9 +4,16 @@ import { NftController } from './nft.controller';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { TokenService } from './token.service';
 import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
+import { MarketplaceService } from './nft-marketplace.service';
 
 @Module({
-  providers: [NftService, PrismaService, TokenService, GraphQlcallerService],
-  controllers: [NftController]
+  providers: [
+    NftService,
+    PrismaService,
+    TokenService,
+    GraphQlcallerService,
+    MarketplaceService,
+  ],
+  controllers: [NftController],
 })
 export class NftModule {}
