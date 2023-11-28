@@ -49,11 +49,6 @@ export class CollectionController {
     return this.collectionService.update(id, updateCollectionDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.collectionService.remove(id);
-  }
-
   @Get('/user/:id')
   findByUserID(@Param('id') id: string) {
     return this.collectionService.findWithUserID(id);
