@@ -24,6 +24,14 @@ model User {
   nftCollection UserCollection[]
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
+  bio           String?
+  facebookLink  String?
+  twitterLink   String?
+  telegramLink  String?
+  shortLink     String?         @unique
+  discordLink   String?
+  webURL        String?
+  coverImage    String?
 }
 
 model NFT {
@@ -45,12 +53,12 @@ model NFT {
 }
 
 model Trait {
-  id          String  @id @default(uuid()) @db.Uuid
+  id           String  @id @default(uuid()) @db.Uuid
   trait_type   String
   display_type String?
-  value       String
-  nftId       String
-  NFT         NFT     @relation(fields: [nftId], references: [id])
+  value        String
+  nftId        String
+  NFT          NFT     @relation(fields: [nftId], references: [id])
 }
 
 model UserNFT {
