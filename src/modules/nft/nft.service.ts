@@ -103,7 +103,6 @@ export class NftService {
       let traitsConditions = [];
 
       // TODO: if price and status are included, then use subgraph as main source and use other to eliminate
-
       if (filter.traits) {
         traitsConditions = filter.traits.map((trait) => ({
           traits: {
@@ -122,12 +121,12 @@ export class NftService {
             publicKey: filter.creatorAddress,
           },
         }),
-        ...(filter.collectionAddress && {
-          collection: {
+        collection: {
+          ...(filter.collectionAddress && {
             address: filter.collectionAddress,
-            ...(filter.type && { type: filter.type }),
-          },
-        }),
+          }),
+          ...(filter.type && { type: filter.type }),
+        },
         ...(filter.name && { name: filter.name }),
       };
       // TODO: add first / skip to these 2 for pagination
