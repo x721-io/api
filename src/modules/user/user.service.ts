@@ -1,15 +1,34 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { User } from '@prisma/client';
 import { GetAllUser } from './dto/get-all-user.dto';
+import { UserEntity } from './entities/user.entity';
+import { validate as isValidUUID } from 'uuid';
 
 @Injectable()
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findByPublicKey(publicKey: string) {
+  // Remove few prop secret
+  private minifyUserObject(user: any): any {
+    const propertiesToRemove = ['signature', 'signer', 'signedMessage'];
+    const minifiedUser = { ...user };
+    for (const property in minifiedUser) {
+      if (propertiesToRemove.includes(property)) {
+        delete minifiedUser[property];
+      }
+    }
+    return minifiedUser;
+  }
+
+  async findByPublicKey(publicKey: string): Promise<any> {
     const account = await this.prisma.user.findFirst({
       where: {
         publicKey: publicKey,
@@ -71,16 +90,65 @@ export class UserService {
     return { users, nextCursor };
   }
 
+  async getProfileWithShortLinkOrIdUser(input: string, user: any) {
+    try {
+      const currentUserId = user?.id;
+      let result: any = {};
+
+      if (!isValidUUID(input)) {
+        result = await this.prisma.user.findFirst({
+          where: {
+            OR: [{ shortLink: input }, { signer: input.toLowerCase() }],
+          },
+        });
+      } else {
+        result = await this.prisma.user.findFirst({
+          where: { id: input },
+        });
+      }
+
+      const response =
+        !currentUserId || currentUserId !== result.id
+          ? this.minifyUserObject(result)
+          : result;
+
+      return response;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
   async updateProfile(input: UpdateUserDto, user: User) {
-    return await this.prisma.user.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        email: input.email,
-        username: input.username,
-        acceptedTerms: input.acceptedTerms,
-      },
-    });
+    try {
+      const checkExistShortLink = await this.prisma.user.findFirst({
+        where: {
+          AND: [{ id: { not: user.id } }, { shortLink: input.shortLink }],
+        },
+      });
+      if (checkExistShortLink) {
+        throw new Error('Short Link already exists');
+      }
+      const response = await this.prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          email: input.email,
+          username: input.username,
+          acceptedTerms: input.acceptedTerms,
+          bio: input.bio,
+          facebookLink: input.facebookLink,
+          twitterLink: input.twitterLink,
+          telegramLink: input.telegramLink,
+          discordLink: input.discordLink,
+          webURL: input.webURL,
+          coverImage: input.coverImage,
+          shortLink: input.shortLink,
+        },
+      });
+      return response;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
   }
 }

@@ -21,6 +21,7 @@ import { AuthenticationGuard } from '../auth/guards/auth.guard';
 import { GetAllUser } from './dto/get-all-user.dto';
 import { FilterNFTUserDetail } from './dto/get-nft-user.dto';
 import { UserServiceExtend } from './user-graph.service';
+import {AuthenticationCustomizeGuard} from '../auth/guards/authCustomize.guard';
 
 @Controller('user')
 export class UserController {
@@ -38,10 +39,10 @@ export class UserController {
     return await this.userService.updateProfile(updateProfile, user);
   }
 
-  @Get('profile/:id')
-  async getProfile(@Param('id') signer: string) {
-    return await this.userService.findOneByWallet(signer);
-  }
+  // @Get('profile/:id')
+  // async getProfile(@Param('id') signer: string) {
+  //   return await this.userService.findOneByWallet(signer);
+  // }
 
   @Get('all')
   async getAllUser(@Query() filter: GetAllUser) {
@@ -60,4 +61,12 @@ export class UserController {
   async getCollectionWithUserID(@Param('id') id: string) {
     return await this.userServiceExtend.getCollectionByUser(id);
   }
+
+
+  @Get('profile/:id')
+  @UseGuards(AuthenticationCustomizeGuard)
+  async findWithShortLink(@Param('id') signer: string , @GetCurrentUser() user: User,) {
+    return await this.userService.getProfileWithShortLinkOrIdUser(signer , user);
+  }
+  // findWithShortLink
 }

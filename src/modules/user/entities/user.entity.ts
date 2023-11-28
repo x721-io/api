@@ -1,6 +1,6 @@
 import { User } from '@prisma/client';
 
-export class UserEntity implements User {
+export class UserEntity {
   id: string;
   email: string;
   username: string;
@@ -17,4 +17,12 @@ export class UserEntity implements User {
   createdAt: Date;
   updatedAt: Date;
   signer: string;
+  bio? : string ;
+  facebookLink? : string;
+  twitterLink? : string;
+  telegramLink? : string;
+  discordLink? : string;
+  webURL? : string;
+  coverImage? : string
+
 }
