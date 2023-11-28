@@ -114,6 +114,15 @@ export class NftService {
           },
         }));
       }
+      let nftIdFromOwner = [];
+      if (filter.owner) {
+        const { account } = await this.GraphqlService.getNFTFromOwner(
+          filter.owner.toLocaleLowerCase(),
+        );
+        nftIdFromOwner = account.ERC721tokens.map((item) => item.id).concat(
+          account.ERC1155balances.map((item) => item.id.split('-')[1]),
+        );
+      }
       let whereCondition: Prisma.NFTWhereInput = {
         AND: traitsConditions,
         ...(filter.creatorAddress && {
@@ -128,20 +137,28 @@ export class NftService {
           ...(filter.type && { type: filter.type }),
         },
         ...(filter.name && { name: filter.name }),
+        ...(nftIdFromOwner.length > 0 && {
+          id: {
+            in: nftIdFromOwner,
+          },
+        }),
       };
-      // TODO: add first / skip to these 2 for pagination
-      const { marketEvent721S } = await this.GraphqlService.getNFTsHistory721(
-        filter.priceMin,
-        filter.priceMax,
-        filter.sellStatus,
-        filter.quoteToken,
-      );
-      const { marketEvent1155S } = await this.GraphqlService.getNFTsHistory1155(
-        filter.priceMin,
-        filter.priceMax,
-        filter.sellStatus,
-        filter.quoteToken,
-      );
+      const { marketEvent1155S, marketEvent721S } =
+        await this.GraphqlService.getNFTSellStatus1(
+          {
+            and: [
+              { price_gte: filter.priceMin },
+              { price_lte: filter.priceMax },
+              { event: filter.sellStatus },
+              { quoteToken: filter.quoteToken },
+              { from: filter.from },
+              { to: filter.to },
+            ],
+            // or: [{ from: filter.owner }, { to: filter.owner }],
+          },
+          // 1,
+          // 1,
+        );
       if (!filter.priceMin && !filter.priceMax && !filter.sellStatus) {
         const nfts = await this.prisma.nFT.findMany({
           skip: (filter.page - 1) * filter.limit,

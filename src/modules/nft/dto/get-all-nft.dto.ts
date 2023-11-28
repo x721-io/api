@@ -31,6 +31,15 @@ export class GetAllNftDto extends OffsetPaginationDto {
   name: string;
 
   @IsOptional()
+  owner: string;
+
+  @IsOptional()
+  from: string;
+
+  @IsOptional()
+  to: string;
+
+  @IsOptional()
   quoteToken: string;
 
   @IsOptional()
