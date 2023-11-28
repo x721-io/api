@@ -8,6 +8,8 @@ import {
   Delete,
   Query,
   UseGuards,
+  ValidationPipe,
+  UsePipes,
 } from '@nestjs/common';
 import { GetCurrentUser } from 'src/decorators/get-current-user.decorator';
 import { User } from '@prisma/client';
@@ -20,6 +22,7 @@ import { TokenService } from './token.service';
 import { GetAllNftDto } from './dto/get-all-nft.dto';
 import { GetEventMarketplace } from './dto/event-marketplace.dto';
 import { MarketplaceService } from './nft-marketplace.service';
+import { GetEventBase } from './dto/event-base.dto';
 
 @Controller('nft')
 export class NftController {
@@ -64,7 +67,8 @@ export class NftController {
   }
 
   @Post('/events')
-  findEvents(@Body() input: GetEventMarketplace) {
-    return this.eventService.findEvents(input);
+  @UsePipes(new ValidationPipe({ transform: true }))
+  findEvents(@Body() input: GetEventBase) {
+    return this.eventService.findEvents1(input);
   }
 }
