@@ -30,10 +30,14 @@ export class MarketplaceService {
 
   async findEvents1(input: GetEventBase) {
     const { and, page, limit, or, type } = input;
-    const res = await this.GraphQl.getNFTSellStatus1(page, limit, {
-      and,
-      or,
-    });
+    const res = await this.GraphQl.getNFTSellStatus1(
+      {
+        and,
+        or,
+      },
+      page,
+      limit,
+    );
     if (type === 'ERC1155') {
       return res.marketEvent1155S;
     } else if (type === 'ERC721') return res.marketEvent721S;
