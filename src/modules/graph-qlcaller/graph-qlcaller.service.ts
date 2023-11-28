@@ -14,6 +14,7 @@ import {
   GetNftOwnersInfo721Query,
   GetNftOwnersInfo1155Query,
   GetOneNftSellInfoQuery,
+  GetNfTwithAccountIdQueryVariables,
 } from '../../generated/graphql';
 import { GraphQLClient, gql } from 'graphql-request';
 import { CONTRACT_TYPE } from '@prisma/client';
@@ -142,9 +143,9 @@ export class GraphQlcallerService {
   }
 
   async getNFTSellStatus1(
-    page: number,
-    limit: number,
     conditions: { or?: any[]; and?: any[] },
+    page?: number,
+    limit?: number,
   ) {
     const { or, and } = conditions;
 
@@ -152,11 +153,16 @@ export class GraphQlcallerService {
 
     // Process AND conditions
     if (and && and.length > 0) {
-      const andConditions = and.map((condition) => {
-        return `{${Object.entries(condition)
-          .map(([key, value]) => `${key}: "${value}"`)
-          .join(', ')}}`;
-      });
+      const andConditions = and
+        .map((condition) => {
+          return Object.entries(condition)
+            .filter(([key, value]) => !!value) // Filter out null values
+            .map(([key, value]) => `${key}: "${value}"`)
+            .join(', ');
+        })
+        .filter((condition) => condition) // Filter out empty conditions
+        .map((condition) => `{${condition}}`);
+
       if (andConditions.length > 0) {
         whereParts.push(`and: [${andConditions.join(', ')}]`);
       }
@@ -164,11 +170,16 @@ export class GraphQlcallerService {
 
     // Process OR conditions
     if (or && or.length > 0) {
-      const orConditions = or.map((condition) => {
-        return `{${Object.entries(condition)
-          .map(([key, value]) => `${key}: "${value}"`)
-          .join(', ')}}`;
-      });
+      const orConditions = or
+        .map((condition) => {
+          return Object.entries(condition)
+            .filter(([key, value]) => !!value) // Filter out null values
+            .map(([key, value]) => `${key}: "${value}"`)
+            .join(', ');
+        })
+        .filter((condition) => condition) // Filter out empty conditions
+        .map((condition) => `{${condition}}`);
+
       if (orConditions.length > 0) {
         whereParts.push(`or: [${orConditions.join(', ')}]`);
       }
@@ -177,7 +188,6 @@ export class GraphQlcallerService {
     const isWhereEmpty = whereParts.length === 0;
     const whereClause =
       whereParts.length > 0 ? `where: {${whereParts.join(', ')}}` : '';
-    console.log(whereClause, isWhereEmpty);
     const query = gql`
       query GetNFTSellInfo($page: Int, $limit: Int) {
         marketEvent1155S(
@@ -360,6 +370,14 @@ export class GraphQlcallerService {
     console.log('let see: ', nftId);
     const variables: GetNftOwnersInfo721QueryVariables = { nftId };
     const response = sdk.GetNFTOwnersInfo721(variables);
+    return response;
+  }
+
+  async getNFTFromOwner(owner: string) {
+    const client = this.getGraphqlClient();
+    const sdk = getSdk(client);
+    const variables: GetNfTwithAccountIdQueryVariables = { id: owner };
+    const response = sdk.getNFTwithAccountID(variables);
     return response;
   }
 }
