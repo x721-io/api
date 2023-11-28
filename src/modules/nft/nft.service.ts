@@ -16,7 +16,6 @@ import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
 import { MarketplaceService } from './nft-marketplace.service';
 import { SellStatus } from 'src/generated/graphql';
 import { ZERO_ADDR } from 'src/constants/web3Const/messages';
-import { UserEntity } from '../user/entities/user.entity';
 import { OwnerOutputDto } from '../user/dto/owners.dto';
 
 @Injectable()
@@ -126,6 +125,7 @@ export class NftService {
         ...(filter.collectionAddress && {
           collection: {
             address: filter.collectionAddress,
+            ...(filter.type && { type: filter.type }),
           },
         }),
         ...(filter.name && { name: filter.name }),
@@ -135,11 +135,13 @@ export class NftService {
         filter.priceMin,
         filter.priceMax,
         filter.sellStatus,
+        filter.quoteToken,
       );
       const { marketEvent1155S } = await this.GraphqlService.getNFTsHistory1155(
         filter.priceMin,
         filter.priceMax,
         filter.sellStatus,
+        filter.quoteToken,
       );
       if (!filter.priceMin && !filter.priceMax && !filter.sellStatus) {
         const nfts = await this.prisma.nFT.findMany({
@@ -398,7 +400,7 @@ export class NftService {
         nftId: nft.id,
         event: SellStatus.Bid,
         type: nft.collection.type,
-        page: bidPage,
+        page: (bidPage - 1) * bidListLimit,
         limit: bidListLimit,
       });
       const returnNft: NftDto = {

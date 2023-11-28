@@ -22,6 +22,7 @@ export class GetEventMarketplace extends OffsetPaginationDto {
   @IsEnum(SellStatus)
   event?: SellStatus;
 
+  @IsOptional()
   @IsEnum(CONTRACT_TYPE)
   type?: CONTRACT_TYPE;
 }

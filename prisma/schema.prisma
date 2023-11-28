@@ -18,6 +18,9 @@ model User {
   signer        String           @unique
   publicKey     String?
   signDate      DateTime?
+  shortUrl      String?
+  twitterUrl    String?
+  bio           String?
   acceptedTerms Boolean          @default(false)
   nftCreator    NFT[]
   nftsOwnership UserNFT[]
