@@ -23,6 +23,7 @@ import { GetCollectionMarketData } from '../graph-qlcaller/getCollectionMarketDa
 import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
 import { SellStatus } from 'src/generated/graphql';
 
+
 interface CollectionGeneral {
   totalOwner: number;
   volumn: string;
@@ -46,11 +47,12 @@ export class CollectionService {
             { txCreationHash: input.txCreationHash },
             { symbol: input.symbol },
             { name: input.name },
+            { shortUrl : input.shortUrl}
           ],
         },
       });
       if (checkExist) {
-        throw new Error('Transaction hash or name, symbol or already exists');
+        throw new Error('Transaction hash or name or Short URL , symbol are already exists');
       } else {
         const collection = await this.prisma.collection.create({
           data: {
@@ -61,10 +63,12 @@ export class CollectionService {
             status: TX_STATUS.PENDING,
             type: input.type,
             shortUrl: input.shortUrl,
+            coverImage : input.coverImage,
             // categoryId: ...(input.categoryId  Number(input.categoryId),
             ...(input.categoryId && { categoryId: Number(input.categoryId) }),
-          },
+          }
         });
+
 
         await this.prisma.userCollection.create({
           data: {
@@ -320,23 +324,41 @@ export class CollectionService {
     }
   }
 
-  async update(id: string, input: UpdateCollectionDto): Promise<any> {
+  async update(id: string, input: UpdateCollectionDto, user: User): Promise<any> {
     try {
+      // Validate ID
       if (!isValidUUID(id)) {
-        throw new Error('Invalid ID. Please try again !');
+        throw new Error('Invalid ID. Please try again!');
       }
-      const checkExist = await this.prisma.collection.findFirst({
+  
+      // Check if Collection Exists
+      const existingCollection = await this.prisma.collection.findFirst({
         where: { id: id },
       });
-      if (!checkExist) {
+      
+      if (!existingCollection) {
         throw new NotFoundException();
       }
-      return this.prisma.collection.update({
+  
+      // Check if User is the Creator of the Collection
+      const isCreator = await this.prisma.userCollection.findFirst({
+        where: { AND: [{ userId: user.id }, { collectionId: id }] },
+      });
+  
+      if (!isCreator) {
+        throw new Error(`You can't update this collection`);
+      }
+  
+      // Update Collection
+      const updatedCollection = await this.prisma.collection.update({
         where: { id: id },
         data: {
           description: input.description,
+          coverImage: input.coverImage,
         },
       });
+  
+      return updatedCollection;
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
@@ -390,4 +412,5 @@ export class CollectionService {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
+  
 }
