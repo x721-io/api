@@ -1,6 +1,6 @@
-query GetNFTsHistory721 ($minPrice: BigInt, $maxPrice: BigInt, $event: SellStatus) {
+query GetNFTsHistory721 ($minPrice: BigInt, $maxPrice: BigInt, $event: SellStatus, $quoteToken: String) {
   marketEvent721S(
-    where: {price_gte: $minPrice, price_lte: $maxPrice, event: $event}
+    where: {price_gte: $minPrice, price_lte: $maxPrice, event: $event, quoteToken: $quoteToken}
     orderBy: timestamp
     orderDirection: desc
   ) {
@@ -16,9 +16,9 @@ query GetNFTsHistory721 ($minPrice: BigInt, $maxPrice: BigInt, $event: SellStatu
   }
 }
 
-query GetNFTsHistory1155 ($minPrice: BigInt, $maxPrice: BigInt, $event: SellStatus) {
+query GetNFTsHistory1155 ($minPrice: BigInt, $maxPrice: BigInt, $event: SellStatus, $quoteToken: String) {
   marketEvent1155S(
-    where: {price_gte: $minPrice, price_lte: $maxPrice, event: $event}
+    where: {price_gte: $minPrice, price_lte: $maxPrice, event: $event, quoteToken: $quoteToken}
     orderBy: timestamp
     orderDirection: desc
   ) {

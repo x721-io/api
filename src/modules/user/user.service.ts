@@ -31,9 +31,9 @@ export class UserService {
   async findByPublicKey(publicKey: string) : Promise<any> {
     const account = await this.prisma.user.findFirst({
       where: {
-        publicKey: publicKey
-      }
-    })
+        publicKey: publicKey,
+      },
+    });
     if (!account) {
       return null
     }
@@ -41,7 +41,7 @@ export class UserService {
   }
 
   async findOne(id: string) {
-    const user = await this.prisma.user.findUnique({
+    const user = await this.prisma.user.findFirst({
       where: {
         id,
       },
@@ -56,8 +56,8 @@ export class UserService {
     const user = await this.prisma.user.findUnique({
       where: {
         signer: address.toLowerCase(),
-      }
-    })
+      },
+    });
     if (!user) {
       throw new NotFoundException(`User #${address} not found`);
     }
@@ -68,14 +68,14 @@ export class UserService {
     const limit = (filter.limit || 12) as number;
     const cursor = filter.cursor;
     // @ts-ignore
-    const take: number = limit && limit > 0 ? parseInt(limit) + 1: 13
+    const take: number = limit && limit > 0 ? parseInt(limit) + 1 : 13;
 
     const users = await this.prisma.user.findMany({
       orderBy: {
         createdAt: filter.order,
       },
       where: {
-        username: { not: null }
+        username: { not: null },
       },
       take: take,
       cursor: cursor ? { id: cursor } : undefined,
@@ -87,7 +87,7 @@ export class UserService {
       const nextUser = users.pop();
       nextCursor = nextUser.id;
     }
-    return { users, nextCursor }
+    return { users, nextCursor };
   }
 
 
@@ -151,5 +151,4 @@ export class UserService {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
-
 }

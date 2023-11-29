@@ -16,7 +16,6 @@ import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
 import { MarketplaceService } from './nft-marketplace.service';
 import { SellStatus } from 'src/generated/graphql';
 import { ZERO_ADDR } from 'src/constants/web3Const/messages';
-import { UserEntity } from '../user/entities/user.entity';
 import { OwnerOutputDto } from '../user/dto/owners.dto';
 
 @Injectable()
@@ -104,7 +103,6 @@ export class NftService {
       let traitsConditions = [];
 
       // TODO: if price and status are included, then use subgraph as main source and use other to eliminate
-
       if (filter.traits) {
         traitsConditions = filter.traits.map((trait) => ({
           traits: {
@@ -116,6 +114,15 @@ export class NftService {
           },
         }));
       }
+      let nftIdFromOwner = [];
+      if (filter.owner) {
+        const { account } = await this.GraphqlService.getNFTFromOwner(
+          filter.owner.toLocaleLowerCase(),
+        );
+        nftIdFromOwner = account.ERC721tokens.map((item) => item.id).concat(
+          account.ERC1155balances.map((item) => item.id.split('-')[1]),
+        );
+      }
       let whereCondition: Prisma.NFTWhereInput = {
         AND: traitsConditions,
         ...(filter.creatorAddress && {
@@ -123,24 +130,35 @@ export class NftService {
             publicKey: filter.creatorAddress,
           },
         }),
-        ...(filter.collectionAddress && {
-          collection: {
+        collection: {
+          ...(filter.collectionAddress && {
             address: filter.collectionAddress,
+          }),
+          ...(filter.type && { type: filter.type }),
+        },
+        ...(filter.name && { name: filter.name }),
+        ...(nftIdFromOwner.length > 0 && {
+          id: {
+            in: nftIdFromOwner,
           },
         }),
-        ...(filter.name && { name: filter.name }),
       };
-      // TODO: add first / skip to these 2 for pagination
-      const { marketEvent721S } = await this.GraphqlService.getNFTsHistory721(
-        filter.priceMin,
-        filter.priceMax,
-        filter.sellStatus,
-      );
-      const { marketEvent1155S } = await this.GraphqlService.getNFTsHistory1155(
-        filter.priceMin,
-        filter.priceMax,
-        filter.sellStatus,
-      );
+      const { marketEvent1155S, marketEvent721S } =
+        await this.GraphqlService.getNFTSellStatus1(
+          {
+            and: [
+              { price_gte: filter.priceMin },
+              { price_lte: filter.priceMax },
+              { event: filter.sellStatus },
+              { quoteToken: filter.quoteToken },
+              { from: filter.from },
+              { to: filter.to },
+            ],
+            // or: [{ from: filter.owner }, { to: filter.owner }],
+          },
+          // 1,
+          // 1,
+        );
       if (!filter.priceMin && !filter.priceMax && !filter.sellStatus) {
         const nfts = await this.prisma.nFT.findMany({
           skip: (filter.page - 1) * filter.limit,
@@ -398,7 +416,7 @@ export class NftService {
         nftId: nft.id,
         event: SellStatus.Bid,
         type: nft.collection.type,
-        page: bidPage,
+        page: (bidPage - 1) * bidListLimit,
         limit: bidListLimit,
       });
       const returnNft: NftDto = {

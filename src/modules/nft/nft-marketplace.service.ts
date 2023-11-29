@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
 import { GetEventMarketplace } from './dto/event-marketplace.dto';
+import { GetEventBase } from './dto/event-base.dto';
 
 @Injectable()
 export class MarketplaceService {
@@ -23,7 +24,23 @@ export class MarketplaceService {
     );
     if (type === 'ERC1155') {
       return res.marketEvent1155S;
-    }
-    return res.marketEvent721S;
+    } else if (type === 'ERC721') return res.marketEvent721S;
+    else return [...res.marketEvent1155S, ...res.marketEvent721S];
+  }
+
+  async findEvents1(input: GetEventBase) {
+    const { and, page, limit, or, type } = input;
+    const res = await this.GraphQl.getNFTSellStatus1(
+      {
+        and,
+        or,
+      },
+      page,
+      limit,
+    );
+    if (type === 'ERC1155') {
+      return res.marketEvent1155S;
+    } else if (type === 'ERC721') return res.marketEvent721S;
+    else return [...res.marketEvent1155S, ...res.marketEvent721S];
   }
 }
