@@ -408,7 +408,7 @@ export class NftService {
         nftId: nft.id,
         event: SellStatus.AskNew,
         type: nft.collection.type,
-        page: 1,
+        page: 0,
         limit: 1,
       });
 
