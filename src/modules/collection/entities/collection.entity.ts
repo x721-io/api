@@ -1,6 +1,6 @@
 import { Collection , TX_STATUS , CONTRACT_TYPE , Category , NFT , UserCollection} from '@prisma/client';
 
-export class CollectionEntity implements Collection {
+export class CollectionEntity{
   id : string;
   txCreationHash : string;
   name : string;
@@ -22,6 +22,7 @@ export class CollectionEntity implements Collection {
   floorPrice?: string;
   totalNft?: number;
   volumn?: string;
+  coverImage? : string
 
 }
 export enum TXSTATUS {

@@ -6,7 +6,7 @@ import {TXSTATUS , CONTRACTTYPE} from '../entities/collection.entity'
 
 
 @InputType()
-export class UpdateCollectionDto extends PartialType(CreateCollectionDto) {
+export class UpdateCollectionDto{
   @IsOptional()
   @IsString({message : 'Transaction Hash is invalid'})
   @IsNotEmpty({ message: 'Please Enter Transaction Hash' })
@@ -38,4 +38,7 @@ export class UpdateCollectionDto extends PartialType(CreateCollectionDto) {
 
   @IsOptional()
   creators : string;
+
+  @IsOptional()
+  coverImage : string;
 }

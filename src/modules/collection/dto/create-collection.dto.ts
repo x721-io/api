@@ -42,4 +42,8 @@ export class CreateCollectionDto {
   @IsOptional()
   @IsNotEmpty({message : 'Please Enter User ID'})
   creators : string;
+
+  @IsOptional()
+  @IsString()
+  coverImage : string
 }
