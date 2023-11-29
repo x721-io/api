@@ -28,7 +28,7 @@ model User {
   facebookLink  String?
   twitterLink   String?
   telegramLink  String?
-  shortLink     String?         
+  shortLink     String?         @unique
   discordLink   String?
   webURL        String?
   coverImage    String?
