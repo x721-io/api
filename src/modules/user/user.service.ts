@@ -136,7 +136,6 @@ export class UserService {
           throw new Error('Email already exists');
         }
       }
-
       // Check for existing username
       if (username) {
         const checkExistUsername = await this.checkUserExistence('username', username, user.id);
