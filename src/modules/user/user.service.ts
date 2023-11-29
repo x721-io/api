@@ -118,33 +118,40 @@ export class UserService {
 
   async updateProfile(input: UpdateUserDto, user: User) {
     try{
-      let checkExistShortLink = await this.prisma.user.findFirst({
-        where: {AND: [
-          {id : { not: user.id }},
-          {shortLink : input.shortLink}
-        
-        ]}
-      })
-      if(checkExistShortLink){
-        throw new Error('Short Link already exists');
+      let updateData = {
+        email: input.email,
+        username: input.username,
+        acceptedTerms: input.acceptedTerms,
+        bio: input.bio,
+        facebookLink: input.facebookLink,
+        twitterLink: input.twitterLink,
+        telegramLink: input.telegramLink,
+        discordLink: input.discordLink,
+        webURL: input.webURL,
+        coverImage: input.coverImage,
+        shortLink : input.shortLink
+      };
+
+      if(input && input.shortLink){
+        let checkExistShortLink = await this.prisma.user.findFirst({
+          where: {AND: [
+            {id : { not: user.id }},
+            {shortLink : input.shortLink}
+          
+          ]}
+        })
+        if(checkExistShortLink){
+          throw new Error('Short Link already exists');
+        } 
+      }else{
+        delete updateData.shortLink
       }
+      
       let response = await this.prisma.user.update({
           where: {
             id: user.id
           },
-          data: {
-            email: input.email,
-            username: input.username,
-            acceptedTerms: input.acceptedTerms,
-            bio : input.bio,
-            facebookLink : input.facebookLink,
-            twitterLink : input.twitterLink,
-            telegramLink : input.telegramLink,
-            discordLink : input.discordLink,
-            webURL : input.webURL,
-            coverImage : input.coverImage,
-            shortLink : input.shortLink
-          }
+          data: updateData
         })
         return response;
     }catch(error){
