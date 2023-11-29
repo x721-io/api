@@ -42,11 +42,13 @@ export class CollectionController {
   }
 
   @Put(':id')
+  @UseGuards(AuthenticationGuard)
   update(
     @Param('id') id: string,
+    @GetCurrentUser() user: User,
     @Body() updateCollectionDto: UpdateCollectionDto,
   ) {
-    return this.collectionService.update(id, updateCollectionDto);
+    return this.collectionService.update(id, updateCollectionDto,user);
   }
 
   @Get('/user/:id')
