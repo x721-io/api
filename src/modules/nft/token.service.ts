@@ -2,6 +2,7 @@
 
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { createHash } from 'crypto';
 
 @Injectable()
 export class TokenService {
@@ -48,7 +49,14 @@ export class TokenService {
         },
       },
     });
-    const nextId = current + 1;
-    return minterAddress + nextId.toString().padStart(24, '0');
+    const baseId =
+      collectionAddress + Date.now().toString() + current.toString();
+    const hash = createHash('sha256')
+      .update(baseId)
+      .digest('hex')
+      .substring(0, 24);
+
+    // const nextId = current + 1;
+    return minterAddress + hash.padStart(24, '0');
   }
 }
