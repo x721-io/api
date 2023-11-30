@@ -17,6 +17,7 @@ import { MarketplaceService } from './nft-marketplace.service';
 import { SellStatus } from 'src/generated/graphql';
 import { ZERO_ADDR } from 'src/constants/web3Const/messages';
 import { OwnerOutputDto } from '../user/dto/owners.dto';
+import { ValidatorService } from '../validator/validator.service';
 
 @Injectable()
 export class NftService {
@@ -24,16 +25,13 @@ export class NftService {
     private prisma: PrismaService,
     private readonly GraphqlService: GraphQlcallerService,
     private readonly eventService: MarketplaceService,
+    private validatorService: ValidatorService,
   ) {}
   async create(input: CreateNftDto, user: User): Promise<NftDto> {
     try {
       const checkExist = await this.prisma.nFT.findFirst({
         where: {
-          OR: [
-            { txCreationHash: input.txCreationHash },
-            { name: input.name },
-            { id: input.id },
-          ],
+          OR: [{ txCreationHash: input.txCreationHash }, { id: input.id }],
         },
       });
 
@@ -54,9 +52,21 @@ export class NftService {
       // if (!isValidUUID(input.collectionId)) {
       //   throw new Error('Invalid Collection ID. Please try again !');
       // }
+      const collectionHasNameNFT =
+        await this.validatorService.checkNFTExistence(
+          'name',
+          'collectionId',
+          input.name,
+          input.collectionId,
+        );
+
+      console.log(collectionHasNameNFT);
+      if (!!collectionHasNameNFT) {
+        throw new Error('The name of the NFT already exists in Collection');
+      }
 
       if (checkExist) {
-        throw new Error('Transaction hash or name or ID already exists');
+        throw new Error('Transaction hash or ID already exists');
       }
 
       const nft = await this.prisma.nFT.create({
