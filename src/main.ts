@@ -31,6 +31,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
   app.enableCors({
     origin: function (origin, callback) {
+      console.log(origin);
       if (!origin || matchRegexArray(whitelist, origin)) {
         callback(null, true);
       } else {
