@@ -123,24 +123,40 @@ export class NftService {
         );
       }
       let whereCondition: Prisma.NFTWhereInput = {
-        OR: traitsConditions,
-        ...(filter.creatorAddress && {
-          creator: {
-            publicKey: filter.creatorAddress,
-          },
-        }),
-        collection: {
-          ...(filter.collectionAddress && {
-            address: filter.collectionAddress,
-          }),
-          ...(filter.type && { type: filter.type }),
-        },
-        ...(filter.name && { name: filter.name }),
-        ...(nftIdFromOwner.length > 0 && {
-          id: {
-            in: nftIdFromOwner,
-          },
-        }),
+        ...(traitsConditions.length > 0 && { OR: traitsConditions }),
+        AND: [
+          ...(filter.creatorAddress
+            ? [
+                {
+                  creator: {
+                    publicKey: filter.creatorAddress,
+                  },
+                },
+              ]
+            : []),
+          ...(filter.collectionAddress || filter.type
+            ? [
+                {
+                  collection: {
+                    ...(filter.collectionAddress
+                      ? { address: filter.collectionAddress }
+                      : {}),
+                    ...(filter.type ? { type: filter.type } : {}),
+                  },
+                },
+              ]
+            : []),
+          ...(filter.name ? [{ name: filter.name }] : []),
+          ...(nftIdFromOwner.length > 0
+            ? [
+                {
+                  id: {
+                    in: nftIdFromOwner,
+                  },
+                },
+              ]
+            : []),
+        ],
       };
       const { marketEvent1155S, marketEvent721S } =
         await this.GraphqlService.getNFTSellStatus1(

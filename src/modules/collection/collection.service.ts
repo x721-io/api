@@ -130,9 +130,8 @@ export class CollectionService {
     } else {
       // const respose = await this.collectionData.getCollectionSumData('0xc2587c1b945b1a7be4be5423c24f1bbf54495daa')
       // count owners
-      const owners = await this.collectionData.getCollectionHolder(
-        '0xc2587c1b945b1a7be4be5423c24f1bbf54495daa',
-      );
+      const owners =
+        await this.collectionData.getCollectionHolder(collectionAddress);
       const uniqueOwnerIdsCount = owners.erc1155Balances.filter(
         (obj) => BigInt(obj.value) > BigInt(0) && !!obj.account,
       ).length;
@@ -239,6 +238,7 @@ export class CollectionService {
   async findOne(id: string): Promise<{
     collection: CollectionEntity;
     traitAvailable: TraitGeneralInfo[];
+    generalInfo: any;
   }> {
     try {
       let whereCondition: Prisma.CollectionWhereInput;
@@ -283,7 +283,11 @@ export class CollectionService {
       }
       const traitsAvailable =
         await this.traitService.findUniqueTraitsInCollection(collection.id);
-      return { collection, traitAvailable: traitsAvailable };
+      const generalInfo = await this.getGeneralCollectionData(
+        collection.address,
+        collection.type,
+      );
+      return { collection, traitAvailable: traitsAvailable, generalInfo };
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
