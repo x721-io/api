@@ -17,7 +17,7 @@ import {
 } from '@prisma/client';
 import { validate as isValidUUID } from 'uuid';
 import { Redis } from 'src/database';
-import { TraitService } from '../nft/trait.service';
+import { TraitGeneralInfo, TraitService } from '../nft/trait.service';
 import { GetAllCollectionDto } from './dto/get-all-collection.dto';
 import { GetCollectionMarketData } from '../graph-qlcaller/getCollectionMarketData.service';
 import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
@@ -231,9 +231,10 @@ export class CollectionService {
     return dataArray;
   }
 
-  async findOne(
-    id: string,
-  ): Promise<{ collection: CollectionEntity; traitAvailable: string[] }> {
+  async findOne(id: string): Promise<{
+    collection: CollectionEntity;
+    traitAvailable: TraitGeneralInfo[];
+  }> {
     try {
       let whereCondition: Prisma.CollectionWhereInput;
       if (!isValidUUID(id)) {
@@ -266,43 +267,6 @@ export class CollectionService {
                   username: true,
                   publicKey: true,
                   createdAt: true,
-                },
-              },
-            },
-          },
-          nfts: {
-            select: {
-              id: true,
-              name: true,
-              ipfsHash: true,
-              createdAt: true,
-              status: true,
-              tokenUri: true,
-              txCreationHash: true,
-              creator: {
-                select: {
-                  id: true,
-                  email: true,
-                  avatar: true,
-                  username: true,
-                  publicKey: true,
-                  createdAt: true,
-                },
-              },
-              owners: {
-                select: {
-                  userId: true,
-                  nftId: true,
-                  quantity: true,
-                  user: {
-                    select: {
-                      email: true,
-                      avatar: true,
-                      username: true,
-                      publicKey: true,
-                      createdAt: true,
-                    },
-                  },
                 },
               },
             },
