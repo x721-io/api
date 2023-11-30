@@ -17,6 +17,7 @@ import { MarketplaceService } from './nft-marketplace.service';
 import { SellStatus } from 'src/generated/graphql';
 import { ZERO_ADDR } from 'src/constants/web3Const/messages';
 import { OwnerOutputDto } from '../user/dto/owners.dto';
+import { ValidatorService } from '../validator/validator.service';
 
 @Injectable()
 export class NftService {
@@ -24,16 +25,13 @@ export class NftService {
     private prisma: PrismaService,
     private readonly GraphqlService: GraphQlcallerService,
     private readonly eventService: MarketplaceService,
+    private validatorService: ValidatorService,
   ) {}
   async create(input: CreateNftDto, user: User): Promise<NftDto> {
     try {
       const checkExist = await this.prisma.nFT.findFirst({
         where: {
-          OR: [
-            { txCreationHash: input.txCreationHash },
-            { name: input.name },
-            { id: input.id },
-          ],
+          OR: [{ txCreationHash: input.txCreationHash }, { id: input.id }],
         },
       });
 
@@ -54,9 +52,20 @@ export class NftService {
       // if (!isValidUUID(input.collectionId)) {
       //   throw new Error('Invalid Collection ID. Please try again !');
       // }
+      const collectionHasNameNFT =
+        await this.validatorService.checkNFTExistence(
+          'name',
+          'collectionId',
+          input.name,
+          input.collectionId,
+        );
+
+      if (collectionHasNameNFT) {
+        throw new Error('The name of the NFT already exists in Collection');
+      }
 
       if (checkExist) {
-        throw new Error('Transaction hash or name or ID already exists');
+        throw new Error('Transaction hash or ID already exists');
       }
 
       const nft = await this.prisma.nFT.create({
@@ -102,6 +111,7 @@ export class NftService {
     try {
       let traitsConditions = [];
 
+      // TODO: if price and status are included, then use subgraph as main source and use other to eliminate
       if (filter.traits) {
         traitsConditions = filter.traits.map((trait) => ({
           traits: {
@@ -123,40 +133,24 @@ export class NftService {
         );
       }
       let whereCondition: Prisma.NFTWhereInput = {
-        ...(traitsConditions.length > 0 && { OR: traitsConditions }),
-        AND: [
-          ...(filter.creatorAddress
-            ? [
-                {
-                  creator: {
-                    publicKey: filter.creatorAddress,
-                  },
-                },
-              ]
-            : []),
-          ...(filter.collectionAddress || filter.type
-            ? [
-                {
-                  collection: {
-                    ...(filter.collectionAddress
-                      ? { address: filter.collectionAddress }
-                      : {}),
-                    ...(filter.type ? { type: filter.type } : {}),
-                  },
-                },
-              ]
-            : []),
-          ...(filter.name ? [{ name: filter.name }] : []),
-          ...(nftIdFromOwner.length > 0
-            ? [
-                {
-                  id: {
-                    in: nftIdFromOwner,
-                  },
-                },
-              ]
-            : []),
-        ],
+        AND: traitsConditions,
+        ...(filter.creatorAddress && {
+          creator: {
+            publicKey: filter.creatorAddress,
+          },
+        }),
+        collection: {
+          ...(filter.collectionAddress && {
+            address: filter.collectionAddress,
+          }),
+          ...(filter.type && { type: filter.type }),
+        },
+        ...(filter.name && { name: filter.name }),
+        ...(nftIdFromOwner.length > 0 && {
+          id: {
+            in: nftIdFromOwner,
+          },
+        }),
       };
       const { marketEvent1155S, marketEvent721S } =
         await this.GraphqlService.getNFTSellStatus1(
