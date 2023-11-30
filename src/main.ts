@@ -21,6 +21,7 @@ function matchRegexArray(arr: string[], str: string): boolean {
 const whitelist = [
   'http://localhost:3000',
   'https://marketplace-dev.uniultra.xyz/',
+  'https://marketplace-dev.uniultra.xyz',
 ];
 
 async function bootstrap() {
