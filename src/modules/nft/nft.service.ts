@@ -102,7 +102,6 @@ export class NftService {
     try {
       let traitsConditions = [];
 
-      // TODO: if price and status are included, then use subgraph as main source and use other to eliminate
       if (filter.traits) {
         traitsConditions = filter.traits.map((trait) => ({
           traits: {
@@ -124,7 +123,7 @@ export class NftService {
         );
       }
       let whereCondition: Prisma.NFTWhereInput = {
-        AND: traitsConditions,
+        OR: traitsConditions,
         ...(filter.creatorAddress && {
           creator: {
             publicKey: filter.creatorAddress,

@@ -48,7 +48,7 @@ export class CollectionController {
     @GetCurrentUser() user: User,
     @Body() updateCollectionDto: UpdateCollectionDto,
   ) {
-    return this.collectionService.update(id, updateCollectionDto,user);
+    return this.collectionService.update(id, updateCollectionDto, user);
   }
 
   @Get('/user/:id')
