@@ -29,13 +29,10 @@ import { NftModule } from './modules/nft/nft.module';
     UserModule,
     GraphQlcallerModule,
     CollectionModule,
-    NftModule
+    NftModule,
   ],
-  providers: [
-    PrismaService,
-  ],
+  providers: [PrismaService],
 })
 export class AppModule {
-  constructor() {
-  }
+  constructor() {}
 }
