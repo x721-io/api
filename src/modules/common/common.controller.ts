@@ -1,17 +1,32 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, UploadedFiles, HttpException, HttpStatus, Query , Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseInterceptors,
+  UploadedFiles,
+  Query,
+  Res,
+} from '@nestjs/common';
 import { CommonService } from './common.service';
-import { CreateCommonDto } from './dto/create-common.dto';
 import { UpdateCommonDto } from './dto/update-common.dto';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { CreateFileDto } from './dto/create-file.dto';
 import { Response } from 'express';
+import { SearchAllDto } from './dto/search-all.dto';
 @Controller('common')
 export class CommonController {
   constructor(private readonly commonService: CommonService) {}
 
   @Post('upload-ipfs')
   @UseInterceptors(FilesInterceptor('files'))
-  async uploadIpfs(@UploadedFiles() files: Express.Multer.File[], @Body() createFileDto: CreateFileDto) {
+  async uploadIpfs(
+    @UploadedFiles() files: Express.Multer.File[],
+    @Body() createFileDto: CreateFileDto,
+  ) {
     return await this.commonService.uploadIpfs(files, createFileDto.metadata);
   }
 
@@ -21,10 +36,10 @@ export class CommonController {
   }
 
   @Get('get-file-ipfs')
-  async getFileFromIpfs(@Query('hash') hash : string , @Res() res: Response){
-    return await this.commonService.getFileFromIpfs(hash , res);
+  async getFileFromIpfs(@Query('hash') hash: string, @Res() res: Response) {
+    return await this.commonService.getFileFromIpfs(hash, res);
   }
-  
+
   @Get()
   findAll() {
     return this.commonService.findAll();
@@ -43,5 +58,10 @@ export class CommonController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.commonService.remove(+id);
+  }
+
+  @Post('search-all')
+  async searchAll(@Body() input: SearchAllDto) {
+    return this.commonService.searchAll(input);
   }
 }

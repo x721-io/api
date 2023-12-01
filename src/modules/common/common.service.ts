@@ -1,38 +1,105 @@
 import { Injectable } from '@nestjs/common';
-import { CreateCommonDto } from './dto/create-common.dto';
 import { UpdateCommonDto } from './dto/update-common.dto';
 import { create } from 'ipfs-http-client';
 import OtherCommon from 'src/commons/Other.common';
 import { Response } from 'express';
 import * as fileType from 'file-type';
+import { SearchAllDto } from './dto/search-all.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { SearchAllType } from 'src/constants/searchType.enum';
 @Injectable()
 export class CommonService {
   private ipfs;
-  constructor() {
-    this.ipfs = create({ host: process.env.IPFS_URL, port: parseInt(process.env.IPFS_PORT), protocol: process.env.IPFS_PROTOCOL})
+  constructor(private readonly prisma: PrismaService) {
+    this.ipfs = create({
+      host: process.env.IPFS_URL,
+      port: parseInt(process.env.IPFS_PORT),
+      protocol: process.env.IPFS_PROTOCOL,
+    });
+  }
+
+  async searchAll(input: SearchAllDto) {
+    if (input.mode === SearchAllType.COLLECTION) {
+      return this.prisma.collection.findMany({
+        where: {
+          OR: [
+            {
+              name: {
+                contains: input.text,
+                mode: 'insensitive',
+              },
+            },
+            {
+              symbol: {
+                contains: input.text,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        },
+      });
+    } else if (input.mode === SearchAllType.USER) {
+      return this.prisma.user.findMany({
+        select: {
+          id: true,
+          signer: true,
+          username: true,
+        },
+        where: {
+          OR: [
+            {
+              username: {
+                contains: input.text,
+                mode: 'insensitive',
+              },
+            },
+
+            {
+              signer: {
+                contains: input.text,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        },
+      });
+    } else if (input.mode === SearchAllType.NFT) {
+      return this.prisma.nFT.findMany({
+        where: {
+          OR: [
+            {
+              name: {
+                contains: input.text,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        },
+      });
+    }
   }
   async uploadIpfs(files: Express.Multer.File[], metadata: any) {
     try {
       const fileResults = await Promise.all(
-        files.map(file => this.ipfs.add(file.buffer))
+        files.map((file) => this.ipfs.add(file.buffer)),
       );
-      const fileHashes = fileResults.map(result => result.path);
+      const fileHashes = fileResults.map((result) => result.path);
       if (metadata) {
         const metadataObject = JSON.parse(metadata);
         const updatedMetadata = { ...metadataObject, fileHashes };
-  
-        const metadataResult = await this.ipfs.add(JSON.stringify(updatedMetadata));
+
+        const metadataResult = await this.ipfs.add(
+          JSON.stringify(updatedMetadata),
+        );
         return {
           fileHashes: fileHashes,
-          metadataHash: metadataResult.path
+          metadataHash: metadataResult.path,
         };
-
       } else {
-        return { fileHashes: fileHashes}
+        return { fileHashes: fileHashes };
       }
-
     } catch (err) {
-      console.log('err: ', err)
+      console.log('err: ', err);
     }
   }
 
@@ -58,16 +125,16 @@ export class CommonService {
     }
   }
 
-  async getFileFromIpfs(hash: string , res : Response){
+  async getFileFromIpfs(hash: string, res: Response) {
     try {
       const content = [];
       for await (const chunk of this.ipfs.cat(hash)) {
         content.push(chunk);
       }
       const buffer = Buffer.concat(content);
-      let filetype = await fileType.fromBuffer(buffer);
-      let {ext,mime} = filetype
-      let result = OtherCommon.convertBufferToFile(buffer);
+      const filetype = await fileType.fromBuffer(buffer);
+      const { ext, mime } = filetype;
+      const result = OtherCommon.convertBufferToFile(buffer);
       // Set response headers
       res.set({
         'Content-Type': `${mime}`,
