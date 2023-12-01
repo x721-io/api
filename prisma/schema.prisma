@@ -36,7 +36,7 @@ model User {
 
 model NFT {
   id             String     @id @db.VarChar(255)
-  name           String     @unique
+  name           String     
   ipfsHash       String
   imageHash      String?
   traits         Trait[]

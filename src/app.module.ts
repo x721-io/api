@@ -11,7 +11,7 @@ import { UserModule } from './modules/user/user.module';
 import { GraphQlcallerModule } from './modules/graph-qlcaller/graph-qlcaller.module';
 import { CollectionModule } from './modules/collection/collection.module';
 import { NftModule } from './modules/nft/nft.module';
-
+import { ValidatorModule } from './modules/validator/validator.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -30,6 +30,7 @@ import { NftModule } from './modules/nft/nft.module';
     GraphQlcallerModule,
     CollectionModule,
     NftModule,
+    ValidatorModule,
   ],
   providers: [PrismaService],
 })
