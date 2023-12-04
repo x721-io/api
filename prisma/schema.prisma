@@ -28,15 +28,16 @@ model User {
   facebookLink  String?
   twitterLink   String?
   telegramLink  String?
-  shortLink     String?         @unique
+  shortLink     String?          @unique
   discordLink   String?
   webURL        String?
   coverImage    String?
 }
 
 model NFT {
-  id             String     @id @db.VarChar(255)
-  name           String     
+  id             String     @db.VarChar(255)
+  u2uId          String     @db.VarChar(255)
+  name           String
   ipfsHash       String
   imageHash      String?
   traits         Trait[]
@@ -50,6 +51,8 @@ model NFT {
   creator        User       @relation(fields: [creatorId], references: [id])
   collectionId   String     @db.Uuid
   collection     Collection @relation(fields: [collectionId], references: [id])
+
+  @@id([id, collectionId])
 }
 
 model Trait {
@@ -57,16 +60,18 @@ model Trait {
   trait_type   String
   display_type String?
   value        String
+  collectionId String  @db.Uuid
   nftId        String
-  NFT          NFT     @relation(fields: [nftId], references: [id])
+  NFT          NFT     @relation(fields: [nftId, collectionId], references: [id, collectionId])
 }
 
 model UserNFT {
-  userId   String @db.Uuid
-  nftId    String @db.VarChar(255)
-  quantity Int    @default(1)
-  user     User   @relation(fields: [userId], references: [id])
-  nft      NFT    @relation(fields: [nftId], references: [id])
+  userId       String @db.Uuid
+  nftId        String @db.VarChar(255)
+  collectionId String @db.Uuid
+  quantity     Int    @default(1)
+  user         User   @relation(fields: [userId], references: [id])
+  nft          NFT    @relation(fields: [nftId, collectionId], references: [id, collectionId])
 
   @@id([userId, nftId])
 }
@@ -77,7 +82,7 @@ model Collection {
   name           String           @unique
   symbol         String           @unique
   description    String?
-  address        String?
+  address        String?          @unique
   shortUrl       String           @unique
   metadata       String?
   status         TX_STATUS

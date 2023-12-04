@@ -34,4 +34,7 @@ export class CreateNftDto {
   @IsString({ message: 'Collection is invalid' })
   @IsNotEmpty({ message: 'Please Enter Collection ID' })
   collectionId: string;
+
+  @IsString()
+  u2uId: string;
 }
