@@ -58,7 +58,7 @@ export class TokenService {
     const nextId = current + 1;
     // return minterAddress + nextId.toString().padStart(24, '0');
     return {
-      rId: minterAddress + nextId.toString().padStart(24, '0'),
+      u2uId: minterAddress + nextId.toString().padStart(24, '0'),
       id: nextId,
     };
   }
