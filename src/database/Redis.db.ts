@@ -2,6 +2,7 @@ import * as PromiseBluebird from 'bluebird';
 import Redis, { Cluster, RedisOptions } from 'ioredis';
 import { messageConstant } from '../constants';
 import { logger } from '../commons';
+import { RedisPubReq } from 'src/commons/types/RedisPubReq.type';
 
 class RedisDB {
   clientSync: Redis.Redis | Cluster;
@@ -118,7 +119,10 @@ class RedisDB {
     await this.subscriber.unsubscribe(channel);
   }
 
-  public async publish(channel: string, message: any): Promise<number> {
+  public async publish<T>(
+    channel: string,
+    message: RedisPubReq<T>,
+  ): Promise<number> {
     const client = await this.getClient();
     return client.publish(channel, JSON.stringify(message));
   }

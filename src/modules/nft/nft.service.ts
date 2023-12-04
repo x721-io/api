@@ -96,21 +96,21 @@ export class NftService {
           collectionId: collection.id,
         },
       });
-      await Redis.publish(
-        'nft-channel',
-        JSON.stringify({
+      await Redis.publish('nft-channel', {
+        data: {
           txCreation: nft.txCreationHash,
           type: nft.collection.type,
-        }),
-      );
-      await Redis.publish(
-        'ipfs',
-        JSON.stringify({
+        },
+        process: 'nft-create',
+      });
+      await Redis.publish('ipfs', {
+        data: {
           collectionAddress: collection.address,
           tokenId: nft.id,
           ipfsUrl: nft.tokenUri.replace('ipfs://', ''),
-        }),
-      );
+        },
+        process: 'get-ipfs',
+      });
       return nft;
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
