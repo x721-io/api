@@ -52,13 +52,14 @@ export class NftController {
     return this.nftService.findAll(query);
   }
 
-  @Get(':id')
+  @Get('')
   findOne(
-    @Param('id') id: string,
+    @Query('id') id: string,
+    @Query('collectionAddress') collectionAddress: string,
     @Query('bidListPage') bidPage: number,
     @Query('bidListLimit') bidLimit: number,
   ) {
-    return this.nftService.findOne(id, bidPage, bidLimit);
+    return this.nftService.findOne(id, collectionAddress, bidPage, bidLimit);
   }
 
   @Get('/user/:id')

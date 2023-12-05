@@ -12,7 +12,7 @@ export class TokenService {
   async generateTokenId(
     minterAddress: string,
     collectionAddress: string,
-  ): Promise<string> {
+  ): Promise<any> {
     const isValidAddress = await this.prisma.collection.findFirst({
       where: {
         address: {
@@ -49,14 +49,17 @@ export class TokenService {
         },
       },
     });
-    const baseId =
-      collectionAddress + Date.now().toString() + current.toString();
-    const hash = createHash('sha256')
-      .update(baseId)
-      .digest('hex')
-      .substring(0, 24);
+    // const baseId = collectionAddress + current.toString();
+    // const hash = createHash('sha256')
+    //   .update(baseId)
+    //   .digest('hex')
+    //   .substring(0, 24);
 
-    // const nextId = current + 1;
-    return minterAddress + hash.padStart(24, '0');
+    const nextId = current + 1;
+    // return minterAddress + nextId.toString().padStart(24, '0');
+    return {
+      u2uId: minterAddress + nextId.toString().padStart(24, '0'),
+      id: nextId,
+    };
   }
 }

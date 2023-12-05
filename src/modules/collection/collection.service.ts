@@ -77,13 +77,13 @@ export class CollectionService {
             collectionId: collection.id,
           },
         });
-        await Redis.publish(
-          'collection-channel',
-          JSON.stringify({
+        await Redis.publish('collection-channel', {
+          data: {
             txCreation: collection.txCreationHash,
             type: collection.type,
-          }),
-        );
+          },
+          process: 'collection-create',
+        });
         return collection;
       }
     } catch (error) {

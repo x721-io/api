@@ -31,7 +31,7 @@ export class NftService {
     try {
       const checkExist = await this.prisma.nFT.findFirst({
         where: {
-          OR: [{ txCreationHash: input.txCreationHash }, { id: input.id }],
+          OR: [{ txCreationHash: input.txCreationHash }],
         },
       });
 
@@ -52,17 +52,17 @@ export class NftService {
       // if (!isValidUUID(input.collectionId)) {
       //   throw new Error('Invalid Collection ID. Please try again !');
       // }
-      const collectionHasNameNFT =
-        await this.validatorService.checkNFTExistence(
-          'name',
-          'collectionId',
-          input.name,
-          input.collectionId,
-        );
+      // const collectionHasNameNFT =
+      //   await this.validatorService.checkNFTExistence(
+      //     'name',
+      //     'address',
+      //     input.name,
+      //     input.collectionId,
+      //   );
 
-      if (collectionHasNameNFT) {
-        throw new Error('The name of the NFT already exists in Collection');
-      }
+      // if (collectionHasNameNFT) {
+      //   throw new Error('The name of the NFT already exists in Collection');
+      // }
 
       if (checkExist) {
         throw new Error('Transaction hash or ID already exists');
@@ -70,13 +70,14 @@ export class NftService {
 
       const nft = await this.prisma.nFT.create({
         data: {
+          u2uId: input.u2uId,
           id: input.id,
           name: input.name,
           ipfsHash: input.name,
           imageHash: input.imageHash,
-          traits: {
-            create: input.traits,
-          },
+          // traits: {
+          //   create: input.traits,
+          // },
           status: TX_STATUS.PENDING,
           tokenUri: input.tokenUri,
           txCreationHash: input.txCreationHash,
@@ -92,15 +93,24 @@ export class NftService {
         data: {
           userId: user.id,
           nftId: input.id,
+          collectionId: collection.id,
         },
       });
-      await Redis.publish(
-        'nft-channel',
-        JSON.stringify({
+      await Redis.publish('nft-channel', {
+        data: {
           txCreation: nft.txCreationHash,
           type: nft.collection.type,
-        }),
-      );
+        },
+        process: 'nft-create',
+      });
+      await Redis.publish('ipfs', {
+        data: {
+          collectionAddress: collection.address,
+          tokenId: nft.id,
+          ipfsUrl: nft.tokenUri.replace('ipfs://', ''),
+        },
+        process: 'get-ipfs',
+      });
       return nft;
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
@@ -133,24 +143,40 @@ export class NftService {
         );
       }
       let whereCondition: Prisma.NFTWhereInput = {
-        AND: traitsConditions,
-        ...(filter.creatorAddress && {
-          creator: {
-            publicKey: filter.creatorAddress,
-          },
-        }),
-        collection: {
-          ...(filter.collectionAddress && {
-            address: filter.collectionAddress,
-          }),
-          ...(filter.type && { type: filter.type }),
-        },
-        ...(filter.name && { name: filter.name }),
-        ...(nftIdFromOwner.length > 0 && {
-          id: {
-            in: nftIdFromOwner,
-          },
-        }),
+        ...(traitsConditions.length > 0 && { OR: traitsConditions }),
+        AND: [
+          ...(filter.creatorAddress
+            ? [
+                {
+                  creator: {
+                    publicKey: filter.creatorAddress,
+                  },
+                },
+              ]
+            : []),
+          ...(filter.collectionAddress || filter.type
+            ? [
+                {
+                  collection: {
+                    ...(filter.collectionAddress
+                      ? { address: filter.collectionAddress }
+                      : {}),
+                    ...(filter.type ? { type: filter.type } : {}),
+                  },
+                },
+              ]
+            : []),
+          ...(filter.name ? [{ name: filter.name }] : []),
+          ...(nftIdFromOwner.length > 0
+            ? [
+                {
+                  id: {
+                    in: nftIdFromOwner,
+                  },
+                },
+              ]
+            : []),
+        ],
       };
       const { marketEvent1155S, marketEvent721S } =
         await this.GraphqlService.getNFTSellStatus1(
@@ -322,13 +348,22 @@ export class NftService {
 
   async findOne(
     id: string,
+    collectionAddress: string,
     bidPage: number,
     bidListLimit: number,
   ): Promise<NftDto> {
     try {
+      const collection = await this.prisma.collection.findUnique({
+        where: {
+          address: collectionAddress.toLowerCase(),
+        },
+      });
       const nft = await this.prisma.nFT.findUnique({
         where: {
-          id: id,
+          id_collectionId: {
+            id,
+            collectionId: collection.id,
+          },
         },
         include: {
           creator: {
