@@ -385,7 +385,7 @@ export class NftService {
         });
         owners = ownersFromLocal.map((item2) => {
           const item1 = nftInfoWithOwner.erc1155Balances.find(
-            (i1) => i1.account.id === item2.signer,
+            (i1) => i1.account && i1.account.id === item2.signer,
           );
           if (item1) {
             return {
@@ -435,6 +435,7 @@ export class NftService {
       };
       return returnNft;
     } catch (error) {
+      console.log(error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
