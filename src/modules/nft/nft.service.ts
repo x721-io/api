@@ -52,17 +52,17 @@ export class NftService {
       // if (!isValidUUID(input.collectionId)) {
       //   throw new Error('Invalid Collection ID. Please try again !');
       // }
-      const collectionHasNameNFT =
-        await this.validatorService.checkNFTExistence(
-          'name',
-          'collectionId',
-          input.name,
-          input.collectionId,
-        );
+      // const collectionHasNameNFT =
+      //   await this.validatorService.checkNFTExistence(
+      //     'name',
+      //     'collectionId',
+      //     input.name,
+      //     input.collectionId,
+      //   );
 
-      if (collectionHasNameNFT) {
-        throw new Error('The name of the NFT already exists in Collection');
-      }
+      // if (collectionHasNameNFT) {
+      //   throw new Error('The name of the NFT already exists in Collection');
+      // }
 
       if (checkExist) {
         throw new Error('Transaction hash or ID already exists');
