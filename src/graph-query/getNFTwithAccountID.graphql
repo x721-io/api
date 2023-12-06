@@ -5,6 +5,10 @@ query getNFTwithAccountID($id: ID!) {
       uri
       txCreation
       id
+      tokenId
+      contract {
+        id
+      }
     }
     ERC1155balances {
       valueExact
@@ -12,7 +16,11 @@ query getNFTwithAccountID($id: ID!) {
       id
       token {
         id
+        tokenId
         txCreation
+        contract {
+          id
+        }
       }
     }
   }
