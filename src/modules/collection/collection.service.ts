@@ -8,20 +8,12 @@ import { CreateCollectionDto } from './dto/create-collection.dto';
 import { UpdateCollectionDto } from './dto/update-collection.dto';
 import { CollectionEntity } from './entities/collection.entity';
 import { PrismaService } from 'src/prisma/prisma.service';
-import {
-  CONTRACT_TYPE,
-  Collection,
-  Prisma,
-  TX_STATUS,
-  User,
-} from '@prisma/client';
+import { CONTRACT_TYPE, Prisma, TX_STATUS, User } from '@prisma/client';
 import { validate as isValidUUID } from 'uuid';
 import { Redis } from 'src/database';
 import { TraitGeneralInfo, TraitService } from '../nft/trait.service';
 import { GetAllCollectionDto } from './dto/get-all-collection.dto';
 import { GetCollectionMarketData } from '../graph-qlcaller/getCollectionMarketData.service';
-import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
-import { SellStatus } from 'src/generated/graphql';
 
 interface CollectionGeneral {
   totalOwner: number;
@@ -194,6 +186,7 @@ export class CollectionService {
             },
           },
         }),
+        status: TX_STATUS.SUCCESS,
       },
       include: {
         creators: {

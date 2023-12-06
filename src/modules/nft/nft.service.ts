@@ -155,6 +155,9 @@ export class NftService {
       }
 
       whereCondition.AND = [];
+      whereCondition.AND.push({
+        status: TX_STATUS.SUCCESS,
+      });
 
       if (filter.creatorAddress) {
         whereCondition.AND.push({
