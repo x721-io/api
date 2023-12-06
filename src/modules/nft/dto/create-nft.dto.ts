@@ -19,8 +19,8 @@ export class CreateNftDto {
   @IsNotEmpty({ message: 'Please Enter IPFS ' })
   imageHash: string;
 
-  @IsNotEmpty({ message: 'Please Enter Traits ' })
-  traits: CreateTraitDto[];
+  // @IsNotEmpty({ message: 'Please Enter Traits ' })
+  // traits: CreateTraitDto[];
 
   @IsString({ message: 'Token Uri is invalid' })
   @IsNotEmpty({ message: 'Please Enter Token Uri ' })

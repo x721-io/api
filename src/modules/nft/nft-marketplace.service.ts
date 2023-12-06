@@ -12,10 +12,21 @@ export class MarketplaceService {
   ) {}
 
   async findEvents(input: GetEventMarketplace) {
-    const { nftId, from, to, quoteToken, event, page, limit, type } = input;
+    const {
+      nftId,
+      from,
+      to,
+      quoteToken,
+      event,
+      page,
+      limit,
+      type,
+      contractAddress,
+    } = input;
     const res = await this.GraphQl.getNFTSellStatus(
       page,
       limit,
+      contractAddress,
       nftId,
       from,
       to,

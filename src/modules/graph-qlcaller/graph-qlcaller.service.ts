@@ -1,14 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { CreateGraphQlcallerDto } from './dto/create-graph-qlcaller.dto';
-import { UpdateGraphQlcallerDto } from './dto/update-graph-qlcaller.dto';
 import {
   getSdk,
-  GetNfTsHistory721QueryVariables,
-  GetNfTsHistory1155QueryVariables,
   SellStatus,
   GetNfTsHistory721Query,
   GetNfTsHistory1155Query,
-  GetOneNftSellInfoQueryVariables,
   GetNftOwnersInfo1155QueryVariables,
   GetNftOwnersInfo721QueryVariables,
   GetNftOwnersInfo721Query,
@@ -17,7 +12,6 @@ import {
   GetNfTwithAccountIdQueryVariables,
 } from '../../generated/graphql';
 import { GraphQLClient, gql } from 'graphql-request';
-import { CONTRACT_TYPE } from '@prisma/client';
 @Injectable()
 export class GraphQlcallerService {
   private readonly endpoint = process.env.SUBGRAPH_URL;
@@ -70,6 +64,10 @@ export class GraphQlcallerService {
           event
           nftId {
             id
+            tokenId
+            contract {
+              id
+            }
           }
           price
           to
@@ -126,6 +124,10 @@ export class GraphQlcallerService {
           amounts
           nftId {
             id
+            tokenId
+            contract {
+              id
+            }
           }
           price
           to
@@ -201,6 +203,7 @@ export class GraphQlcallerService {
           event
           nftId {
             id
+            tokenId
             contract {
               id
               name
@@ -225,6 +228,7 @@ export class GraphQlcallerService {
           event
           nftId {
             id
+            tokenId
             contract {
               id
               name
@@ -248,6 +252,7 @@ export class GraphQlcallerService {
   async getNFTSellStatus(
     page: number,
     limit: number,
+    contract: string,
     nftId?: string,
     from?: string,
     to?: string,
@@ -260,13 +265,18 @@ export class GraphQlcallerService {
     // const variables: GetOneNftSellInfoQueryVariables = { nftId };
     // const response = sdk.GetOneNFTSellInfo(variables);
     // return response;
-
     const whereConditions = [];
     const variables = {};
     // Add conditions based on parameters
-    if (nftId !== undefined && nftId !== null) {
-      whereConditions.push('nftId_contains: $nftId');
+    if (
+      nftId !== undefined &&
+      nftId !== null &&
+      contract !== undefined &&
+      contract !== null
+    ) {
+      whereConditions.push('nftId_: {tokenId: $nftId, contract: $contract}');
       variables['nftId'] = nftId;
+      variables['contract'] = contract;
     }
     if (from !== undefined && from !== null) {
       whereConditions.push('from: $from');
@@ -285,7 +295,7 @@ export class GraphQlcallerService {
       variables['event'] = event;
     }
     const isWhereEmpty = Object.keys(whereConditions).length === 0;
-
+    console.log('where: ', whereConditions.join(', '));
     // Construct the query
     const query = gql`
       query GetNFTSellInfo(
@@ -294,6 +304,7 @@ export class GraphQlcallerService {
         $quoteToken: String
         $to: String
         $from: String
+        $contract: String
       ) {
         marketEvent1155S(
           ${isWhereEmpty ? '' : `where: {${whereConditions.join(', ')}}`}
@@ -306,6 +317,7 @@ export class GraphQlcallerService {
           event
           nftId {
             id
+            tokenId
             contract {
               id
               name
@@ -330,6 +342,7 @@ export class GraphQlcallerService {
           event
           nftId {
             id
+            tokenId
             contract {
               id
               name
@@ -352,23 +365,33 @@ export class GraphQlcallerService {
   }
 
   async getOneNFTOwnersInfo1155(
+    contractAddress: string,
     nftId: string,
   ): Promise<GetNftOwnersInfo1155Query> {
     const client = this.getGraphqlClient();
     const sdk = getSdk(client);
-    console.log('let see: ', nftId);
-    const variables: GetNftOwnersInfo1155QueryVariables = { nftId };
+    // const id = OtherCommon.generateCombineKey([contractAddress, nftId]);
+    // console.log('let see: ', id);
+    const variables: GetNftOwnersInfo1155QueryVariables = {
+      nftId,
+      contractAddress,
+    };
     const response = sdk.GetNFTOwnersInfo1155(variables);
     return response;
   }
 
   async getOneNFTOwnersInfo721(
+    contractAddress: string,
     nftId: string,
   ): Promise<GetNftOwnersInfo721Query> {
     const client = this.getGraphqlClient();
     const sdk = getSdk(client);
-    console.log('let see: ', nftId);
-    const variables: GetNftOwnersInfo721QueryVariables = { nftId };
+    // const id = OtherCommon.generateCombineKey([contractAddress, nftId]);
+    // console.log('let see: ', id);
+    const variables: GetNftOwnersInfo721QueryVariables = {
+      nftId,
+      contractAddress,
+    };
     const response = sdk.GetNFTOwnersInfo721(variables);
     return response;
   }

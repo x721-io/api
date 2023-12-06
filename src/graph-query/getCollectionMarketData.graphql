@@ -68,16 +68,16 @@ query GetCollectionTokens($collectionAddress: String) {
   }
 }
 
-query GetNFTOwnersInfo1155($nftId: String) {
+query GetNFTOwnersInfo1155($nftId: String, $contractAddress: String) {
   erc1155Balances(
-    where: {token: $nftId}
+    where: {contract: $contractAddress, token_: {tokenId: $nftId}}
   ) {
     value
     account {
       id
     }
     token {
-      id
+      tokenId
     }
     contract {
       id
@@ -85,9 +85,9 @@ query GetNFTOwnersInfo1155($nftId: String) {
   }
 }
 
-query GetNFTOwnersInfo721($nftId: ID) {
+query GetNFTOwnersInfo721($nftId: String, $contractAddress: String) {
   erc721Tokens(
-    where: {id: $nftId}
+    where: {contract: $contractAddress, tokenId: $nftId}
   ) {
     id
     txCreation

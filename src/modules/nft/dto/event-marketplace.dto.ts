@@ -1,5 +1,4 @@
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
-import { QueryTraitDto } from './query-trait.dto';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { OffsetPaginationDto } from 'src/commons/definitions/OffsetPagination.input';
 import { SellStatus } from 'src/generated/graphql';
 import { CONTRACT_TYPE } from '@prisma/client';
@@ -7,7 +6,7 @@ import { CONTRACT_TYPE } from '@prisma/client';
 export class GetEventMarketplace extends OffsetPaginationDto {
   @IsOptional()
   @IsString()
-  nftId?: string;
+  nftId: string;
   @IsString()
   @IsOptional()
   from?: string;
@@ -25,4 +24,6 @@ export class GetEventMarketplace extends OffsetPaginationDto {
   @IsOptional()
   @IsEnum(CONTRACT_TYPE)
   type?: CONTRACT_TYPE;
+
+  contractAddress: string;
 }
