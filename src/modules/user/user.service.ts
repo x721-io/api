@@ -2,7 +2,7 @@ import {
   Injectable,
   NotFoundException,
   HttpException,
-  HttpStatus
+  HttpStatus,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -10,11 +10,11 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { User } from '@prisma/client';
 import { GetAllUser } from './dto/get-all-user.dto';
 import { UserEntity } from './entities/user.entity';
-import { validate as isValidUUID } from 'uuid'
+import { validate as isValidUUID } from 'uuid';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   // Remove few prop secret
   private minifyUserObject(user: any): any {
@@ -35,7 +35,7 @@ export class UserService {
       },
     });
     if (!account) {
-      return null
+      return null;
     }
     return account;
   }
@@ -90,10 +90,9 @@ export class UserService {
     return { users, nextCursor };
   }
 
-
   async getProfileWithShortLinkOrIdUser(input: string, user: any) {
     try {
-      let currentUserId = user?.id;
+      const currentUserId = user?.id;
       let result: any = {};
 
       if (!isValidUUID(input)) {
@@ -101,8 +100,8 @@ export class UserService {
           where: {
             OR: [
               { shortLink: { equals: input, mode: 'insensitive' } },
-              { signer: { equals: input.toLowerCase(), mode: 'insensitive' } }
-            ]
+              { signer: { equals: input.toLowerCase(), mode: 'insensitive' } },
+            ],
           },
         });
       } else {
@@ -115,9 +114,10 @@ export class UserService {
         throw new NotFoundException();
       }
 
-      let response = (!currentUserId || currentUserId !== result.id)
-        ? this.minifyUserObject(result)
-        : result;
+      const response =
+        !currentUserId || currentUserId !== result.id
+          ? this.minifyUserObject(result)
+          : result;
 
       return response;
     } catch (error) {
@@ -131,14 +131,22 @@ export class UserService {
       const { email, username, shortLink } = input;
       // Check for existing email
       if (email) {
-        const checkExistEmail = await this.checkUserExistence('email', email, user.id);
+        const checkExistEmail = await this.checkUserExistence(
+          'email',
+          email,
+          user.id,
+        );
         if (checkExistEmail) {
           throw new Error('Email already exists');
         }
       }
       // Check for existing username
       if (username) {
-        const checkExistUsername = await this.checkUserExistence('username', username, user.id);
+        const checkExistUsername = await this.checkUserExistence(
+          'username',
+          username,
+          user.id,
+        );
         if (checkExistUsername) {
           throw new Error('Username already exists');
         }
@@ -146,13 +154,17 @@ export class UserService {
 
       // Check for existing short link
       if (shortLink) {
-        const checkExistShortLink = await this.checkUserExistence('shortLink', shortLink, user.id);
+        const checkExistShortLink = await this.checkUserExistence(
+          'shortLink',
+          shortLink,
+          user.id,
+        );
         if (checkExistShortLink) {
           throw new Error('Short Link already exists');
         }
       }
 
-      let updateData = {
+      const updateData = {
         email: input.email,
         username: input.username,
         acceptedTerms: input.acceptedTerms,
@@ -163,7 +175,8 @@ export class UserService {
         discordLink: input.discordLink,
         webURL: input.webURL,
         coverImage: input.coverImage,
-        shortLink: input.shortLink
+        shortLink: input.shortLink,
+        avatar: input.avatar,
       };
 
       // Remove shortLink if not provided
@@ -173,11 +186,10 @@ export class UserService {
 
       return await this.prisma.user.update({
         where: {
-          id: user.id
+          id: user.id,
         },
-        data: updateData
-      })
-
+        data: updateData,
+      });
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
