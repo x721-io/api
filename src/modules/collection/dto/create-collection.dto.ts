@@ -46,4 +46,8 @@ export class CreateCollectionDto {
   @IsOptional()
   @IsString()
   coverImage: string;
+
+  @IsOptional()
+  @IsString()
+  avatar: string;
 }
