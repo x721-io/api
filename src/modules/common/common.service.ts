@@ -44,6 +44,9 @@ export class CommonService {
           id: true,
           signer: true,
           username: true,
+          avatar: true,
+          createdAt: true,
+          shortLink: true,
         },
         where: {
           OR: [
@@ -74,6 +77,32 @@ export class CommonService {
               },
             },
           ],
+        },
+
+        include: {
+          collection: {
+            select: {
+              id: true,
+              txCreationHash: true,
+              name: true,
+              address: true,
+              metadata: true,
+              shortUrl: true,
+              symbol: true,
+              description: true,
+              status: true,
+              type: true,
+              categoryId: true,
+              createdAt: true,
+              avatar: true,
+              category: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
         },
       });
     }
