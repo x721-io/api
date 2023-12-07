@@ -6,7 +6,12 @@ import { TraitService } from '../nft/trait.service';
 import { GetCollectionMarketData } from '../graph-qlcaller/getCollectionMarketData.service';
 
 @Module({
-  providers: [CollectionService , PrismaService, TraitService, GetCollectionMarketData],
-  controllers: [CollectionController]
+  providers: [
+    CollectionService,
+    PrismaService,
+    TraitService,
+    GetCollectionMarketData,
+  ],
+  controllers: [CollectionController],
 })
 export class CollectionModule {}
