@@ -2,9 +2,10 @@ enum TypeValidator {
   username = 'username',
   email = 'email',
   shortLink = 'shortLink',
-  CollectionName = 'CollectionName',
-  shortUrl = 'shortUrl',
-  NftName = 'NftName',
+  Collection_Name = 'Collection_Name',
+  Collection_ShortUrl = 'Collection_ShortUrl',
+  Collection_Symbol = 'Collection_Symbol',
+  Nft_Name = 'Nft_Name',
 }
 
 export { TypeValidator };
