@@ -14,6 +14,7 @@ import { Redis } from 'src/database';
 import { TraitGeneralInfo, TraitService } from '../nft/trait.service';
 import { GetAllCollectionDto } from './dto/get-all-collection.dto';
 import { GetCollectionMarketData } from '../graph-qlcaller/getCollectionMarketData.service';
+import { CollectionPriceService } from './collectionPrice.service';
 
 interface CollectionGeneral {
   totalOwner: number;
@@ -28,6 +29,7 @@ export class CollectionService {
     private prisma: PrismaService,
     private traitService: TraitService,
     private readonly collectionData: GetCollectionMarketData,
+    private readonly collectionPriceService: CollectionPriceService,
   ) {}
 
   async create(input: CreateCollectionDto, user: User): Promise<any> {
@@ -158,7 +160,9 @@ export class CollectionService {
     }
   }
 
-  async findAll(input: GetAllCollectionDto): Promise<CollectionEntity[]> {
+  async findAll(
+    input: GetAllCollectionDto,
+  ): Promise<PagingResponse<CollectionEntity>> {
     // TODO: get all collection from subgraph first, got the id and map it back to local collection
     const creators = await this.prisma.user.findMany({
       where: {
@@ -169,63 +173,113 @@ export class CollectionService {
       },
     });
     const addresses = creators.map((item) => item.id);
-    const collections = await this.prisma.collection.findMany({
-      where: {
-        ...(input.name && {
-          name: {
-            contains: input.name,
-            mode: 'insensitive',
+    const whereCondition: Prisma.CollectionWhereInput = {
+      ...(input.name && {
+        name: {
+          contains: input.name,
+          mode: 'insensitive',
+        },
+      }),
+      creators: {
+        some: {
+          userId: {
+            in: addresses,
           },
-        }),
-        ...(addresses.length > 0 && {
-          creators: {
-            some: {
-              userId: {
-                in: addresses,
-              },
-            },
-          },
-        }),
-        status: TX_STATUS.SUCCESS,
+        },
       },
-      include: {
-        creators: {
-          select: {
-            userId: true,
-            user: {
-              select: {
-                email: true,
-                avatar: true,
-                username: true,
-                publicKey: true,
+      status: TX_STATUS.SUCCESS,
+    };
+
+    if (input.max || input.min) {
+      const filteredContractId =
+        await this.collectionPriceService.filterFloorPriceFromSubgraph(
+          input.min,
+          input.max,
+        );
+      whereCondition.address = {
+        in: filteredContractId,
+      };
+      const filterPriceCollection = await this.prisma.collection.findMany({
+        where: whereCondition,
+        skip: (input.page - 1) * input.limit,
+        take: input.limit,
+        include: {
+          creators: {
+            select: {
+              userId: true,
+              user: {
+                select: {
+                  email: true,
+                  avatar: true,
+                  username: true,
+                  publicKey: true,
+                },
               },
             },
           },
         },
-      },
-    });
-
-    const subgraphCollection = collections.map(async (item) => {
-      const generalInfo = await this.getGeneralCollectionData(
-        item.address,
-        item.type,
-      );
-      return { ...item, ...generalInfo };
-    });
-    const dataArray = Promise.all(subgraphCollection);
-    if (input.max || input.min) {
-      const filterPriceCollection = (await dataArray).filter((item) => {
-        const price = item.floorPrice;
-        const meetsMinCondition =
-          input.min !== undefined ? price >= input.min : true;
-        const meetsMaxCondition =
-          input.max !== undefined ? price <= input.max : true;
-        return meetsMinCondition && meetsMaxCondition;
       });
-      return filterPriceCollection;
-    }
+      const subgraphCollection = filterPriceCollection.map(async (item) => {
+        const generalInfo = await this.getGeneralCollectionData(
+          item.address,
+          item.type,
+        );
+        return { ...item, ...generalInfo };
+      });
+      const dataArray = Promise.all(subgraphCollection);
 
-    return dataArray;
+      const total = await this.prisma.collection.count({
+        where: whereCondition,
+      });
+      return {
+        data: await dataArray,
+        paging: {
+          total,
+          page: input.page,
+          limit: input.limit,
+        },
+      };
+    } else {
+      const collections = await this.prisma.collection.findMany({
+        where: whereCondition,
+        skip: (input.page - 1) * input.limit,
+        take: input.limit,
+        include: {
+          creators: {
+            select: {
+              userId: true,
+              user: {
+                select: {
+                  email: true,
+                  avatar: true,
+                  username: true,
+                  publicKey: true,
+                },
+              },
+            },
+          },
+        },
+      });
+      const total = await this.prisma.collection.count({
+        where: whereCondition,
+      });
+      const subgraphCollection = collections.map(async (item) => {
+        const generalInfo = await this.getGeneralCollectionData(
+          item.address,
+          item.type,
+        );
+        return { ...item, ...generalInfo };
+      });
+      const dataArray = Promise.all(subgraphCollection);
+      return {
+        data: await dataArray,
+        paging: {
+          total,
+          limit: input.limit,
+          page: input.page,
+        },
+      };
+    }
   }
 
   async findOne(id: string): Promise<{
