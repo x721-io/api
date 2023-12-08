@@ -34,16 +34,16 @@ export class ValidatorService {
         case TypeValidator.shortLink:
           return this.checkUserExistence(key, value);
 
-        case TypeValidator.Collection_Name:
+        case TypeValidator.collectionName:
           return this.checkCollectionExistence('name', value);
 
-        case TypeValidator.Collection_ShortUrl:
+        case TypeValidator.collectionShortUrl:
           return this.checkCollectionExistence('shortUrl', value);
 
-        case TypeValidator.Collection_Symbol:
+        case TypeValidator.collectionSymbol:
           return this.checkCollectionExistence('symbol', value);
 
-        case TypeValidator.Nft_Name:
+        case TypeValidator.nftName:
           if (!collectionId) {
             throw new Error('Collection ID should not be empty');
           }
