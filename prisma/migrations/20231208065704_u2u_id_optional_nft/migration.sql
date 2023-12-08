@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "NFT" ALTER COLUMN "u2uId" DROP NOT NULL;

@@ -27,6 +27,24 @@ export class NftService {
     private readonly eventService: MarketplaceService,
     private validatorService: ValidatorService,
   ) {}
+
+  async crawlNftInfo(collectionAddress: string) {
+    try {
+      const collection = await this.prisma.collection.findUnique({
+        where: { address: collectionAddress },
+      });
+      await Redis.publish('nft-channel', {
+        data: {
+          type: collection.type,
+          collectionAddress: collection.address,
+        },
+        process: 'nft-crawl',
+      });
+      return true;
+    } catch (err) {
+      throw new Error(err);
+    }
+  }
   async create(input: CreateNftDto, user: User): Promise<NftDto> {
     try {
       const checkExist = await this.prisma.nFT.findFirst({
