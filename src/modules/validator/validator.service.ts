@@ -2,7 +2,7 @@ import {
   Injectable,
   HttpException,
   HttpStatus,
-  // NotFoundException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ValidatorDto } from './dto/validator.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -32,30 +32,42 @@ export class ValidatorService {
         case TypeValidator.username:
         case TypeValidator.email:
         case TypeValidator.shortLink:
-          const hasValue = await this.checkUserExistence(key, value);
-          return hasValue;
+          return this.checkUserExistence(key, value);
 
-        case TypeValidator.CollectionName:
-          const hasCLName = await this.checkCollectionExistence('name', value);
-          return hasCLName;
+        case TypeValidator.collectionName:
+          return this.checkCollectionExistence('name', value);
 
-        case TypeValidator.shortUrl:
-          const hasURL = await this.checkCollectionExistence('shortUrl', value);
-          return hasURL;
-        case TypeValidator.NftName:
+        case TypeValidator.collectionShortUrl:
+          return this.checkCollectionExistence('shortUrl', value);
+
+        case TypeValidator.collectionSymbol:
+          return this.checkCollectionExistence('symbol', value);
+
+        case TypeValidator.nftName:
           if (!collectionId) {
             throw new Error('Collection ID should not be empty');
           }
-          if (!isValidUUID(collectionId)) {
-            throw new Error('Invalid Collection ID. Please try again !');
+          const collection = !isValidUUID(collectionId)
+            ? await this.prisma.collection.findFirst({
+                where: {
+                  address: {
+                    mode: 'insensitive',
+                    contains: collectionId,
+                  },
+                },
+              })
+            : await this.prisma.collection.findFirst({
+                where: { id: collectionId },
+              });
+          if (!collection) {
+            throw new NotFoundException('Collection not found');
           }
-          const hasNFTName = await this.checkNFTExistence(
+          return this.checkNFTExistence(
             'name',
             'collectionId',
             value,
-            collectionId,
+            collection.id,
           );
-          return hasNFTName;
       }
     } catch (err) {
       throw new HttpException(`${err.message}`, HttpStatus.BAD_REQUEST);

@@ -1,20 +1,21 @@
-import { Collection , TX_STATUS , CONTRACT_TYPE , Category , NFT , UserCollection} from '@prisma/client';
+import { Collection, TX_STATUS, CONTRACT_TYPE } from '@prisma/client';
 
-export class CollectionEntity{
-  id : string;
-  txCreationHash : string;
-  name : string;
+export class CollectionEntity implements Collection {
+  id: string;
+  txCreationHash: string;
+  name: string;
   symbol: string;
-  description : string;
-  status : TX_STATUS;
-  type : CONTRACT_TYPE;
-  categoryId : number;
+  description: string;
+  status: TX_STATUS;
+  type: CONTRACT_TYPE;
+  categoryId: number;
   // creators : string;
-  createdAt : Date;
-  updatedAt : Date;
+  createdAt: Date;
+  updatedAt: Date;
   constructor(partial: Partial<Collection>) {
     Object.assign(this, partial);
   }
+  avatar: string;
   metadata: string;
   shortUrl: string;
   address: string;
@@ -22,16 +23,15 @@ export class CollectionEntity{
   floorPrice?: string;
   totalNft?: number;
   volumn?: string;
-  coverImage? : string
-
+  coverImage: string;
 }
 export enum TXSTATUS {
-  PENDING = "PENDING",
-  SUCCESS = "SUCCESS",
-  FAILED = "FAILED"
+  PENDING = 'PENDING',
+  SUCCESS = 'SUCCESS',
+  FAILED = 'FAILED',
 }
 
 export enum CONTRACTTYPE {
-  ERC1155 = "ERC1155",
-  ERC721 = "ERC721"
+  ERC1155 = 'ERC1155',
+  ERC721 = 'ERC721',
 }

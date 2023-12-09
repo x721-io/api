@@ -1,44 +1,41 @@
-import { CreateCollectionDto } from './create-collection.dto';
-import { InputType, Field, Int, PartialType } from '@nestjs/graphql';
-import { IsNotEmpty, IsString , IsOptional, IsEnum } from 'class-validator';
-import { TX_STATUS , CONTRACT_TYPE} from '@prisma/client';
-import {TXSTATUS , CONTRACTTYPE} from '../entities/collection.entity'
-
+import { InputType } from '@nestjs/graphql';
+import { IsNotEmpty, IsString, IsOptional, IsEnum } from 'class-validator';
+import { TX_STATUS, CONTRACT_TYPE } from '@prisma/client';
 
 @InputType()
-export class UpdateCollectionDto{
+export class UpdateCollectionDto {
   @IsOptional()
-  @IsString({message : 'Transaction Hash is invalid'})
+  @IsString({ message: 'Transaction Hash is invalid' })
   @IsNotEmpty({ message: 'Please Enter Transaction Hash' })
   txCreationHash: string;
-  
+
   @IsOptional()
-  @IsString({message : 'Name Collection is invalid'})
+  @IsString({ message: 'Name Collection is invalid' })
   @IsNotEmpty({ message: 'Please Enter Name Collection' })
-  name : string;
+  name: string;
 
   @IsOptional()
-  @IsString({message : 'Symbol Collection is invalid'})
+  @IsString({ message: 'Symbol Collection is invalid' })
   @IsNotEmpty({ message: 'Please Enter Symbol Collection' })
-  symbol : string;
+  symbol: string;
 
   @IsOptional()
-  description : string;
-  
+  description: string;
+
   @IsOptional()
   @IsEnum(TX_STATUS)
-  status : TX_STATUS;
+  status: TX_STATUS;
 
   @IsOptional()
   @IsEnum(CONTRACT_TYPE)
-  type : CONTRACT_TYPE;
+  type: CONTRACT_TYPE;
 
   @IsOptional()
-  categoryId : number;
+  categoryId: number;
 
   @IsOptional()
-  creators : string;
+  creators: string;
 
   @IsOptional()
-  coverImage : string;
+  coverImage: string;
 }
