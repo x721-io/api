@@ -47,8 +47,8 @@ model NFT {
   tokenUri       String
   txCreationHash String     @unique
   owners         UserNFT[]
-  creatorId      String     @db.Uuid
-  creator        User       @relation(fields: [creatorId], references: [id])
+  creatorId      String?     @db.Uuid
+  creator        User?       @relation(fields: [creatorId], references: [id])
   collectionId   String     @db.Uuid
   collection     Collection @relation(fields: [collectionId], references: [id])
 

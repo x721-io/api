@@ -31,8 +31,11 @@ export class NftService {
   async crawlNftInfo(collectionAddress: string) {
     try {
       const collection = await this.prisma.collection.findUnique({
-        where: { address: collectionAddress },
+        where: { address: collectionAddress.toLowerCase() },
       });
+      if (!collection) {
+        throw new NotFoundException('Collection not found');
+      }
       await Redis.publish('nft-channel', {
         data: {
           type: collection.type,

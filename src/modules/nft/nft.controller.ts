@@ -32,7 +32,7 @@ export class NftController {
     private readonly eventService: MarketplaceService,
   ) {}
 
-  @Get('crawl')
+  @Get('crawl-nft-info')
   async crawlNftInfo(@Query('collectionAddress') address: string) {
     return await this.nftService.crawlNftInfo(address);
   }
