@@ -20,9 +20,9 @@ import { AuthenticationGuard } from '../auth/guards/auth.guard';
 import { GetTokenIdDto } from './dto/get-token-id.dto';
 import { TokenService } from './token.service';
 import { GetAllNftDto } from './dto/get-all-nft.dto';
-import { GetEventMarketplace } from './dto/event-marketplace.dto';
 import { MarketplaceService } from './nft-marketplace.service';
 import { GetEventBase } from './dto/event-base.dto';
+// import { TraitService } from './trait.service';
 
 @Controller('nft')
 export class NftController {
@@ -31,6 +31,11 @@ export class NftController {
     private readonly tokenService: TokenService,
     private readonly eventService: MarketplaceService,
   ) {}
+
+  @Get('crawl-nft-info')
+  async crawlNftInfo(@Query('collectionAddress') address: string) {
+    return await this.nftService.crawlNftInfo(address);
+  }
 
   @Post()
   @UseGuards(AuthenticationGuard)

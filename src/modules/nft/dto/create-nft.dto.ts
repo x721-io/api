@@ -36,5 +36,6 @@ export class CreateNftDto {
   collectionId: string;
 
   @IsString()
+  @IsOptional()
   u2uId: string;
 }

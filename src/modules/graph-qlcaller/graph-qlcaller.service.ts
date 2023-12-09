@@ -10,6 +10,7 @@ import {
   GetNftOwnersInfo1155Query,
   GetOneNftSellInfoQuery,
   GetNfTwithAccountIdQueryVariables,
+  GetCollectionTokensQueryVariables,
 } from '../../generated/graphql';
 import { GraphQLClient, gql } from 'graphql-request';
 @Injectable()
@@ -401,6 +402,15 @@ export class GraphQlcallerService {
     const sdk = getSdk(client);
     const variables: GetNfTwithAccountIdQueryVariables = { id: owner };
     const response = sdk.getNFTwithAccountID(variables);
+    return response;
+  }
+  async getNFTFromCollection(contractAddress: string) {
+    const client = this.getGraphqlClient();
+    const sdk = getSdk(client);
+    const variables: GetCollectionTokensQueryVariables = {
+      collectionAddress: contractAddress,
+    };
+    const response = sdk.GetCollectionTokens(variables);
     return response;
   }
 }
