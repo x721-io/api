@@ -37,6 +37,7 @@ model User {
 model NFT {
   id             String     @db.VarChar(255)
   u2uId          String?     @db.VarChar(255)
+  description    String?
   name           String
   ipfsHash       String
   imageHash      String?
