@@ -28,7 +28,7 @@ export class NftService {
     private validatorService: ValidatorService,
   ) {}
 
-  async crawlNftInfo(collectionAddress: string) {
+  async crawlNftInfo(collectionAddress: string, txCreation?: string) {
     try {
       const collection = await this.prisma.collection.findUnique({
         where: { address: collectionAddress.toLowerCase() },
@@ -36,14 +36,24 @@ export class NftService {
       if (!collection) {
         throw new NotFoundException('Collection not found');
       }
-      await Redis.publish('nft-channel', {
-        data: {
-          type: collection.type,
-          collectionAddress: collection.address,
-        },
-        process: 'nft-crawl',
-      });
-      return true;
+      if (!txCreation) {
+        await Redis.publish('nft-channel', {
+          data: {
+            type: collection.type,
+            collectionAddress: collection.address,
+          },
+          process: 'nft-crawl-collection',
+        });
+        return true;
+      } else {
+        await Redis.publish('nft-channel', {
+          data: {
+            type: collection.type,
+            txCreation: txCreation,
+          },
+          process: 'nft-crawl-single',
+        });
+      }
     } catch (err) {
       throw new Error(err);
     }
@@ -445,7 +455,7 @@ export class NftService {
         const nftInfoWithOwner =
           await this.GraphqlService.getOneNFTOwnersInfo1155(
             nft.collection.address,
-            nft.u2uId,
+            nft.u2uId ? nft.u2uId : nft.id,
           );
         const ownerAddresses = nftInfoWithOwner.erc1155Balances
           .map((i) => {
@@ -464,6 +474,11 @@ export class NftService {
             publicKey: true,
           },
         });
+        const totalSupply = nftInfoWithOwner.erc1155Balances.filter(
+          (i) => i.value > 0 && !i.account,
+        );
+        // @ts-ignore
+        nft.totalSupply = totalSupply[0].value;
         owners = ownersFromLocal.map((item2) => {
           const item1 = nftInfoWithOwner.erc1155Balances.find(
             (i1) => i1.account.id === item2.signer,
@@ -480,7 +495,7 @@ export class NftService {
         const nftInfoWithOwner =
           await this.GraphqlService.getOneNFTOwnersInfo721(
             nft.collection.address,
-            nft.u2uId,
+            nft.u2uId ? nft.u2uId : nft.id,
           );
         owners = await this.prisma.user.findMany({
           where: {
@@ -499,7 +514,7 @@ export class NftService {
       nft.owners = owners;
       const sellInfo = await this.eventService.findEvents({
         contractAddress: nft.collection.address,
-        nftId: nft.u2uId,
+        nftId: nft.u2uId ? nft.u2uId : nft.id,
         event: SellStatus.AskNew,
         type: nft.collection.type,
         page: 0,
@@ -508,7 +523,7 @@ export class NftService {
 
       const bidInfo = await this.eventService.findEvents({
         contractAddress: nft.collection.address,
-        nftId: nft.u2uId,
+        nftId: nft.u2uId ? nft.u2uId : nft.id,
         event: SellStatus.Bid,
         type: nft.collection.type,
         page: (bidPage - 1) * bidListLimit,

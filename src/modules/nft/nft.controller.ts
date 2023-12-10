@@ -33,8 +33,11 @@ export class NftController {
   ) {}
 
   @Get('crawl-nft-info')
-  async crawlNftInfo(@Query('collectionAddress') address: string) {
-    return await this.nftService.crawlNftInfo(address);
+  async crawlNftInfo(
+    @Query('collectionAddress') address: string,
+    @Query('txCreation') txCreation?: string,
+  ) {
+    return await this.nftService.crawlNftInfo(address, txCreation);
   }
 
   @Post()
