@@ -1,7 +1,7 @@
 version: '3'
 services:
   ext-server:
-    container_name: u2u-server-worker
+    container_name: u2u-server
     build:
       context: .
       dockerfile: Dockerfile
@@ -10,7 +10,7 @@ services:
       - '8888:8888'
       - '5555:5555'
     volumes:
-      - ../logs/u2u-marketplace-worker:/usr/src/app/u2u-server-worker/logs
+      - ../logs/u2u-marketplace-api:/usr/src/app/u2u-server/logs
     networks:
       - u2u-nw
   redis:
