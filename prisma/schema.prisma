@@ -95,6 +95,7 @@ model Collection {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   coverImage     String?
+  avatar         String?
 }
 
 model UserCollection {

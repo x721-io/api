@@ -1,7 +1,6 @@
 import { InputType } from '@nestjs/graphql';
 import { IsNotEmpty, IsString, IsOptional, IsEnum } from 'class-validator';
 import { TX_STATUS, CONTRACT_TYPE } from '@prisma/client';
-import { TXSTATUS, CONTRACTTYPE } from '../entities/collection.entity';
 
 @InputType()
 export class CreateCollectionDto {
@@ -46,4 +45,8 @@ export class CreateCollectionDto {
   @IsOptional()
   @IsString()
   coverImage: string;
+
+  @IsOptional()
+  @IsString()
+  avatar: string;
 }

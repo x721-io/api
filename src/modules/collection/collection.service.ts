@@ -60,6 +60,7 @@ export class CollectionService {
             shortUrl: input.shortUrl,
             coverImage: input.coverImage,
             metadata: input.metadata,
+            avatar: input.avatar,
             // categoryId: ...(input.categoryId  Number(input.categoryId),
             ...(input.categoryId && { categoryId: Number(input.categoryId) }),
           },
@@ -416,6 +417,7 @@ export class CollectionService {
                   type: true,
                   categoryId: true,
                   createdAt: true,
+                  avatar: true,
                   category: {
                     select: {
                       id: true,
