@@ -28,7 +28,7 @@ export class NftService {
     private validatorService: ValidatorService,
   ) {}
 
-  async crawlNftInfo(collectionAddress: string) {
+  async crawlNftInfo(collectionAddress: string, txCreation?: string) {
     try {
       const collection = await this.prisma.collection.findUnique({
         where: { address: collectionAddress.toLowerCase() },
@@ -36,14 +36,24 @@ export class NftService {
       if (!collection) {
         throw new NotFoundException('Collection not found');
       }
-      await Redis.publish('nft-channel', {
-        data: {
-          type: collection.type,
-          collectionAddress: collection.address,
-        },
-        process: 'nft-crawl',
-      });
-      return true;
+      if (!txCreation) {
+        await Redis.publish('nft-channel', {
+          data: {
+            type: collection.type,
+            collectionAddress: collection.address,
+          },
+          process: 'nft-crawl-collection',
+        });
+        return true;
+      } else {
+        await Redis.publish('nft-channel', {
+          data: {
+            type: collection.type,
+            txCreation: txCreation,
+          },
+          process: 'nft-crawl-single',
+        });
+      }
     } catch (err) {
       throw new Error(err);
     }
