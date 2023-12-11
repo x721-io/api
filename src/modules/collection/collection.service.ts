@@ -376,6 +376,7 @@ export class CollectionService {
         data: {
           description: input.description,
           coverImage: input.coverImage,
+          avatar: input.avatar,
         },
       });
 

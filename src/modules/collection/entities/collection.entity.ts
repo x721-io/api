@@ -23,7 +23,7 @@ export class CollectionEntity implements Collection {
   floorPrice?: string;
   totalNft?: number;
   volumn?: string;
-  coverImage: string;
+  coverImage?: string;
 }
 export enum TXSTATUS {
   PENDING = 'PENDING',

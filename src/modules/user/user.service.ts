@@ -8,6 +8,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { User } from '@prisma/client';
 import { GetAllUser } from './dto/get-all-user.dto';
+import { UserEntity } from './entities/user.entity';
 import { validate as isValidUUID } from 'uuid';
 
 @Injectable()

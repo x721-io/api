@@ -141,6 +141,7 @@ export class NftService {
       });
       return nft;
     } catch (error) {
+      console.log(error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
