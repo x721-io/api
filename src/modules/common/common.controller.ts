@@ -17,12 +17,13 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { CreateFileDto } from './dto/create-file.dto';
 import { Response } from 'express';
 import { SearchAllDto } from './dto/search-all.dto';
+import { multerOptions } from './interceptor/interceptor';
 @Controller('common')
 export class CommonController {
   constructor(private readonly commonService: CommonService) {}
 
   @Post('upload-ipfs')
-  @UseInterceptors(FilesInterceptor('files'))
+  @UseInterceptors(FilesInterceptor('files', 10, multerOptions))
   async uploadIpfs(
     @UploadedFiles() files: Express.Multer.File[],
     @Body() createFileDto: CreateFileDto,
