@@ -102,7 +102,7 @@ export class NftService {
           id: input.id,
           name: input.name,
           ipfsHash: input.name,
-          imageHash: input.imageHash,
+          image: input.image,
           // traits: {
           //   create: input.traits,
           // },
@@ -210,7 +210,12 @@ export class NftService {
       }
 
       if (filter.name) {
-        whereCondition.AND.push({ name: filter.name });
+        whereCondition.AND.push({
+          name: {
+            contains: filter.name,
+            mode: 'insensitive',
+          },
+        });
       }
 
       if (nftIdFromOwner.length > 0) {
@@ -536,7 +541,7 @@ export class NftService {
       };
       return returnNft;
     } catch (error) {
-      console.error(error)
+      console.error(error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }

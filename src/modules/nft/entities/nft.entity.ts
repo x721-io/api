@@ -19,7 +19,7 @@ export class NftEntity implements NFT {
   }
   description: string;
   u2uId: string;
-  imageHash: string;
+  image: string;
 }
 
 export enum TXSTATUS {
