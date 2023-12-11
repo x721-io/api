@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { UserEntity } from '../user/entities/user.entity'; // import your User entity
 import { UserService } from '../user/user.service';
 import { ethers } from 'ethers';
@@ -11,11 +16,20 @@ import SecureCommon from 'src/commons/Secure.common';
 import { User } from '@prisma/client';
 @Injectable()
 export class AuthService {
-  constructor(private readonly configService: ConfigService, private userService: UserService, private readonly prisma: PrismaService, private jwtService: JwtService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private userService: UserService,
+    private readonly prisma: PrismaService,
+    private jwtService: JwtService,
+  ) {}
 
   async validateUser(validateInfo: loginDto): Promise<UserEntity> {
-    const loginMessage = LOGIN_MESSAGE(validateInfo.date)
-    const isSignatureValid = await this.isSignatureValid(loginMessage, validateInfo.signature, validateInfo.publicKey);
+    const loginMessage = LOGIN_MESSAGE(validateInfo.date);
+    const isSignatureValid = await this.isSignatureValid(
+      loginMessage,
+      validateInfo.signature,
+      validateInfo.publicKey,
+    );
     if (!isSignatureValid) {
       throw new BadRequestException('Signature invalid');
     }
@@ -27,10 +41,14 @@ export class AuthService {
 
     // If the user does not exist yet, create a new user record
     if (!user) {
-      const data = { ...validateInfo, signDate: new Date(validateInfo.date), signedMessage: loginMessage };
+      const data = {
+        ...validateInfo,
+        signDate: new Date(validateInfo.date),
+        signedMessage: loginMessage,
+      };
       delete data.date;
       const newUser = await this.prisma.user.create({
-        data
+        data,
       });
       return newUser;
     }
@@ -49,23 +67,24 @@ export class AuthService {
     if (!user) {
       throw new ForbiddenException('Access Denied');
     }
-    const tokens = await this.getTokens(
-      user.signer,
-      user.id.toString(),
-    );
+    const tokens = await this.getTokens(user.signer, user.id.toString());
     await this.updateRefreshTokenCaching(user, tokens.refreshToken);
     await this.updateRefreshTokenCaching(user, refreshToken, true);
     return tokens;
   }
 
-  async updateRefreshTokenCaching(user: UserEntity, token: string, isLogout = false) {
+  async updateRefreshTokenCaching(
+    user: UserEntity,
+    token: string,
+    isLogout = false,
+  ) {
     if (!isLogout) {
       SecureCommon.storeSession(user, token);
     } else {
       SecureCommon.deleteSessionInfo(token);
     }
   }
-  
+
   async getTokens(signer: string, userId: string) {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
@@ -75,7 +94,7 @@ export class AuthService {
         },
         {
           secret: this.configService.get<string>('JWT_SECRET'),
-          expiresIn: '7d',
+          expiresIn: '1d',
         },
       ),
       this.jwtService.signAsync(
@@ -85,14 +104,12 @@ export class AuthService {
         },
         {
           secret: this.configService.get<string>('JWT_SECRET'),
-          expiresIn: '7d',
+          expiresIn: '1d',
         },
       ),
     ]);
-    const refreshTokenExpire = new Date().setDate(new Date().getDate() + 7);
-    const accessTokenExpire = new Date().setTime(
-      new Date().getTime() + 5000 * 60,
-    );
+    const refreshTokenExpire = Date.now() + 1 * 24 * 3600 * 1000;
+    const accessTokenExpire = Date.now() + 1 * 24 * 3600 * 1000;
     return {
       accessToken,
       refreshToken,
@@ -102,33 +119,37 @@ export class AuthService {
     };
   }
 
-  async isSignatureValid (message, signature, address) {
+  async isSignatureValid(message, signature, address) {
     try {
       const signerAddr = await ethers.verifyMessage(message, signature);
       if (signerAddr !== address) {
         return false;
       }
-  
+
       return true;
     } catch (err) {
       console.log(err);
       return false;
     }
-  };
+  }
 
   async login(user: UserEntity) {
     // Set user information in the session
-    const { accessToken, refreshToken, accessTokenExpire, refreshTokenExpire, userId } =
-      await this.getTokens(user.signer, user.id.toString());
+    const {
+      accessToken,
+      refreshToken,
+      accessTokenExpire,
+      refreshTokenExpire,
+      userId,
+    } = await this.getTokens(user.signer, user.id.toString());
     await this.updateRefreshTokenCaching(user, refreshToken, false);
-    if (!accessToken) 
-      throw new InternalServerErrorException();
+    if (!accessToken) throw new InternalServerErrorException();
     return {
       refreshToken,
       refreshTokenExpire,
       accessToken,
       accessTokenExpire,
       userId,
-    }
+    };
   }
 }
