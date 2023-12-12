@@ -28,11 +28,18 @@ export class LaunchpadService {
   //   return 'This action adds a new launchpad';
   // }
 
-  async findAll(): Promise<any> {
+  async findAll(query: FindAllProjectDto): Promise<any> {
     const projects = await this.prisma.project.findMany({
+      where: {
+        isActivated: true,
+      },
       include: {
         collection: true,
         rounds: {
+          where: {
+            start: { gte: new Date(query.start) },
+            end: { lte: new Date(query.end) },
+          },
           include: {
             round: true,
           },

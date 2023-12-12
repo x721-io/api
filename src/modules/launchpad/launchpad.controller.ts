@@ -26,8 +26,8 @@ export class LaunchpadController {
   // }
 
   @Get()
-  findAll() {
-    return this.launchpadService.findAll();
+  findAll(@Query() query: FindAllProjectDto) {
+    return this.launchpadService.findAll(query);
   }
 
   @Get(':id')
