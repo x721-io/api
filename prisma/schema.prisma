@@ -75,7 +75,7 @@ model UserNFT {
   user         User   @relation(fields: [userId], references: [id])
   nft          NFT    @relation(fields: [nftId, collectionId], references: [id, collectionId])
 
-  @@id([userId, nftId])
+  @@id([userId, nftId, collectionId])
 }
 
 model Collection {
@@ -115,7 +115,6 @@ model Category {
   name       String
   collection Collection[]
 }
-
 model Project {
   id            String           @id @default(uuid()) @db.Uuid
   idOnchain     Int
@@ -129,17 +128,18 @@ model Project {
   instaLink     String?
   discordLink   String?
   shortLink     String?
+  isActivated   Boolean       @default(false)
   rounds        ProjectRound[]
   collection    Collection?
   subscriber    UserProject[]
 }
 
 model ProjectRound {
-  projectId     String    @db.Uuid
-  project       Project   @relation(fields: [projectId], references: [id])
-  roundId       Int    
-  round         RoundInfo @relation(fields: [roundId], references: [id])
-  address       String?
+  projectId   String    @db.Uuid
+  project     Project   @relation(fields: [projectId], references: [id])
+  roundId     Int    
+  round       RoundInfo @relation(fields: [roundId], references: [id])
+  address     String?
   start         DateTime
   end           DateTime
   @@id([projectId, roundId])

@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { LaunchpadService } from './launchpad.service';
 import { CreateLaunchpadDto } from './dto/create-launchpad.dto';
@@ -15,6 +16,7 @@ import { CheckStakingDto } from './dto/check-staking.dto';
 import { AuthenticationGuard } from '../auth/guards/auth.guard';
 import { User } from '@prisma/client';
 import { GetCurrentUser } from 'src/decorators/get-current-user.decorator';
+import { FindAllProjectDto } from './dto/find-all-project.dto';
 
 @Controller('launchpad')
 export class LaunchpadController {
@@ -26,8 +28,8 @@ export class LaunchpadController {
   // }
 
   @Get()
-  findAll() {
-    return this.launchpadService.findAll();
+  findAll(@Query() query: FindAllProjectDto) {
+    return this.launchpadService.findAll(query);
   }
 
   @Get(':id')

@@ -13,6 +13,8 @@ import { GraphQLClient, gql } from 'graphql-request';
 import { CheckStakingDto } from './dto/check-staking.dto';
 import { User } from '@prisma/client';
 import { validate as isValidUUID } from 'uuid';
+import { FindAllProjectDto } from './dto/find-all-project.dto';
+
 @Injectable()
 export class LaunchpadService {
   private readonly endpoint = process.env.SUBGRAPH_URL_STAKING;
@@ -28,11 +30,18 @@ export class LaunchpadService {
   //   return 'This action adds a new launchpad';
   // }
 
-  async findAll(): Promise<any> {
+  async findAll(query: FindAllProjectDto): Promise<any> {
     const projects = await this.prisma.project.findMany({
+      where: {
+        isActivated: true,
+      },
       include: {
         collection: true,
         rounds: {
+          where: {
+            start: { gte: new Date(query.start) },
+            end: { lte: new Date(query.end) },
+          },
           include: {
             round: true,
           },
