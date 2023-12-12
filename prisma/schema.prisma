@@ -96,6 +96,8 @@ model Collection {
   updatedAt      DateTime         @updatedAt
   coverImage     String?
   avatar         String?
+  projectId      String?        @db.Uuid @unique
+  project        Project?       @relation(fields: [projectId], references: [id])
 }
 
 model UserCollection {
@@ -111,6 +113,42 @@ model Category {
   id         Int          @id @default(autoincrement())
   name       String
   collection Collection[]
+}
+
+model Project {
+  id            String           @id @default(uuid()) @db.Uuid
+  idOnchain     Int
+  name          String
+  banner        String?
+  description   String?
+  organization  String?
+  website       String?
+  teleLink      String?
+  facebookLink  String?
+  instaLink     String?
+  discordLink   String?
+  shortLink     String?
+  rounds        ProjectRound[]
+  collection    Collection?
+}
+
+model ProjectRound {
+  projectId   String    @db.Uuid
+  project     Project   @relation(fields: [projectId], references: [id])
+  roundId     Int    
+  round       RoundInfo @relation(fields: [roundId], references: [id])
+  address     String?
+  start         DateTime
+  end           DateTime
+  @@id([projectId, roundId])
+  
+}
+
+model RoundInfo {
+  id         Int          @id @default(autoincrement())
+  name          String?
+  description   String?
+  projects      ProjectRound[]
 }
 
 enum TX_STATUS {
