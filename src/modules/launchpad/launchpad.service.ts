@@ -4,6 +4,7 @@ import { UpdateLaunchpadDto } from './dto/update-launchpad.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ProjectEntity } from './entities/project.entity';
 import { RoundEntity } from './entities/round.entity';
+import { FindAllProjectDto } from './dto/find-all-project.dto';
 
 @Injectable()
 export class LaunchpadService {
@@ -12,11 +13,18 @@ export class LaunchpadService {
   //   return 'This action adds a new launchpad';
   // }
 
-  async findAll(): Promise<any> {
+  async findAll(query: FindAllProjectDto): Promise<any> {
     const projects = await this.prisma.project.findMany({
+      where: {
+        isActivated: true,
+      },
       include: {
         collection: true,
         rounds: {
+          where: {
+            start: { gte: new Date(query.start) },
+            end: { lte: new Date(query.end) },
+          },
           include: {
             round: true,
           },
