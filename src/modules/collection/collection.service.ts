@@ -385,7 +385,7 @@ export class CollectionService {
     }
   }
 
-  async findWithUserID(id: string): Promise<any[]> {
+  async findWithUserID(id: string): Promise<any> {
     try {
       if (!isValidUUID(id)) {
         throw new Error('Invalid User. Please try again !');
@@ -396,7 +396,7 @@ export class CollectionService {
       if (!checkExist) {
         throw new NotFoundException();
       }
-      return this.prisma.user.findMany({
+      const userWithCollection = await this.prisma.user.findUnique({
         where: {
           id: id,
         },
@@ -430,6 +430,17 @@ export class CollectionService {
           },
         },
       });
+      const baseCollection = await this.prisma.collection.findUnique({
+        where: {
+          address: process.env.BASE_ADDR,
+        },
+        include: {
+          category: true,
+        },
+      });
+      userWithCollection.nftCollection.push({ collection: baseCollection });
+
+      return userWithCollection;
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
