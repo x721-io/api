@@ -281,11 +281,13 @@ export class NftService {
         const mergedArray = nfts.map((item) => {
           const foundItem1 = marketEvent721S.find(
             (obj) =>
+              obj.nftId &&
               obj.nftId.tokenId === item.u2uId &&
               obj.nftId.contract.id === item.collection.address,
           );
           const foundItem2 = marketEvent1155S.find(
             (obj) =>
+              obj.nftId &&
               obj.nftId.tokenId === item.u2uId &&
               obj.nftId.contract.id === item.collection.address,
           );
