@@ -400,6 +400,7 @@ export class NftService {
         };
       }
     } catch (error) {
+      console.error(error)
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
