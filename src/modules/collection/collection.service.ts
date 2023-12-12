@@ -430,15 +430,24 @@ export class CollectionService {
           },
         },
       });
-      const baseCollection = await this.prisma.collection.findUnique({
+      const baseCollection721 = await this.prisma.collection.findUnique({
         where: {
-          address: process.env.BASE_ADDR,
+          address: process.env.BASE_ADDR_721,
         },
         include: {
           category: true,
         },
       });
-      userWithCollection.nftCollection.push({ collection: baseCollection });
+      const baseCollection1155 = await this.prisma.collection.findUnique({
+        where: {
+          address: process.env.BASE_ADDR_1155,
+        },
+        include: {
+          category: true,
+        },
+      });
+      userWithCollection.nftCollection.push({ collection: baseCollection721 });
+      userWithCollection.nftCollection.push({ collection: baseCollection1155 });
 
       return userWithCollection;
     } catch (error) {
