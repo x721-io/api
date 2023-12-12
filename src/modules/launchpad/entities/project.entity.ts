@@ -2,6 +2,7 @@ import { Project } from '@prisma/client';
 import { RoundEntity } from './round.entity';
 
 export class ProjectEntity implements Project {
+  isActivated: boolean;
   id: string;
   idOnchain: number;
   name: string;
