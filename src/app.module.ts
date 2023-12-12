@@ -12,6 +12,7 @@ import { GraphQlcallerModule } from './modules/graph-qlcaller/graph-qlcaller.mod
 import { CollectionModule } from './modules/collection/collection.module';
 import { NftModule } from './modules/nft/nft.module';
 import { ValidatorModule } from './modules/validator/validator.module';
+import { LaunchpadModule } from './modules/launchpad/launchpad.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -31,6 +32,7 @@ import { ValidatorModule } from './modules/validator/validator.module';
     CollectionModule,
     NftModule,
     ValidatorModule,
+    LaunchpadModule,
   ],
   providers: [PrismaService],
 })
