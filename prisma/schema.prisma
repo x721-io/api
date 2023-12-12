@@ -32,6 +32,7 @@ model User {
   discordLink   String?
   webURL        String?
   coverImage    String?
+  projectSubscribe  UserProject[]
 }
 
 model NFT {
@@ -96,8 +97,8 @@ model Collection {
   updatedAt      DateTime         @updatedAt
   coverImage     String?
   avatar         String?
-  projectId      String?        @db.Uuid @unique
-  project        Project?       @relation(fields: [projectId], references: [id])
+  projectId      String?          @db.Uuid @unique
+  project        Project?         @relation(fields: [projectId], references: [id])
 }
 
 model UserCollection {
@@ -114,7 +115,6 @@ model Category {
   name       String
   collection Collection[]
 }
-
 model Project {
   id            String           @id @default(uuid()) @db.Uuid
   idOnchain     Int
@@ -131,6 +131,7 @@ model Project {
   isActivated   Boolean       @default(false)
   rounds        ProjectRound[]
   collection    Collection?
+  subscriber    UserProject[]
 }
 
 model ProjectRound {
@@ -143,6 +144,17 @@ model ProjectRound {
   end           DateTime
   @@id([projectId, roundId])
   
+}
+
+model UserProject{
+  userId          String     @db.Uuid
+  projectId       String     @db.Uuid
+  subscribeDate   DateTime   @default(now())
+  stakingTotal    String?
+  lastDateRecord  DateTime?  @default(now())
+  user            User       @relation(fields: [userId], references: [id])
+  project         Project    @relation(fields: [projectId], references: [id])
+  @@id([userId,projectId])
 }
 
 model RoundInfo {
