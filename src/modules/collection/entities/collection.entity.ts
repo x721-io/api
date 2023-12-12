@@ -15,6 +15,7 @@ export class CollectionEntity implements Collection {
   constructor(partial: Partial<Collection>) {
     Object.assign(this, partial);
   }
+  projectId: string;
   avatar: string;
   metadata: string;
   shortUrl: string;
