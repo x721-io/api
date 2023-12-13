@@ -333,11 +333,13 @@ export class NftService {
             .filter((i) => !!i.nftId)
             .map((pair) => ({
               AND: [
-                { collectionId: pair.nftId.contract.id },
+                { collection: { address: pair.nftId.contract.id } },
                 { u2uId: pair.nftId.tokenId },
               ],
             })),
         };
+        // @ts-ignore
+        console.log(whereCondition.OR.map((i) => i.AND));
         const nfts = await this.prisma.nFT.findMany({
           skip: (filter.page - 1) * filter.limit,
           take: filter.limit,
