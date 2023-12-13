@@ -322,11 +322,18 @@ export class NftService {
       } else {
         whereCondition = {
           ...whereCondition,
-          u2uId: {
-            in: marketEvent721S
-              .map((item) => item.nftId.tokenId)
-              .concat(marketEvent1155S.map((item) => item.nftId.tokenId)),
-          },
+          // u2uId: {
+          //   in: marketEvent721S
+          //     .map((item) => item.nftId.tokenId)
+          //     .concat(marketEvent1155S.map((item) => item.nftId.tokenId)),
+          // },
+          // @ts-ignore
+          OR: marketEvent1155S.concat(marketEvent721S).map((pair) => ({
+            AND: [
+              { collectionId: pair.nftId.contract.id },
+              { u2uId: pair.nftId.id },
+            ],
+          })),
         };
         const nfts = await this.prisma.nFT.findMany({
           skip: (filter.page - 1) * filter.limit,
@@ -402,7 +409,7 @@ export class NftService {
         };
       }
     } catch (error) {
-      console.error(error)
+      console.error(error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
