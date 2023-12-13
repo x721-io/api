@@ -385,7 +385,7 @@ export class CollectionService {
     }
   }
 
-  async findWithUserID(id: string): Promise<any> {
+  async findWithUserID(id: string): Promise<CollectionEntity[]> {
     try {
       if (!isValidUUID(id)) {
         throw new Error('Invalid User. Please try again !');
@@ -418,6 +418,8 @@ export class CollectionService {
                   categoryId: true,
                   createdAt: true,
                   avatar: true,
+                  coverImage: true,
+                  updatedAt: true,
                   category: {
                     select: {
                       id: true,
@@ -449,7 +451,7 @@ export class CollectionService {
       userWithCollection.nftCollection.push({ collection: baseCollection721 });
       userWithCollection.nftCollection.push({ collection: baseCollection1155 });
 
-      return userWithCollection;
+      return userWithCollection.nftCollection.map((i) => i.collection);
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
