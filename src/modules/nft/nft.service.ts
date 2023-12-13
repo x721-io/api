@@ -334,7 +334,7 @@ export class NftService {
             .map((pair) => ({
               AND: [
                 { collectionId: pair.nftId.contract.id },
-                { u2uId: pair.nftId.id },
+                { u2uId: pair.nftId.tokenId },
               ],
             })),
         };
