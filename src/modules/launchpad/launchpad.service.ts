@@ -13,6 +13,9 @@ import { GraphQLClient, gql } from 'graphql-request';
 import { CheckStakingDto } from './dto/check-staking.dto';
 import { User } from '@prisma/client';
 import { validate as isValidUUID } from 'uuid';
+import { FindAllProjectDto } from './dto/find-all-project.dto';
+import { Redis } from 'src/database';
+
 @Injectable()
 export class LaunchpadService {
   private readonly endpoint = process.env.SUBGRAPH_URL_STAKING;
@@ -27,6 +30,15 @@ export class LaunchpadService {
   // create(createLaunchpadDto: CreateLaunchpadDto) {
   //   return 'This action adds a new launchpad';
   // }
+
+  async configNextRound(id: string) {
+    await Redis.publish('project-channel', {
+      data: {
+        id,
+      },
+      process: 'config-round-timer',
+    });
+  }
 
   async findAll(query: FindAllProjectDto): Promise<any> {
     const projects = await this.prisma.project.findMany({

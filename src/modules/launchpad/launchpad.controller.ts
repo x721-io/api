@@ -25,6 +25,11 @@ export class LaunchpadController {
   //   return this.launchpadService.create(createLaunchpadDto);
   // }
 
+  @Post('/job-config-round/:id')
+  activateProject(@Param('id') id: string) {
+    return this.launchpadService.configNextRound(id);
+  }
+
   @Get()
   findAll(@Query() query: FindAllProjectDto) {
     return this.launchpadService.findAll(query);
