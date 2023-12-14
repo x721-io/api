@@ -36,7 +36,6 @@ async function bootstrap() {
   );
   app.enableCors({
     origin: function (origin, callback) {
-      console.log(origin);
       if (!origin || matchRegexArray(whitelist, origin)) {
         callback(null, true);
       } else {
