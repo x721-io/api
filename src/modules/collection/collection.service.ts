@@ -385,6 +385,7 @@ export class CollectionService {
     }
   }
 
+
   async findWithUserID(
     id: string,
     input: GetCollectionByUserDto,
@@ -423,6 +424,7 @@ export class CollectionService {
               avatar: true,
               coverImage: true,
               updatedAt: true,
+              projectId: true,
               category: {
                 select: {
                   id: true,
