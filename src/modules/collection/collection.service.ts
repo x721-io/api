@@ -420,6 +420,7 @@ export class CollectionService {
                   avatar: true,
                   coverImage: true,
                   updatedAt: true,
+                  projectId: true,
                   category: {
                     select: {
                       id: true,
