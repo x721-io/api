@@ -11,7 +11,7 @@ import { ProjectEntity } from './entities/project.entity';
 import { RoundEntity } from './entities/round.entity';
 import { GraphQLClient, gql } from 'graphql-request';
 import { CheckStakingDto } from './dto/check-staking.dto';
-import { User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import { validate as isValidUUID } from 'uuid';
 import { FindAllProjectDto } from './dto/find-all-project.dto';
 import { Redis } from 'src/database';
@@ -41,6 +41,15 @@ export class LaunchpadService {
   }
 
   async findAll(query: FindAllProjectDto): Promise<any> {
+    const whereRounds: Prisma.ProjectRoundWhereInput = {};
+
+    if (query.start) {
+      whereRounds.start = { gte: new Date(query.start) };
+    }
+
+    if (query.end) {
+      whereRounds.end = { lte: new Date(query.end) };
+    }
     const projects = await this.prisma.project.findMany({
       where: {
         isActivated: true,
@@ -48,10 +57,7 @@ export class LaunchpadService {
       include: {
         collection: true,
         rounds: {
-          where: {
-            start: { gte: new Date(query.start) },
-            end: { lte: new Date(query.end) },
-          },
+          where: whereRounds,
           include: {
             round: true,
           },
