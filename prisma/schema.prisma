@@ -97,13 +97,8 @@ model Collection {
   updatedAt      DateTime         @updatedAt
   coverImage     String?
   avatar         String?
-<<<<<<< HEAD
   projectId      String?          @db.Uuid @unique
   project        Project?         @relation(fields: [projectId], references: [id])
-=======
-  projectId      String?        @db.Uuid @unique
-  project        Project?       @relation(fields: [projectId], references: [id])
->>>>>>> bb70386 (feat: launchpad project and round)
 }
 
 model UserCollection {
