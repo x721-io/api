@@ -214,27 +214,27 @@ export class CommonService {
         return 'application/json';
     }
   }
-  // async getFromIpfs(hash: string): Promise<{ data: any; type: string }> {
-  //   try {
-  //     const content = [];
-  //     for await (const chunk of this.ipfs.cat(hash)) {
-  //       content.push(chunk);
-  //     }
-  //     const buffer = Buffer.concat(content);
+  async getFromIpfs(hash: string): Promise<{ data: any; type: string }> {
+    try {
+      const content = [];
+      for await (const chunk of this.ipfs.cat(hash)) {
+        content.push(chunk);
+      }
+      const buffer = Buffer.concat(content);
 
-  //     // Try to parse buffer as JSON
-  //     try {
-  //       const json = JSON.parse(buffer.toString());
-  //       return { data: json, type: 'json' };
-  //     } catch (e) {
-  //       // If it's not JSON, return it as a file
-  //       return { data: buffer, type: 'file' };
-  //     }
-  //   } catch (err) {
-  //     console.error('Error retrieving content from IPFS:', err);
-  //     throw err;
-  //   }
-  // }
+      // Try to parse buffer as JSON
+      try {
+        const json = JSON.parse(buffer.toString());
+        return { data: json, type: 'json' };
+      } catch (e) {
+        // If it's not JSON, return it as a file
+        return { data: buffer, type: 'file' };
+      }
+    } catch (err) {
+      console.error('Error retrieving content from IPFS:', err);
+      throw err;
+    }
+  }
 
   // async getFileFromIpfs(hash: string, res: Response) {
   //   try {

@@ -39,10 +39,10 @@ export class CommonController {
     return await this.commonService.getFileFromIpfsPath(ipfsPath, res);
   }
 
-  // @Get('get-ipfs')
-  // async getIpfs(@Query('hash') hash: string) {
-  //   return await this.commonService.getFromIpfs(hash);
-  // }
+  @Get('get-ipfs')
+  async getIpfs(@Query('hash') hash: string) {
+    return await this.commonService.getFromIpfs(hash);
+  }
 
   // async getFileFromIpfs(@Query('hash') hash: string, @Res() res: Response) {
   //   return await this.commonService.getFileFromIpfs(hash, res);
