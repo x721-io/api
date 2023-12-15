@@ -479,7 +479,8 @@ export class NftService {
           );
         const ownerAddresses = nftInfoWithOwner.erc1155Balances
           .map((i) => {
-            if (i.account && i.account.id !== ZERO_ADDR) return i.account.id;
+            if (i.account && i.account.id !== ZERO_ADDR && i.value > 0)
+              return i.account.id;
           })
           .filter((i) => !!i);
         const ownersFromLocal = await this.prisma.user.findMany({
