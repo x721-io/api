@@ -6,9 +6,11 @@ import {
 } from '@nestjs/common';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import { GetAllUser } from './dto/get-all-user.dto';
 import { validate as isValidUUID } from 'uuid';
+import { FindAllProjectDto } from '../launchpad/dto/find-all-project.dto';
+import { ListProjectEntity } from './entities/project.entity';
 
 @Injectable()
 export class UserService {
@@ -204,5 +206,68 @@ export class UserService {
     });
 
     return !!existingUser;
+  }
+  async getProjectByUser(
+    query: FindAllProjectDto,
+    user: User,
+  ): Promise<ListProjectEntity[]> {
+    try {
+      const whereRounds: Prisma.ProjectRoundWhereInput = {};
+
+      if (query.start) {
+        whereRounds.start = { gte: new Date(query.start) };
+      }
+
+      if (query.end) {
+        whereRounds.end = { lte: new Date(query.end) };
+      }
+      const result = await this.prisma.userProject.findMany({
+        where: {
+          userId: user.id,
+        },
+        include: {
+          project: {
+            select: {
+              id: true,
+              idOnchain: true,
+              name: true,
+              banner: true,
+              website: true,
+              teleLink: true,
+              facebookLink: true,
+              instaLink: true,
+              discordLink: true,
+              shortLink: true,
+              organization: true,
+              description: true,
+              isActivated: true,
+              collection: true,
+              rounds: {
+                where: whereRounds,
+                include: {
+                  round: true,
+                },
+              },
+            },
+          },
+        },
+      });
+      const response = result.map((subcriber) => {
+        const { project } = subcriber;
+        return {
+          ...subcriber,
+          project: {
+            ...project,
+            rounds: project.rounds.map((round) => ({
+              ...round,
+              ...round.round,
+            })),
+          },
+        };
+      });
+      return response;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
   }
 }

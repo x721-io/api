@@ -15,7 +15,8 @@ import { Prisma, User } from '@prisma/client';
 import { validate as isValidUUID } from 'uuid';
 import { FindAllProjectDto } from './dto/find-all-project.dto';
 import { Redis } from 'src/database';
-
+import { SubcribeProjectDto } from './dto/subcribe-project.dto';
+import { SubcribeEntity } from './entities/subcribe.entity';
 @Injectable()
 export class LaunchpadService {
   private readonly endpoint = process.env.SUBGRAPH_URL_STAKING;
@@ -175,6 +176,45 @@ export class LaunchpadService {
       return result;
     } catch (error) {
       console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async subcribeProject(
+    input: SubcribeProjectDto,
+    user: User,
+  ): Promise<SubcribeEntity> {
+    try {
+      if (!isValidUUID(input.projectId)) {
+        throw new Error('Invalid Project. Please try again !');
+      }
+      const projectExists = await this.prisma.project.findUnique({
+        where: {
+          id: input.projectId,
+        },
+      });
+      if (!projectExists) {
+        throw new NotFoundException();
+      }
+
+      const isSubcribe = await this.prisma.userProject.findFirst({
+        where: {
+          userId: user.id,
+          projectId: input.projectId,
+        },
+      });
+
+      if (isSubcribe) {
+        throw Error('You are a subscriber to this project');
+      }
+      const response = await this.prisma.userProject.create({
+        data: {
+          userId: user.id,
+          projectId: input.projectId,
+        },
+      });
+      return response;
+    } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }

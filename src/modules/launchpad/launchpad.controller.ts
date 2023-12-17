@@ -17,6 +17,7 @@ import { AuthenticationGuard } from '../auth/guards/auth.guard';
 import { User } from '@prisma/client';
 import { GetCurrentUser } from 'src/decorators/get-current-user.decorator';
 import { FindAllProjectDto } from './dto/find-all-project.dto';
+import { SubcribeProjectDto } from './dto/subcribe-project.dto';
 
 @Controller('launchpad')
 export class LaunchpadController {
@@ -49,5 +50,14 @@ export class LaunchpadController {
     @GetCurrentUser() user: User,
   ) {
     return await this.launchpadService.checkStaking(inputStaking, user);
+  }
+
+  @Post('/subcribe')
+  @UseGuards(AuthenticationGuard)
+  async subcribeProject(
+    @Body() input: SubcribeProjectDto,
+    @GetCurrentUser() user: User,
+  ) {
+    return await this.launchpadService.subcribeProject(input, user);
   }
 }
