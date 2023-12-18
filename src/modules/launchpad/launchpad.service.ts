@@ -17,6 +17,8 @@ import { FindAllProjectDto } from './dto/find-all-project.dto';
 import { Redis } from 'src/database';
 import { SubcribeProjectDto } from './dto/subcribe-project.dto';
 import { SubcribeEntity } from './entities/subcribe.entity';
+import { ProjectStat } from 'src/constants/enums/ProjectStat.enum';
+
 @Injectable()
 export class LaunchpadService {
   private readonly endpoint = process.env.SUBGRAPH_URL_STAKING;
@@ -42,15 +44,6 @@ export class LaunchpadService {
   }
 
   async findAll(query: FindAllProjectDto): Promise<any> {
-    const whereRounds: Prisma.ProjectRoundWhereInput = {};
-
-    if (query.start) {
-      whereRounds.start = { gte: new Date(query.start) };
-    }
-
-    if (query.end) {
-      whereRounds.end = { lte: new Date(query.end) };
-    }
     const projects = await this.prisma.project.findMany({
       where: {
         isActivated: true,
@@ -58,15 +51,41 @@ export class LaunchpadService {
       include: {
         collection: true,
         rounds: {
-          where: whereRounds,
           include: {
             round: true,
           },
         },
       },
     });
-    // if (!projects)
-    const returnProject = projects.map((item) => {
+    let filteredProjects = [];
+    if (query.mode === ProjectStat.UPCOMING) {
+      filteredProjects = projects.filter((project) =>
+        project.rounds.every((round) => {
+          console.log(project.id, new Date(round.start) > new Date());
+          return new Date(round.start) > new Date();
+        }),
+      );
+    } else if (query.mode === ProjectStat.MINTING) {
+      filteredProjects = projects.filter((project) =>
+        project.rounds.some((round) => {
+          console.log(
+            new Date(round.start) <= new Date() &&
+              new Date(round.end) >= new Date(),
+          );
+          return (
+            new Date(round.start) <= new Date() &&
+            new Date(round.end) >= new Date()
+          );
+        }),
+      );
+    } else if (query.mode === ProjectStat.ENDED) {
+      filteredProjects = projects.filter((project) =>
+        project.rounds.every((round) => new Date(round.end) < new Date()),
+      );
+    } else {
+      filteredProjects = projects;
+    }
+    const returnProject = filteredProjects.map((item) => {
       return {
         ...item,
         rounds: item.rounds.map((round) => ({
