@@ -109,6 +109,9 @@ export class LaunchpadService {
       if (!projectId) {
         throw Error('Please Enter Project');
       }
+      if (!isValidUUID(projectId)) {
+        throw new Error('Invalid Project. Please try again !');
+      }
       const result = await this.prisma.project.findFirst({
         where: {
           id: projectId,
@@ -132,7 +135,7 @@ export class LaunchpadService {
       });
 
       if (!result) {
-        throw Error('The Project does not exist');
+        throw new NotFoundException();
       }
       const { subscriber } = result;
       const query = gql`
