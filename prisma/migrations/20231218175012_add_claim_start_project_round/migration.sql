@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "ProjectRound" ADD COLUMN     "claimableStart" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;

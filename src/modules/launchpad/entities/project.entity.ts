@@ -1,5 +1,6 @@
 import { Prisma, Project } from '@prisma/client';
 import { RoundEntity } from './round.entity';
+import { CollectionEntity } from 'src/modules/collection/entities/collection.entity';
 
 export class ProjectEntity implements Project {
   details: Prisma.JsonValue[];
@@ -19,4 +20,5 @@ export class ProjectEntity implements Project {
   discord: string;
   shortLink: string;
   rounds: RoundEntity[];
+  collection: CollectionEntity;
 }

@@ -146,6 +146,7 @@ model ProjectRound {
   address       String?
   start         DateTime
   end           DateTime
+  claimableStart  DateTime  @default(now())
   @@id([projectId, roundId])
   
 }
