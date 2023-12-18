@@ -21,8 +21,8 @@ import { AuthenticationGuard } from '../auth/guards/auth.guard';
 import { GetAllUser } from './dto/get-all-user.dto';
 import { FilterNFTUserDetail } from './dto/get-nft-user.dto';
 import { UserServiceExtend } from './user-graph.service';
-import {AuthenticationCustomizeGuard} from '../auth/guards/authCustomize.guard';
-
+import { AuthenticationCustomizeGuard } from '../auth/guards/authCustomize.guard';
+import { FindAllProjectDto } from '../launchpad/dto/find-all-project.dto';
 @Controller('user')
 export class UserController {
   constructor(
@@ -62,11 +62,21 @@ export class UserController {
     return await this.userServiceExtend.getCollectionByUser(id);
   }
 
-
   @Get('profile/:id')
   @UseGuards(AuthenticationCustomizeGuard)
-  async findWithShortLink(@Param('id') signer: string , @GetCurrentUser() user: User,) {
-    return await this.userService.getProfileWithShortLinkOrIdUser(signer , user);
+  async findWithShortLink(
+    @Param('id') signer: string,
+    @GetCurrentUser() user: User,
+  ) {
+    return await this.userService.getProfileWithShortLinkOrIdUser(signer, user);
   }
-  // findWithShortLink
+
+  @Get('/projects')
+  @UseGuards(AuthenticationGuard)
+  async getProjectByUser(
+    @GetCurrentUser() user: User,
+    @Query() query: FindAllProjectDto,
+  ) {
+    return await this.userService.getProjectByUser(query, user);
+  }
 }
