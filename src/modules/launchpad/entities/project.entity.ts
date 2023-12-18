@@ -1,7 +1,10 @@
-import { Project } from '@prisma/client';
+import { Prisma, Project } from '@prisma/client';
 import { RoundEntity } from './round.entity';
 
 export class ProjectEntity implements Project {
+  details: Prisma.JsonValue[];
+  twitter: string;
+  logo: string;
   isActivated: boolean;
   id: string;
   idOnchain: number;
@@ -10,10 +13,10 @@ export class ProjectEntity implements Project {
   description: string;
   organization: string;
   website: string;
-  teleLink: string;
-  facebookLink: string;
-  instaLink: string;
-  discordLink: string;
+  telegram: string;
+  facebook: string;
+  instagram: string;
+  discord: string;
   shortLink: string;
   rounds: RoundEntity[];
 }

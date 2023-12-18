@@ -5,4 +5,4 @@ enum NFTTab {
   ACTIVITY = 'activity',
 }
 
-export { NFTTab }
+export { NFTTab };

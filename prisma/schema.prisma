@@ -122,13 +122,16 @@ model Project {
   name          String
   banner        String?
   description   String?
+  details       Json[]            @default([])
   organization  String?
   website       String?
-  teleLink      String?
-  facebookLink  String?
-  instaLink     String?
-  discordLink   String?
+  telegram     String?
+  facebook  String?
+  instagram    String?
+  discord   String?
+  twitter     String?
   shortLink     String?
+  logo          String?
   isActivated   Boolean       @default(false)
   rounds        ProjectRound[]
   collection    Collection?
