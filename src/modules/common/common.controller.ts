@@ -31,35 +31,22 @@ export class CommonController {
     return await this.commonService.uploadIpfs(files, createFileDto.metadata);
   }
 
+  @Get('/ipfs-serve')
+  async serveFile(
+    @Query('ipfsPath') ipfsPath: string,
+    @Res() res: Response,
+  ): Promise<any> {
+    return await this.commonService.getFileFromIpfsPath(ipfsPath, res);
+  }
+
   @Get('get-ipfs')
   async getIpfs(@Query('hash') hash: string) {
     return await this.commonService.getFromIpfs(hash);
   }
 
-  @Get('get-file-ipfs')
-  async getFileFromIpfs(@Query('hash') hash: string, @Res() res: Response) {
-    return await this.commonService.getFileFromIpfs(hash, res);
-  }
-
-  @Get()
-  findAll() {
-    return this.commonService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.commonService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCommonDto: UpdateCommonDto) {
-    return this.commonService.update(+id, updateCommonDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.commonService.remove(+id);
-  }
+  // async getFileFromIpfs(@Query('hash') hash: string, @Res() res: Response) {
+  //   return await this.commonService.getFileFromIpfs(hash, res);
+  // }
 
   @Post('search-all')
   async searchAll(@Body() input: SearchAllDto) {

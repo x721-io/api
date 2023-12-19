@@ -32,6 +32,7 @@ model User {
   discordLink   String?
   webURL        String?
   coverImage    String?
+  projectSubscribe  UserProject[]
 }
 
 model NFT {
@@ -96,6 +97,8 @@ model Collection {
   updatedAt      DateTime         @updatedAt
   coverImage     String?
   avatar         String?
+  projectId      String?          @db.Uuid @unique
+  project        Project?         @relation(fields: [projectId], references: [id])
 }
 
 model UserCollection {
@@ -111,6 +114,59 @@ model Category {
   id         Int          @id @default(autoincrement())
   name       String
   collection Collection[]
+}
+
+model Project {
+  id            String           @id @default(uuid()) @db.Uuid
+  idOnchain     Int
+  name          String
+  banner        String?
+  description   String?
+  details       Json[]            @default([])
+  organization  String?
+  website       String?
+  telegram     String?
+  facebook  String?
+  instagram    String?
+  discord   String?
+  twitter     String?
+  shortLink     String?
+  logo          String?
+  isActivated   Boolean       @default(false)
+  rounds        ProjectRound[]
+  collection    Collection?
+  subscriber    UserProject[]
+}
+
+model ProjectRound {
+  projectId     String    @db.Uuid
+  project       Project   @relation(fields: [projectId], references: [id])
+  roundId       Int    
+  round         RoundInfo @relation(fields: [roundId], references: [id])
+  address       String?
+  start         DateTime
+  end           DateTime
+  claimableStart  DateTime  @default(now())
+  @@id([projectId, roundId])
+  
+}
+
+model UserProject{
+  userId          String     @db.Uuid
+  projectId       String     @db.Uuid
+  subscribeDate   DateTime   @default(now())
+  stakingTotal    String?
+  lastDateRecord  DateTime?  @default(now())
+  user            User       @relation(fields: [userId], references: [id])
+  project         Project    @relation(fields: [projectId], references: [id])
+  @@id([userId,projectId])
+}
+
+model RoundInfo {
+  id         Int          @id @default(autoincrement())
+  name          String?
+  description   String?
+  projects      ProjectRound[]
 }
 
 enum TX_STATUS {

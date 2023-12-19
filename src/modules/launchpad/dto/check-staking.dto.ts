@@ -1,4 +1,4 @@
-import { CursorPagination } from 'src/commons/definitions/CursorPagition.input';
+import { PartialType } from '@nestjs/mapped-types';
 import {
   IsNotEmpty,
   IsString,
@@ -11,7 +11,7 @@ import {
   IsDefined,
 } from 'class-validator';
 
-export class GetAllUser extends CursorPagination {
+export class CheckStakingDto {
   @IsOptional()
-  search: string;
+  projectId: string;
 }
