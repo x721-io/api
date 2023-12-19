@@ -11,7 +11,7 @@ import { GetAllUser } from './dto/get-all-user.dto';
 import { validate as isValidUUID } from 'uuid';
 import { FindAllProjectDto } from '../launchpad/dto/find-all-project.dto';
 import { ListProjectEntity } from './entities/project.entity';
-
+import { UserEntity } from './entities/user.entity';
 @Injectable()
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
@@ -64,63 +64,78 @@ export class UserService {
     return user;
   }
 
-  async findAll(filter: GetAllUser) {
-    const limit = (filter.limit || 12) as number;
-    const cursor = filter.cursor;
+  async findAll(filter: GetAllUser): Promise<PagingResponse<UserEntity>> {
+    // const limit = (filter.limit || 12) as number;
+    // const cursor = filter.cursor;
     // @ts-ignore
-    const take: number = limit && limit > 0 ? parseInt(limit) + 1 : 13;
+    // const take: number = limit && limit > 0 ? parseInt(limit) + 1 : 13;
+    const whereCondition: any = {
+      ...(filter.search
+        ? {
+            OR: [
+              {
+                username: {
+                  contains: filter.search,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                email: {
+                  contains: filter.search,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                signer: {
+                  contains: filter.search,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                shortLink: {
+                  contains: filter.search,
+                  mode: 'insensitive',
+                },
+              },
+              // Add more fields as needed
+            ],
+          }
+        : {}),
+      username: {
+        not: null,
+      },
+    };
 
     const users = await this.prisma.user.findMany({
       orderBy: {
         createdAt: filter.order,
       },
-      where: {
-        ...(filter.search
-          ? {
-              OR: [
-                {
-                  username: {
-                    contains: filter.search,
-                    mode: 'insensitive',
-                  },
-                },
-                {
-                  email: {
-                    contains: filter.search,
-                    mode: 'insensitive',
-                  },
-                },
-                {
-                  signer: {
-                    contains: filter.search,
-                    mode: 'insensitive',
-                  },
-                },
-                {
-                  shortLink: {
-                    contains: filter.search,
-                    mode: 'insensitive',
-                  },
-                },
-                // Add more fields as needed
-              ],
-            }
-          : {}),
-        username: {
-          not: null,
-        },
-      },
-      take: take,
-      cursor: cursor ? { id: cursor } : undefined,
-      skip: cursor ? 0 : 0,
+      where: whereCondition,
+      // take: take,
+      // cursor: cursor ? { id: cursor } : undefined,
+      // skip: cursor ? 0 : 0,
+      skip: (filter.page - 1) * filter.limit,
+      take: filter.limit,
     });
 
-    let nextCursor: string | null = null;
-    if (users.length > limit) {
-      const nextUser = users.pop();
-      nextCursor = nextUser.id;
-    }
-    return { users, nextCursor };
+    const total = await this.prisma.user.count({
+      where: whereCondition,
+    });
+    // let nextCursor: string | null = null;
+    // if (users.length > limit) {
+    //   const nextUser = users.pop();
+    //   nextCursor = nextUser.id;
+    // }
+    // return { users, nextCursor };
+
+    return {
+      data: users,
+      paging: {
+        total,
+        page: filter.page,
+        limit: filter.limit,
+      },
+    };
   }
 
   async getProfileWithShortLinkOrIdUser(input: string, user: any) {
