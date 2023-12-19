@@ -75,11 +75,44 @@ export class UserService {
         createdAt: filter.order,
       },
       where: {
-        username: { not: null },
+        ...(filter.search
+          ? {
+              OR: [
+                {
+                  username: {
+                    contains: filter.search,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  email: {
+                    contains: filter.search,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  signer: {
+                    contains: filter.search,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  shortLink: {
+                    contains: filter.search,
+                    mode: 'insensitive',
+                  },
+                },
+                // Add more fields as needed
+              ],
+            }
+          : {}),
+        username: {
+          not: null,
+        },
       },
       take: take,
       cursor: cursor ? { id: cursor } : undefined,
-      skip: cursor ? 1 : 0,
+      skip: cursor ? 0 : 0,
     });
 
     let nextCursor: string | null = null;
