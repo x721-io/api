@@ -17,7 +17,7 @@ export class CommonService {
   constructor(private readonly prisma: PrismaService) {
     this.ipfs = create({
       host: process.env.IPFS_URL,
-      port: parseInt(process.env.IPFS_PORT),
+      // port: parseInt(process.env.IPFS_PORT),
       protocol: process.env.IPFS_PROTOCOL,
     });
   }
