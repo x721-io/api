@@ -188,7 +188,7 @@ export class CommonService {
       case '.pdf':
         return 'application/pdf';
       case '.mp3':
-        return 'audio/mpeg';
+        return 'audio/mp3';
       case '.mp4':
         return 'video/mp4';
       case '.avi':
@@ -217,7 +217,8 @@ export class CommonService {
   async getFromIpfs(hash: string): Promise<{ data: any; type: string }> {
     try {
       const content = [];
-      for await (const chunk of this.ipfs.cat(hash)) {
+      const { cid } = this.parseIpfsPath(hash);
+      for await (const chunk of this.ipfs.cat(cid)) {
         content.push(chunk);
       }
       const buffer = Buffer.concat(content);
