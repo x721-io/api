@@ -491,6 +491,7 @@ export class NftService {
             signer: { in: ownerAddresses },
           },
           select: {
+            id: true,
             email: true,
             avatar: true,
             username: true,
@@ -526,6 +527,7 @@ export class NftService {
             signer: nftInfoWithOwner.erc721Tokens[0].owner.id,
           },
           select: {
+            id: true,
             email: true,
             avatar: true,
             username: true,
