@@ -152,17 +152,27 @@ export class GraphQlcallerService {
   ) {
     const { or, and } = conditions;
 
+    const processCondition = (condition: any): string => {
+      return Object.entries(condition)
+        .filter(([key, value]) => !!value) // Filter out null values
+        .map(([key, value]) => {
+          if (typeof value === 'object' && value !== null) {
+            // Process nested object
+            return `${key}: {${processCondition(value)}}`;
+          } else {
+            // Process simple key-value pair
+            return `${key}: "${value}"`;
+          }
+        })
+        .join(', ');
+    };
+
     const whereParts = [];
 
     // Process AND conditions
     if (and && and.length > 0) {
       const andConditions = and
-        .map((condition) => {
-          return Object.entries(condition)
-            .filter(([key, value]) => !!value) // Filter out null values
-            .map(([key, value]) => `${key}: "${value}"`)
-            .join(', ');
-        })
+        .map(processCondition)
         .filter((condition) => condition) // Filter out empty conditions
         .map((condition) => `{${condition}}`);
 
@@ -174,12 +184,7 @@ export class GraphQlcallerService {
     // Process OR conditions
     if (or && or.length > 0) {
       const orConditions = or
-        .map((condition) => {
-          return Object.entries(condition)
-            .filter(([key, value]) => !!value) // Filter out null values
-            .map(([key, value]) => `${key}: "${value}"`)
-            .join(', ');
-        })
+        .map(processCondition)
         .filter((condition) => condition) // Filter out empty conditions
         .map((condition) => `{${condition}}`);
 
@@ -191,6 +196,8 @@ export class GraphQlcallerService {
     const isWhereEmpty = whereParts.length === 0;
     const whereClause =
       whereParts.length > 0 ? `where: {${whereParts.join(', ')}}` : '';
+
+    console.log(whereClause);
     const query = gql`
       query GetNFTSellInfo($page: Int, $limit: Int) {
         marketEvent1155S(
