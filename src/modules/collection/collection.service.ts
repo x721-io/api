@@ -210,6 +210,7 @@ export class CollectionService {
               userId: true,
               user: {
                 select: {
+                  id: true,
                   email: true,
                   avatar: true,
                   username: true,
@@ -251,6 +252,7 @@ export class CollectionService {
               userId: true,
               user: {
                 select: {
+                  id: true,
                   email: true,
                   avatar: true,
                   username: true,
@@ -315,6 +317,7 @@ export class CollectionService {
               userId: true,
               user: {
                 select: {
+                  id: true,
                   email: true,
                   avatar: true,
                   username: true,
