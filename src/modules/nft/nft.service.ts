@@ -101,16 +101,13 @@ export class NftService {
           u2uId: input.u2uId,
           id: input.id,
           name: input.name,
-          ipfsHash: input.name,
           image: input.image,
-          // traits: {
-          //   create: input.traits,
-          // },
           status: TX_STATUS.PENDING,
           tokenUri: input.tokenUri,
           txCreationHash: input.txCreationHash,
           creatorId: user.id,
           collectionId: collection.id,
+          animationUrl: input.animationUrl,
         },
         include: {
           traits: true,
@@ -591,7 +588,6 @@ export class NftService {
                 select: {
                   id: true,
                   name: true,
-                  ipfsHash: true,
                   traits: true,
                   createdAt: true,
                   updatedAt: true,

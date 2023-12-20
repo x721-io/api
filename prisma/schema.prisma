@@ -40,8 +40,8 @@ model NFT {
   u2uId          String?     @db.VarChar(255)
   description    String?
   name           String
-  ipfsHash       String
   image          String?
+  animationUrl   String?
   traits         Trait[]
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt

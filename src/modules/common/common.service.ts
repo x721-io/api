@@ -283,10 +283,18 @@ export class CommonService {
   }
 
   private parseIpfsPath(ipfsPath: string): { cid: string; filePath: string } {
-    const pathParts = ipfsPath.replace('ipfs://ipfs/', '').split('/');
-    const cid = pathParts[0];
-    const filePath = pathParts.slice(1).join('/');
+    if (ipfsPath.includes('ipfs://ipfs/')) {
+      const pathParts = ipfsPath.replace('ipfs://ipfs/', '').split('/');
+      const cid = pathParts[0];
+      const filePath = pathParts.slice(1).join('/');
 
-    return { cid, filePath };
+      return { cid, filePath };
+    } else {
+      const pathParts = ipfsPath.replace('ipfs://', '').split('/');
+      const cid = pathParts[0];
+      const filePath = pathParts.slice(1).join('/');
+
+      return { cid, filePath };
+    }
   }
 }
