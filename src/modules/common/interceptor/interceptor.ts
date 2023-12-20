@@ -7,20 +7,15 @@ export const multerOptions = {
   fileFilter: (req: any, file: any, cb: any) => {
     const allowedTypes = [
       'image/jpeg',
+      'image/jpg',
       'image/png',
       'image/gif',
       'image/bmp',
       'image/tiff',
-      'image/tiff',
       'image/webp',
-      'image/svg+xml',
-      'audio/mpeg',
-      'audio/mp4',
+      'audio/mp3',
       'video/mp4',
-      'video/x-matroska',
-      'video/x-msvideo',
-      'video/quicktime',
-      'video/x-ms-wmv',
+      'video/webm',
     ];
 
     if (allowedTypes.includes(file.mimetype)) {
@@ -30,7 +25,7 @@ export const multerOptions = {
       // Reject file
       cb(
         new HttpException(
-          `Supported MIME Types: jpeg, png, gif, bmp, tiff, webp, svg, mpeg, mp4, matroska, x-msvideo, quicktime, x-ms-wmv`,
+          `Supported MIME Types: jpeg, jpg ,png, gif, bmp, tiff, webp, svg, mpeg, mp4, mp3 ,webm`,
           HttpStatus.BAD_REQUEST,
         ),
         false,
