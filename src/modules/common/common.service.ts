@@ -188,7 +188,7 @@ export class CommonService {
       case '.pdf':
         return 'application/pdf';
       case '.mp3':
-        return 'audio/mp3';
+        return 'audio/mpeg';
       case '.mp4':
         return 'video/mp4';
       case '.avi':

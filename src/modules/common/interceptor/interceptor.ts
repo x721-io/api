@@ -14,10 +14,10 @@ export const multerOptions = {
       'image/tiff',
       'image/webp',
       'audio/mp3',
+      'audio/mpeg',
       'video/mp4',
       'video/webm',
     ];
-
     if (allowedTypes.includes(file.mimetype)) {
       // Allow storage of file
       cb(null, true);
