@@ -11,10 +11,6 @@ export class CreateNftDto {
   @IsNotEmpty({ message: 'Please Enter Name NFT' })
   name: string;
 
-  @IsString({ message: 'IPFS Hash is invalid' })
-  @IsNotEmpty({ message: 'Please Enter IPFS ' })
-  ipfsHash: string;
-
   @IsString({ message: 'Image IPFS Hash is invalid' })
   @IsOptional()
   image: string;

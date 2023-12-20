@@ -5,7 +5,6 @@ export class NftEntity implements NFT {
   id: string;
   name: string;
   txCreationHash: string;
-  ipfsHash: string;
   traits: string;
   createdAt: Date;
   updatedAt: Date;

@@ -5,7 +5,6 @@ export class NftDto {
   id: string;
   name: string;
   txCreationHash: string;
-  ipfsHash: string;
   traits: TraitEntity[];
   createdAt: Date;
   updatedAt: Date;

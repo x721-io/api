@@ -101,7 +101,6 @@ export class NftService {
           u2uId: input.u2uId,
           id: input.id,
           name: input.name,
-          ipfsHash: input.name,
           image: input.image,
           // traits: {
           //   create: input.traits,
@@ -591,7 +590,6 @@ export class NftService {
                 select: {
                   id: true,
                   name: true,
-                  ipfsHash: true,
                   traits: true,
                   createdAt: true,
                   updatedAt: true,

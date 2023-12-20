@@ -142,7 +142,7 @@ export class CommonService {
         );
         return {
           fileHashes: fileUrls,
-          metadataHash: `ipfs://${metadataResult.path}`,
+          metadataHash: metadataResult.path,
         };
       } else {
         return { fileHashes: fileUrls };
