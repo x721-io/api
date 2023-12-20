@@ -41,6 +41,7 @@ model NFT {
   description    String?
   name           String
   image          String?
+  animationUrl   String?
   traits         Trait[]
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt

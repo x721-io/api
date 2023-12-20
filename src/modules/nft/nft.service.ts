@@ -102,14 +102,12 @@ export class NftService {
           id: input.id,
           name: input.name,
           image: input.image,
-          // traits: {
-          //   create: input.traits,
-          // },
           status: TX_STATUS.PENDING,
           tokenUri: input.tokenUri,
           txCreationHash: input.txCreationHash,
           creatorId: user.id,
           collectionId: collection.id,
+          animationUrl: input.animationUrl,
         },
         include: {
           traits: true,

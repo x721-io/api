@@ -16,6 +16,7 @@ export class NftEntity implements NFT {
   constructor(partial: Partial<NFT>) {
     Object.assign(this, partial);
   }
+  animationUrl: string;
   description: string;
   u2uId: string;
   image: string;

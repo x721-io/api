@@ -15,6 +15,10 @@ export class CreateNftDto {
   @IsOptional()
   image: string;
 
+  @IsString()
+  @IsOptional()
+  animationUrl: string;
+
   // @IsNotEmpty({ message: 'Please Enter Traits ' })
   // traits: CreateTraitDto[];
 
