@@ -13,6 +13,7 @@ import { CollectionModule } from './modules/collection/collection.module';
 import { NftModule } from './modules/nft/nft.module';
 import { ValidatorModule } from './modules/validator/validator.module';
 import { LaunchpadModule } from './modules/launchpad/launchpad.module';
+import { HealthcheckController } from './modules/healthcheck/healthcheck.controller';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -35,6 +36,7 @@ import { LaunchpadModule } from './modules/launchpad/launchpad.module';
     LaunchpadModule,
   ],
   providers: [PrismaService],
+  controllers: [HealthcheckController],
 })
 export class AppModule {
   constructor() {}
