@@ -95,10 +95,9 @@ export class CollectionService {
     const count =
       await this.collectionData.getCollectionTokens(collectionAddress);
     if (type === 'ERC721') {
-      const sum = respose.marketEvent721S.reduce(
-        (acc, obj) => acc + BigInt(obj.price),
-        BigInt(0),
-      );
+      const sum = respose.marketEvent721S
+        .filter((item) => item.event == 'Trade' || item.event == 'AcceptBid')
+        .reduce((acc, obj) => acc + BigInt(obj.price), BigInt(0));
       // const count1= await this.collectionData.getCollectionTokens('0x73039bafa89e6f17f9a6b0b953a01af5ecabacd2');
       const uniqueOwnerIdsCount = new Set(
         count.erc721Tokens.map((obj) => obj.owner.id),
@@ -131,10 +130,9 @@ export class CollectionService {
         (obj) => BigInt(obj.value) > BigInt(0) && !!obj.account,
       ).length;
       // volumn
-      const sum = respose.marketEvent1155S.reduce(
-        (acc, obj) => acc + BigInt(obj.price),
-        BigInt(0),
-      );
+      const sum = respose.marketEvent1155S
+        .filter((item) => item.event == 'Trade' || item.event == 'AcceptBid')
+        .reduce((acc, obj) => acc + BigInt(obj.price), BigInt(0));
       // count total items
 
       // filter floor price
