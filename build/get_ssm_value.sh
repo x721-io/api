@@ -3,7 +3,7 @@
 # To use just set a variable with <target_env_var>=SSM:<ssm_parameter_store_path>
 # e.g. database_password=SSM:/prod/myservice/database-password
 # remove current env
-rm -rf .env
+rm -rf ../.env
 
 function export_key() {
     COMMAND="export $1='$2'"
@@ -39,6 +39,6 @@ function get_parameter() {
     export_key $ENV_VAR_NAME $SSM_VALUE
 }
 
-filename="./$1.env"
+filename="../$1.env"
 
 read_properties $filename
