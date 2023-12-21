@@ -216,16 +216,14 @@ export class NftService {
       }
 
       if (nftIdFromOwner.length > 0) {
-        whereCondition.AND.push({
-          u2uId: {
-            in: nftIdFromOwner,
-          },
-          collection: {
-            address: {
-              in: nftCollectionFromOwner,
+        for (let i = 0; i < nftIdFromOwner.length; i++) {
+          whereCondition.AND.push({
+            u2uId: nftIdFromOwner[i],
+            collection: {
+              address: nftCollectionFromOwner[i],
             },
-          },
-        });
+          });
+        }
       }
 
       //----------
