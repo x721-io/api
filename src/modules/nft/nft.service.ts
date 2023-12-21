@@ -248,10 +248,11 @@ export class NftService {
         });
       // console.log(whereCondition.OR.map((i) => i.AND));
       if (!filter.priceMin && !filter.priceMax && !filter.sellStatus) {
+        console.log(whereCondition);
         const nfts = await this.prisma.nFT.findMany({
           skip: (filter.page - 1) * filter.limit,
           take: filter.limit,
-          where: whereCondition,
+          where: whereCondition.OR.length > 0 ? whereCondition : { AND: [] },
           include: {
             creator: {
               select: {
