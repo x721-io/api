@@ -8,7 +8,7 @@ rm -rf ../.env
 function export_key() {
     COMMAND="export $1='$2'"
     eval ${COMMAND}
-    echo "$1=$2" >> .env
+    echo "$1=$2" >> ../.env
 }
 function read_properties() {
   file="$1"
