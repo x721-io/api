@@ -173,19 +173,21 @@ export class NftService {
         ).concat(account.ERC1155balances.map((item) => item.token.contract.id));
       }
       let whereCondition: Prisma.NFTWhereInput = {};
+      const whereConditionInternal: Prisma.NFTWhereInput = {};
 
       // Handle traits conditions
       if (traitsConditions.length > 0) {
         whereCondition.OR = traitsConditions;
       }
 
-      whereCondition.AND = [];
-      whereCondition.AND.push({
+      whereConditionInternal.AND = [];
+      whereCondition.OR = [];
+      whereConditionInternal.AND.push({
         status: TX_STATUS.SUCCESS,
       });
 
       if (filter.creatorAddress) {
-        whereCondition.AND.push({
+        whereConditionInternal.AND.push({
           creator: {
             publicKey: filter.creatorAddress,
           },
@@ -203,11 +205,11 @@ export class NftService {
           collectionCondition.type = filter.type;
         }
 
-        whereCondition.AND.push({ collection: collectionCondition });
+        whereConditionInternal.AND.push({ collection: collectionCondition });
       }
 
       if (filter.name) {
-        whereCondition.AND.push({
+        whereConditionInternal.AND.push({
           name: {
             contains: filter.name,
             mode: 'insensitive',
@@ -217,11 +219,16 @@ export class NftService {
 
       if (nftIdFromOwner.length > 0) {
         for (let i = 0; i < nftIdFromOwner.length; i++) {
-          whereCondition.AND.push({
-            u2uId: nftIdFromOwner[i],
-            collection: {
-              address: nftCollectionFromOwner[i],
-            },
+          whereCondition.OR.push({
+            AND: [
+              { u2uId: nftIdFromOwner[i] },
+              {
+                collection: {
+                  address: nftCollectionFromOwner[i],
+                },
+              },
+              ...whereConditionInternal.AND,
+            ],
           });
         }
       }
@@ -239,6 +246,7 @@ export class NftService {
           ],
           // or: [{ from: filter.owner }, { to: filter.owner }],
         });
+      // console.log(whereCondition.OR.map((i) => i.AND));
       if (!filter.priceMin && !filter.priceMax && !filter.sellStatus) {
         const nfts = await this.prisma.nFT.findMany({
           skip: (filter.page - 1) * filter.limit,
@@ -318,12 +326,6 @@ export class NftService {
         };
       } else {
         whereCondition = {
-          ...whereCondition,
-          // u2uId: {
-          //   in: marketEvent721S
-          //     .map((item) => item.nftId.tokenId)
-          //     .concat(marketEvent1155S.map((item) => item.nftId.tokenId)),
-          // },
           OR: marketEvent1155S
             // @ts-ignore
             .concat(marketEvent721S)
@@ -332,11 +334,11 @@ export class NftService {
               AND: [
                 { collection: { address: pair.nftId.contract.id } },
                 { u2uId: pair.nftId.tokenId },
+                whereConditionInternal,
               ],
             })),
         };
         // @ts-ignore
-        console.log(whereCondition.OR.map((i) => i.AND));
         const nfts = await this.prisma.nFT.findMany({
           skip: (filter.page - 1) * filter.limit,
           take: filter.limit,
