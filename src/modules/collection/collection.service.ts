@@ -425,6 +425,7 @@ export class CollectionService {
               coverImage: true,
               updatedAt: true,
               projectId: true,
+              isU2U: true,
               category: {
                 select: {
                   id: true,
