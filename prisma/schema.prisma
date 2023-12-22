@@ -9,30 +9,33 @@ datasource db {
 }
 
 model User {
-  id               String           @id @default(uuid()) @db.Uuid
-  email            String?          @unique
-  avatar           String?
-  username         String?          @unique
-  signature        String?          @unique
-  signedMessage    String?
-  signer           String           @unique
-  publicKey        String?
-  signDate         DateTime?
-  acceptedTerms    Boolean          @default(false)
-  nftCreator       NFT[]
-  nftsOwnership    UserNFT[]
-  nftCollection    UserCollection[]
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  bio              String?
-  facebookLink     String?
-  twitterLink      String?
-  telegramLink     String?
-  shortLink        String?          @unique
-  discordLink      String?
-  webURL           String?
-  coverImage       String?
-  projectSubscribe UserProject[]
+  id            String           @id @default(uuid()) @db.Uuid
+  email         String?          @unique
+  avatar        String?
+  username      String?          @unique
+  signature     String?          @unique
+  signedMessage String?
+  signer        String           @unique
+  publicKey     String?
+  signDate      DateTime?
+  acceptedTerms Boolean          @default(false)
+  nftCreator    NFT[]
+  nftsOwnership UserNFT[]
+  nftCollection UserCollection[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  bio           String?
+  facebookLink  String?
+  twitterLink   String?
+  telegramLink  String?
+  shortLink     String?          @unique
+  discordLink   String?
+  webURL        String?
+  coverImage    String?
+  projectSubscribe  UserProject[]
+  accountStatus Boolean       @default(false)
+  verifyEmail   Boolean       @default(false)
+
 }
 
 model NFT {

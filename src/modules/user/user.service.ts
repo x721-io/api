@@ -14,12 +14,33 @@ import { ListProjectEntity } from './entities/project.entity';
 import { UserEntity } from './entities/user.entity';
 import { ActivityService } from '../nft/activity.service';
 import { GetActivityBase } from './dto/activity-user.dto';
+import { Redis } from 'src/database';
+import { SendVerifyEmailDto, VerifyEmailDto } from './dto/verify-email.dto';
+import * as jwt from 'jsonwebtoken';
+import { JwtPayload } from 'jsonwebtoken';
+import { GraphQLClient, gql } from 'graphql-request';
+import { Query } from '../../generated/graphql';
+
+interface ValidateBody {
+  id: number;
+  name: string;
+  email: string;
+}
 @Injectable()
 export class UserService {
   constructor(
     private prisma: PrismaService,
     private activetiService: ActivityService,
   ) {}
+
+  private readonly secretKeyConfirm = process.env.MAIL_KEY_CONFIRM;
+  private readonly tokenExpirationTime = 5 * 60;
+  private readonly endpoint = process.env.SUBGRAPH_URL;
+  private client = this.getGraphqlClient();
+
+  private getGraphqlClient() {
+    return new GraphQLClient(this.endpoint);
+  }
 
   // Remove few prop secret
   private minifyUserObject(user: any): any {
@@ -341,6 +362,153 @@ export class UserService {
     } catch (error) {
       console.log(error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async sendverifyEmail(input: SendVerifyEmailDto, user: User) {
+    try {
+      const { id } = user;
+      const currentUser = await this.prisma.user.findUnique({
+        where: {
+          id: id,
+        },
+      });
+      if (!currentUser) {
+        throw new NotFoundException();
+      }
+      if (input.email !== currentUser.email) {
+        throw new Error('Email is incorrect');
+      }
+
+      await Redis.publish('user-channel', {
+        data: {
+          isVerify: true,
+          email: input.email,
+          name: currentUser.username,
+          id: currentUser.id,
+        },
+        process: 'email-verify',
+      });
+      return true;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async checkVerifyEmail(input: VerifyEmailDto, user: User) {
+    try {
+      const validatie = this.verifyTokenConfirm(input.token);
+      if (!validatie) {
+        throw Error('Token is invalid');
+      }
+      if (user.id != validatie?.id) {
+        throw new Error('This email cannot be confirmed');
+      }
+      if (user && user?.verifyEmail) {
+        throw new Error('This email has been verified');
+      }
+      const resultUpdate = await this.prisma.user.update({
+        where: { id: validatie?.id },
+        data: {
+          verifyEmail: true,
+        },
+      });
+      return resultUpdate;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async checkListVerify(user: User) {
+    try {
+      const listVerify = {};
+      const queryERC721 = gql`
+        query erc721($id: ID = "${user.publicKey.toLowerCase()}") {
+          erc721Transfers(where: { to: $id }) {
+            timestamp
+            id
+            to {
+              id
+            }
+          }
+        }
+      `;
+
+      const queryERC1155 = gql`
+        query erc721($id: ID = "${user.publicKey.toLowerCase()}") {
+          erc1155Transfers(where: { to: $id }) {
+            valueExact
+            value
+            timestamp
+            id
+            to {
+              id
+            }
+          }
+        }
+      `;
+
+      const [ownerOrCreateERC721, ownerOrCreateERC1155] = await Promise.all([
+        this.client.request(queryERC721) as unknown as Query,
+        this.client.request(queryERC1155) as unknown as Query,
+      ]);
+
+      const nftTransfers =
+        ownerOrCreateERC1155?.erc1155Transfers?.length > 0 ||
+        ownerOrCreateERC721?.erc721Transfers?.length > 0;
+
+      if (!nftTransfers) {
+        listVerify['ownerOrCreater'] = false;
+      }
+      const requiredFields = [
+        'bio',
+        'twitterLink',
+        'username',
+        'avatar',
+        'verifyEmail',
+      ];
+
+      requiredFields.forEach((field) => {
+        if (!user[field]) {
+          listVerify[field] = false;
+        }
+      });
+      if (Object.values(listVerify).some((value) => value === false)) {
+        return listVerify;
+      }
+      const resultGetVerify = await this.prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          accountStatus: true,
+        },
+      });
+
+      return resultGetVerify;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  verifyTokenConfirm(token: string): any {
+    try {
+      const decodedToken = jwt.verify(
+        token,
+        this.secretKeyConfirm,
+      ) as JwtPayload;
+
+      // Check expiration time manually if needed
+      if (decodedToken && decodedToken.exp) {
+        const currentTimestamp = Math.floor(Date.now() / 1000); // Convert to seconds
+        if (decodedToken.exp < currentTimestamp) {
+          // Token has expired
+          return null;
+        }
+      }
+      return decodedToken;
+    } catch (error) {
+      return null; // Token verification failed
     }
   }
 }
