@@ -47,7 +47,7 @@ model NFT {
   updatedAt      DateTime   @updatedAt
   status         TX_STATUS
   tokenUri       String
-  txCreationHash String     @unique
+  txCreationHash String     
   owners         UserNFT[]
   creatorId      String?    @db.Uuid
   creator        User?      @relation(fields: [creatorId], references: [id])
