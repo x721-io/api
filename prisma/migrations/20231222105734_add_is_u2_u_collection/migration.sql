@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "NFT" ADD COLUMN     "isU2U" BOOLEAN NOT NULL DEFAULT true;
