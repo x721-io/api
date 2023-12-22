@@ -22,6 +22,8 @@ const whitelist = [
   'http://localhost:3000',
   'https://marketplace-dev.uniultra.xyz/',
   'https://marketplace-dev.uniultra.xyz',
+  'https://marketplace.uniultra.xyz/',
+  'https://marketplace.uniultra.xyz',
 ];
 
 async function bootstrap() {
