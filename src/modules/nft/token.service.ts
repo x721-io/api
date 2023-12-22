@@ -3,11 +3,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { createHash } from 'crypto';
+import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
+import { CONTRACT_TYPE } from '@prisma/client';
 
 @Injectable()
 export class TokenService {
   // private counter = 1n; // Initialize a counter
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly graphql: GraphQlcallerService,
+  ) {}
 
   async generateTokenId(
     minterAddress: string,
@@ -42,20 +47,30 @@ export class TokenService {
     // Return the tokenId
     // return tokenIdBigInt.toString();
 
-    const current = await this.prisma.nFT.count({
-      where: {
-        collection: {
-          address: collectionAddress,
-        },
-      },
-    });
+    // const current = await this.prisma.nFT.count({
+    //   where: {
+    //     collection: {
+    //       address: collectionAddress,
+    //     },
+    //   },
+    // });
+    let total;
+    if (isValidAddress.type === CONTRACT_TYPE.ERC1155) {
+      const nftsFromSubgraph =
+        await this.graphql.getNFTFromCollection(collectionAddress);
+      total = nftsFromSubgraph.erc1155Tokens.length;
+    } else {
+      const nftsFromSubgraph =
+        await this.graphql.getNFTFromCollection(collectionAddress);
+      total = nftsFromSubgraph.erc721Tokens.length;
+    }
     // const baseId = collectionAddress + current.toString();
     // const hash = createHash('sha256')
     //   .update(baseId)
     //   .digest('hex')
     //   .substring(0, 24);
 
-    const nextId = current + 1;
+    const nextId = total + 1;
     // return minterAddress + nextId.toString().padStart(24, '0');
     return {
       u2uId: minterAddress + nextId.toString().padStart(24, '0'),
