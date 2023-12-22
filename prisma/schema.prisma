@@ -146,6 +146,9 @@ model ProjectRound {
   address       String?
   start         DateTime
   end           DateTime
+  maxPerWallet  Int?
+  totalNftt     Int?
+  price         String?
   claimableStart  DateTime  @default(now())
   @@id([projectId, roundId])
   
@@ -166,6 +169,7 @@ model RoundInfo {
   id         Int          @id @default(autoincrement())
   name          String?
   description   String?
+  type          String?
   projects      ProjectRound[]
 }
 

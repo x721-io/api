@@ -231,6 +231,9 @@ export class NftService {
             ],
           });
         }
+      } else {
+        whereCondition.AND = whereConditionInternal.AND;
+        delete whereCondition.OR;
       }
 
       //----------
@@ -252,7 +255,8 @@ export class NftService {
         const nfts = await this.prisma.nFT.findMany({
           skip: (filter.page - 1) * filter.limit,
           take: filter.limit,
-          where: whereCondition.OR.length > 0 ? whereCondition : { AND: [] },
+          // where: whereCondition.OR.length > 0 || whereConditionInternal.AND.length > 0 ? whereCondition : { AND: [] },
+          where: whereCondition,
           include: {
             creator: {
               select: {
