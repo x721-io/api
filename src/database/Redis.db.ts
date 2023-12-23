@@ -125,6 +125,7 @@ class RedisDB {
   ): Promise<number> {
     try {
       const client = await this.getClient();
+      console.log('redis client: ', client)
       return client.publish(channel, JSON.stringify(message));
     } catch (err) {
       console.error(err);
