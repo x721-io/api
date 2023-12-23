@@ -549,7 +549,7 @@ export class NftService {
         event: SellStatus.AskNew,
         type: nft.collection.type,
         page: 0,
-        limit: owners.length,
+        limit: owners.length > 0 ? owners.length : 1,
       });
 
       const bidInfo = await this.eventService.findEvents({
