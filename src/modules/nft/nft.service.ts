@@ -439,6 +439,9 @@ export class NftService {
           address: collectionAddress.toLowerCase(),
         },
       });
+      if (!collection) {
+        throw new NotFoundException('No collection was found');
+      }
       const nft = await this.prisma.nFT.findUnique({
         where: {
           id_collectionId: {
@@ -479,12 +482,12 @@ export class NftService {
         throw new NotFoundException('No NFT found');
       }
       let owners: OwnerOutputDto[] = [];
+      let nftInfoWithOwner;
       if (nft.collection.type === 'ERC1155') {
-        const nftInfoWithOwner =
-          await this.GraphqlService.getOneNFTOwnersInfo1155(
-            nft.collection.address,
-            nft.u2uId ? nft.u2uId : nft.id,
-          );
+        nftInfoWithOwner = await this.GraphqlService.getOneNFTOwnersInfo1155(
+          nft.collection.address,
+          nft.u2uId ? nft.u2uId : nft.id,
+        );
         const ownerAddresses = nftInfoWithOwner.erc1155Balances
           .map((i) => {
             if (i.account && i.account.id !== ZERO_ADDR && i.value > 0)
@@ -522,11 +525,10 @@ export class NftService {
           return item2;
         });
       } else {
-        const nftInfoWithOwner =
-          await this.GraphqlService.getOneNFTOwnersInfo721(
-            nft.collection.address,
-            nft.u2uId ? nft.u2uId : nft.id,
-          );
+        nftInfoWithOwner = await this.GraphqlService.getOneNFTOwnersInfo721(
+          nft.collection.address,
+          nft.u2uId ? nft.u2uId : nft.id,
+        );
         owners = await this.prisma.user.findMany({
           where: {
             signer: nftInfoWithOwner.erc721Tokens[0].owner.id,
@@ -541,8 +543,13 @@ export class NftService {
           },
         });
       }
-      // @ts-ignore
-      nft.owners = owners;
+      if (owners.length === 0) {
+        // @ts-ignore
+        nft.owners = [{ signer: nftInfoWithOwner.erc721Tokens[0].owner.id }];
+      } else {
+        // @ts-ignore
+        nft.owners = owners;
+      }
       const sellInfo = await this.eventService.findEvents({
         contractAddress: nft.collection.address,
         nftId: nft.u2uId ? nft.u2uId : nft.id,
