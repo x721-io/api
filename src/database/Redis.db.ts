@@ -123,8 +123,12 @@ class RedisDB {
     channel: string,
     message: RedisPubReq<T>,
   ): Promise<number> {
-    const client = await this.getClient();
-    return client.publish(channel, JSON.stringify(message));
+    try {
+      const client = await this.getClient();
+      return client.publish(channel, JSON.stringify(message));
+    } catch (err) {
+      console.error(err);
+    }
   }
 }
 
