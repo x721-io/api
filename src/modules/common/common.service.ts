@@ -39,6 +39,18 @@ export class CommonService {
                 mode: 'insensitive',
               },
             },
+            {
+              shortUrl: {
+                contains: input.text,
+                mode: 'insensitive',
+              },
+            },
+            {
+              address: {
+                contains: input.text,
+                mode: 'insensitive',
+              },
+            },
           ],
         },
       });
@@ -60,9 +72,14 @@ export class CommonService {
                 mode: 'insensitive',
               },
             },
-
             {
               signer: {
+                contains: input.text,
+                mode: 'insensitive',
+              },
+            },
+            {
+              shortLink: {
                 contains: input.text,
                 mode: 'insensitive',
               },
