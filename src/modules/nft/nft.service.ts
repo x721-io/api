@@ -172,16 +172,18 @@ export class NftService {
           (item) => item.contract.id,
         ).concat(account.ERC1155balances.map((item) => item.token.contract.id));
       }
-      let whereCondition: Prisma.NFTWhereInput = {};
+
+      console.log(nftIdFromOwner, nftCollectionFromOwner);
+      const whereCondition: Prisma.NFTWhereInput = {};
       const whereConditionInternal: Prisma.NFTWhereInput = {};
+      whereConditionInternal.AND = [];
+      whereCondition.OR = [];
 
       // Handle traits conditions
       if (traitsConditions.length > 0) {
-        whereCondition.OR = traitsConditions;
+        whereConditionInternal.AND.push(...traitsConditions);
       }
 
-      whereConditionInternal.AND = [];
-      whereCondition.OR = [];
       whereConditionInternal.AND.push({
         status: TX_STATUS.SUCCESS,
       });
@@ -330,24 +332,27 @@ export class NftService {
           },
         };
       } else {
-        whereCondition = {
-          OR: marketEvent1155S
-            // @ts-ignore
-            .concat(marketEvent721S)
-            .filter((i) => !!i.nftId)
-            .map((pair) => ({
-              AND: [
-                { collection: { address: pair.nftId.contract.id } },
-                { u2uId: pair.nftId.tokenId },
-                whereConditionInternal,
-              ],
-            })),
+        const whereCondition1: Prisma.NFTWhereInput = {
+          AND: [
+            {
+              OR: marketEvent1155S
+                // @ts-ignore
+                .concat(marketEvent721S)
+                .filter((i) => !!i.nftId)
+                .map((pair) => ({
+                  AND: [
+                    { collection: { address: pair.nftId.contract.id } },
+                    { u2uId: pair.nftId.tokenId },
+                  ],
+                })),
+            },
+            whereCondition,
+          ],
         };
-        // @ts-ignore
         const nfts = await this.prisma.nFT.findMany({
           skip: (filter.page - 1) * filter.limit,
           take: filter.limit,
-          where: whereCondition,
+          where: whereCondition1,
           include: {
             creator: {
               select: {
@@ -410,7 +415,7 @@ export class NftService {
           };
         });
         const total = await this.prisma.nFT.count({
-          where: whereCondition,
+          where: whereCondition1,
         });
         return {
           data: mergedArray,

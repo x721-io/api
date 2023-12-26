@@ -6,6 +6,7 @@ export class RoundEntity implements ProjectRound {
   maxPerWallet: number;
   totalNftt: number;
   claimableStart: Date;
+  claimableIds: string[];
   projectId: string;
   roundId: number;
   address: string;
