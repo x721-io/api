@@ -6,6 +6,7 @@ import { TokenService } from './token.service';
 import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
 import { MarketplaceService } from './nft-marketplace.service';
 import { ValidatorService } from '../validator/validator.service';
+import { ActivityService } from './activity.service';
 @Module({
   providers: [
     NftService,
@@ -14,6 +15,7 @@ import { ValidatorService } from '../validator/validator.service';
     GraphQlcallerService,
     MarketplaceService,
     ValidatorService,
+    ActivityService,
   ],
   controllers: [NftController],
 })
