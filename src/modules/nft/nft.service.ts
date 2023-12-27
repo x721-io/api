@@ -8,6 +8,7 @@ import {
   HttpException,
   HttpStatus,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { validate as isValidUUID } from 'uuid';
 import { Redis } from 'src/database';
@@ -62,10 +63,12 @@ export class NftService {
     try {
       const checkExist = await this.prisma.nFT.findFirst({
         where: {
-          OR: [{ txCreationHash: input.txCreationHash }],
+          txCreationHash: input.txCreationHash,
         },
       });
-
+      if (checkExist) {
+        throw new BadRequestException('Transaction already submitted');
+      }
       const collection = await this.prisma.collection.findFirst({
         where: {
           address: {
