@@ -420,4 +420,53 @@ export class GraphQlcallerService {
     const response = sdk.GetCollectionTokens(variables);
     return response;
   }
+  async formatWherecondition(conditions: { or?: any[]; and?: any[] }) {
+    const { or, and } = conditions;
+
+    const processCondition = (condition: any): string => {
+      return Object.entries(condition)
+        .filter(([key, value]) => !!value) // Filter out null values
+        .map(([key, value]) => {
+          if (typeof value === 'object' && value !== null) {
+            // Process nested object
+            return `${key}: {${processCondition(value)}}`;
+          } else {
+            // Process simple key-value pair
+            return `${key}: "${value}"`;
+          }
+        })
+        .join(', ');
+    };
+
+    const whereParts = [];
+
+    // Process AND conditions
+    if (and && and.length > 0) {
+      const andConditions = and
+        .map(processCondition)
+        .filter((condition) => condition) // Filter out empty conditions
+        .map((condition) => `{${condition}}`);
+
+      if (andConditions.length > 0) {
+        whereParts.push(`and: [${andConditions.join(', ')}]`);
+      }
+    }
+
+    // Process OR conditions
+    if (or && or.length > 0) {
+      const orConditions = or
+        .map(processCondition)
+        .filter((condition) => condition) // Filter out empty conditions
+        .map((condition) => `{${condition}}`);
+
+      if (orConditions.length > 0) {
+        whereParts.push(`or: [${orConditions.join(', ')}]`);
+      }
+    }
+
+    const isWhereEmpty = whereParts.length === 0;
+    const whereClause =
+      whereParts.length > 0 ? `where: {${whereParts.join(', ')}}` : '';
+    return { isWhereEmpty, whereClause };
+  }
 }

@@ -22,7 +22,7 @@ import { TokenService } from './token.service';
 import { GetAllNftDto } from './dto/get-all-nft.dto';
 import { MarketplaceService } from './nft-marketplace.service';
 import { GetEventBase } from './dto/event-base.dto';
-// import { TraitService } from './trait.service';
+import { GetActivityBase } from './dto/activity-nft.dto';
 
 @Controller('nft')
 export class NftController {
@@ -79,5 +79,10 @@ export class NftController {
   @UsePipes(new ValidationPipe({ transform: true }))
   findEvents(@Body() input: GetEventBase) {
     return this.eventService.findEvents1(input);
+  }
+
+  @Post('/activity')
+  findActivityNFT(@Body() input: GetActivityBase) {
+    return this.nftService.findActivityNFT(input);
   }
 }
