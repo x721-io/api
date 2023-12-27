@@ -12,9 +12,14 @@ import { validate as isValidUUID } from 'uuid';
 import { FindAllProjectDto } from '../launchpad/dto/find-all-project.dto';
 import { ListProjectEntity } from './entities/project.entity';
 import { UserEntity } from './entities/user.entity';
+import { ActivityService } from '../nft/activity.service';
+import { GetActivityBase } from './dto/activity-user.dto';
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private activetiService: ActivityService,
+  ) {}
 
   // Remove few prop secret
   private minifyUserObject(user: any): any {
@@ -318,6 +323,23 @@ export class UserService {
       });
       return response;
     } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+  async findActivityNFT(input: GetActivityBase) {
+    try {
+      const { to, from, page, limit, type } = input;
+      const or = [{ to }, { from }];
+      const blocks = await this.activetiService.fetchActivityFromGraph({
+        or,
+        page,
+        limit,
+        type,
+      });
+      const result = await this.activetiService.processActivityNFTData(blocks);
+      return result;
+    } catch (error) {
+      console.log(error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }

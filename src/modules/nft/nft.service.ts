@@ -19,6 +19,9 @@ import { SellStatus } from 'src/generated/graphql';
 import { ZERO_ADDR } from 'src/constants/web3Const/messages';
 import { OwnerOutputDto } from '../user/dto/owners.dto';
 import { ValidatorService } from '../validator/validator.service';
+import { GraphQLClient, gql } from 'graphql-request';
+import { GetActivityBase } from './dto/activity-nft.dto';
+import { ActivityService } from './activity.service';
 
 @Injectable()
 export class NftService {
@@ -27,7 +30,14 @@ export class NftService {
     private readonly GraphqlService: GraphQlcallerService,
     private readonly eventService: MarketplaceService,
     private validatorService: ValidatorService,
+    private activityService: ActivityService,
   ) {}
+
+  private readonly endpoint = process.env.SUBGRAPH_URL;
+  private client = this.getGraphqlClient();
+  private getGraphqlClient() {
+    return new GraphQLClient(this.endpoint);
+  }
 
   async crawlNftInfo(collectionAddress: string, txCreation?: string) {
     try {
@@ -652,11 +662,39 @@ export class NftService {
     }
   }
 
-  update(id: number, updateNftDto: UpdateNftDto) {
-    return `This action updates a #${id} nft`;
+  async findActivityNFT(input: GetActivityBase) {
+    try {
+      const { tokenId, quoteToken, address, page, limit, type } = input;
+      const and = [{ tokenId }, { quoteToken }, { address }];
+      const blocks = await this.activityService.fetchActivityFromGraph({
+        and,
+        page,
+        limit,
+        type,
+      });
+      const result = await this.activityService.processActivityNFTData(blocks);
+      return result;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} nft`;
-  }
+  getUserData = async (signer: string) => {
+    try {
+      return await this.prisma.user.findFirst({
+        where: { signer },
+        select: {
+          id: true,
+          email: true,
+          avatar: true,
+          username: true,
+          signer: true,
+        },
+      });
+    } catch (error) {
+      console.error(`Error fetching user data for signer ${signer}:`, error);
+      throw error; // You may want to handle or log the error accordingly
+    }
+  };
 }

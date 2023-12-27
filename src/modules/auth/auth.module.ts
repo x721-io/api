@@ -9,6 +9,8 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshTokenStrategy } from './strategies/refreshToken.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
+import { ActivityService } from '../nft/activity.service';
+import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
 
 @Module({
   imports: [
@@ -26,6 +28,15 @@ import { LocalStrategy } from './strategies/local.strategy';
     PassportModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, UserService, PrismaService, JwtStrategy, RefreshTokenStrategy, LocalStrategy]
+  providers: [
+    AuthService,
+    UserService,
+    GraphQlcallerService,
+    ActivityService,
+    PrismaService,
+    JwtStrategy,
+    RefreshTokenStrategy,
+    LocalStrategy,
+  ],
 })
 export class AuthModule {}
