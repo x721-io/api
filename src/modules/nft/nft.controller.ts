@@ -60,6 +60,21 @@ export class NftController {
     return this.nftService.findAll(query);
   }
 
+  @Get('/nftTransactionInfo')
+  findNftsCurrentStatus(
+    @Query('id') id: string,
+    @Query('collectionAddress') collectionAddress: string,
+    @Query('bidListPage') bidPage: number,
+    @Query('bidListLimit') bidLimit: number,
+  ) {
+    return this.nftService.getNftDetailTransactionInfo(
+      id,
+      collectionAddress,
+      bidPage,
+      bidLimit,
+    );
+  }
+
   @Get('')
   findOne(
     @Query('id') id: string,
