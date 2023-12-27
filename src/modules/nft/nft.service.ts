@@ -587,12 +587,7 @@ export class NftService {
     }
   }
 
-  async findOne(
-    id: string,
-    collectionAddress: string,
-    bidPage: number,
-    bidListLimit: number,
-  ): Promise<NftDto> {
+  async findOne(id: string, collectionAddress: string): Promise<NftDto> {
     try {
       const collection = await this.prisma.collection.findUnique({
         where: {
