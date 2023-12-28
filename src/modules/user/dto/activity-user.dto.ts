@@ -7,11 +7,7 @@ import { Type, Transform } from 'class-transformer';
 export class GetActivityBase extends OffsetPaginationDto {
   @IsString()
   @Transform(({ value }) => new LowercasePipe().transform(value))
-  from: string;
-
-  @IsString()
-  @Transform(({ value }) => new LowercasePipe().transform(value))
-  to: string;
+  user: string;
 
   @IsOptional()
   @IsEnum(CONTRACT_TYPE)

@@ -12,7 +12,7 @@ export class GetActivityBase extends OffsetPaginationDto {
 
   @IsOptional()
   @IsString()
-  address?: string;
+  collectionAddress?: string;
 
   @IsString()
   @IsOptional()
