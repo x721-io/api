@@ -507,7 +507,21 @@ export class NftService {
       page: (page - 1) * limit,
       limit: limit,
     });
-    return { bidInfo, sellInfo, owners, totalSupply };
+
+    const bidderAddress = bidInfo.map((bidder) => bidder.to);
+
+    const bidderInfo = await this.prisma.user.findMany({
+      where: {
+        signer: {
+          in: bidderAddress,
+        },
+      },
+    });
+    const mergedBidder = bidInfo.map((item) => {
+      const match = bidderInfo.find((item1) => item1.signer == item.to);
+      return match ? { ...item, to: match } : item;
+    });
+    return { bidInfo: mergedBidder, sellInfo, owners, totalSupply };
   }
 
   async getCurrentOwners(
