@@ -1,0 +1,21 @@
+query getActivity($page: Int, $limit: Int, $address: String) {
+  blocks(
+    where: {address: $address}
+    skip: $page
+    first: $limit
+    orderBy: timestampt
+    orderDirection: desc
+  ) {
+    tokenId
+    from
+    to
+    timestampt
+    quantity
+    price
+    id
+    event
+    blockNumber
+    address
+    quoteToken
+  }
+}
