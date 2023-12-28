@@ -16,11 +16,20 @@ import { GetAllCollectionDto } from './dto/get-all-collection.dto';
 import { GetCollectionMarketData } from '../graph-qlcaller/getCollectionMarketData.service';
 import { CollectionPriceService } from './collectionPrice.service';
 import { GetCollectionByUserDto } from './dto/get-collection-by-user.dto';
+import SecureUtil from '../../commons/Secure.common';
+import { GraphQLClient } from 'graphql-request';
+import { getSdk } from '../../generated/graphql';
+import { oneWeekInMilliseconds } from '../../constants/Timestamp.constant';
 interface CollectionGeneral {
   totalOwner: number;
   volumn: string;
   totalNft: number;
   floorPrice: string;
+}
+
+interface CollectionVolumeInterface {
+  timestamp: string;
+  total: string;
 }
 
 @Injectable()
@@ -31,6 +40,14 @@ export class CollectionService {
     private readonly collectionData: GetCollectionMarketData,
     private readonly collectionPriceService: CollectionPriceService,
   ) {}
+
+  private readonly endpoint = process.env.SUBGRAPH_URL;
+  private client = this.getGraphqlClient();
+  private getGraphqlClient() {
+    return new GraphQLClient(this.endpoint);
+  }
+
+  private sdk = getSdk(this.client);
 
   async create(input: CreateCollectionDto, user: User): Promise<any> {
     try {
@@ -90,19 +107,17 @@ export class CollectionService {
     collectionAddress: string,
     type: CONTRACT_TYPE,
   ): Promise<CollectionGeneral> {
-    const respose =
-      await this.collectionData.getCollectionSumData(collectionAddress);
-    const count =
-      await this.collectionData.getCollectionTokens(collectionAddress);
+    const [response, count, sum] = await Promise.all([
+      this.collectionData.getCollectionSumData(collectionAddress),
+      this.collectionData.getCollectionTokens(collectionAddress),
+      this.getVolumeCollection(collectionAddress),
+    ]);
+
     if (type === 'ERC721') {
-      const sum = respose.marketEvent721S
-        .filter((item) => item.event == 'Trade' || item.event == 'AcceptBid')
-        .reduce((acc, obj) => acc + BigInt(obj.price), BigInt(0));
-      // const count1= await this.collectionData.getCollectionTokens('0x73039bafa89e6f17f9a6b0b953a01af5ecabacd2');
       const uniqueOwnerIdsCount = new Set(
         count.erc721Tokens.map((obj) => obj.owner.id),
       ).size;
-      const filterSelling = respose.marketEvent721S.filter(
+      const filterSelling = response.marketEvent721S.filter(
         (obj) => obj.event === 'AskNew',
       );
       const floorPrice =
@@ -130,13 +145,9 @@ export class CollectionService {
         (obj) => BigInt(obj.value) > BigInt(0) && !!obj.account,
       ).length;
       // volumn
-      const sum = respose.marketEvent1155S
-        .filter((item) => item.event == 'Trade' || item.event == 'AcceptBid')
-        .reduce((acc, obj) => acc + BigInt(obj.price), BigInt(0));
-      // count total items
 
       // filter floor price
-      const filterSelling = respose.marketEvent1155S.filter(
+      const filterSelling = response.marketEvent1155S.filter(
         (obj) => obj.event === 'AskNew',
       );
       const floorPrice =
@@ -478,6 +489,70 @@ export class CollectionService {
       };
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+  async checkRecord(address: string) {
+    try {
+      const result = await SecureUtil.getSessionInfo(address);
+      return result ? JSON.parse(result) : null;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async saveVolumeCollection(
+    address: string,
+    input: CollectionVolumeInterface,
+  ) {
+    try {
+      const result = await SecureUtil.storeObjectSession(
+        address,
+        input,
+        oneWeekInMilliseconds,
+      );
+      return result;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getVolumeCollection(address: string) {
+    const { blocks = [] } = await this.sdk.getActivity({ address });
+    const redisData = await this.checkRecord(address);
+    const lastUpdate = `${blocks?.[0]?.timestampt || ''}`;
+    const isTradeOrAcceptBid = (item: any) =>
+      item.event === 'Trade' || item.event === 'AcceptBid';
+    const sum = blocks
+      .filter(isTradeOrAcceptBid)
+      .reduce((acc, obj) => acc + BigInt(obj.price), BigInt(0));
+
+    if (redisData !== null) {
+      const redisTimestamp = parseInt(redisData.timestamp, 10);
+
+      const newBlocks = blocks.filter(
+        (item) => item.timestampt > redisTimestamp,
+      );
+
+      if (newBlocks.length > 0) {
+        const sumNewBlock = newBlocks
+          .filter(isTradeOrAcceptBid)
+          .reduce((acc, obj) => acc + BigInt(obj.price), BigInt(0));
+        const updatedTotal = (BigInt(redisData.total) + sumNewBlock).toString();
+        await this.saveVolumeCollection(address, {
+          timestamp: lastUpdate,
+          total: updatedTotal,
+        });
+        return updatedTotal;
+      }
+
+      return sum;
+    } else {
+      await this.saveVolumeCollection(address, {
+        timestamp: lastUpdate,
+        total: sum.toString(),
+      });
+      return sum;
     }
   }
 }
