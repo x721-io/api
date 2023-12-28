@@ -751,14 +751,18 @@ export class NftService {
 
   async findActivityNFT(input: GetActivityBase) {
     try {
-      const { tokenId, quoteToken, address, page, limit, type } = input;
-      const and = [{ tokenId }, { quoteToken }, { address }];
+      const { tokenId, quoteToken, collectionAddress, page, limit, type } =
+        input;
+
+      const and = [{ tokenId }, { quoteToken }, { address: collectionAddress }];
       const blocks = await this.activityService.fetchActivityFromGraph({
         and,
         page,
         limit,
         type,
       });
+
+      console.log('ssssssssssssss', blocks);
       const result = await this.activityService.processActivityNFTData(blocks);
       return result;
     } catch (error) {

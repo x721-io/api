@@ -328,16 +328,41 @@ export class UserService {
   }
   async findActivityNFT(input: GetActivityBase) {
     try {
-      const { to, from, page, limit, type } = input;
-      const or = [{ to }, { from }];
+      const { user, page, limit, type } = input;
+      const resultUser = await this.getUser(user);
+
+      const or = [{ to: resultUser?.signer }, { from: resultUser?.signer }];
       const blocks = await this.activetiService.fetchActivityFromGraph({
         or,
         page,
         limit,
         type,
       });
-      const result = await this.activetiService.processActivityNFTData(blocks);
+      const result = await this.activetiService.processActivityUserData(blocks);
       return result;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getUser(user: any) {
+    try {
+      if (isValidUUID(user)) {
+        // If user is a valid UUID, search by ID
+        const responseUser = await this.prisma.user.findFirst({
+          where: { id: user },
+        });
+        return responseUser;
+      } else {
+        // If user is not a valid UUID, search by username or shortLink
+        const responseUser = await this.prisma.user.findFirst({
+          where: {
+            OR: [{ username: user }, { shortLink: user }, { signer: user }],
+          },
+        });
+        return responseUser;
+      }
     } catch (error) {
       console.log(error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);

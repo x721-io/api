@@ -40,6 +40,14 @@ interface NullableCollection {
   shortUrl: string;
 }
 
+interface NullableNFT {
+  id: string;
+  u2uId: string;
+  name: string;
+  image: string;
+  animationUrl: boolean;
+}
+
 @Injectable()
 export class ActivityService {
   constructor(
@@ -63,10 +71,29 @@ export class ActivityService {
           avatar: true,
           username: true,
           signer: true,
+          shortLink: true,
         },
       });
     } catch (error) {
       console.error(`Error fetching user data for signer ${signer}:`, error);
+      throw error; // You may want to handle or log the error accordingly
+    }
+  };
+
+  getNFTData = async (id: string) => {
+    try {
+      return await this.prisma.nFT.findFirst({
+        where: { u2uId: id },
+        select: {
+          id: true,
+          u2uId: true,
+          name: true,
+          image: true,
+          animationUrl: true,
+        },
+      });
+    } catch (error) {
+      console.error(`Error fetching user data for signer ${id}:`, error);
       throw error; // You may want to handle or log the error accordingly
     }
   };
@@ -153,21 +180,82 @@ export class ActivityService {
   async processActivityNFTData(blocks: any[]) {
     const result = await Promise.all(
       blocks.map(async (item) => {
-        const to = await this.fetchUserData(item?.to);
-        const from = await this.fetchUserData(item?.from);
+        const toResult = await this.fetchUserData(item?.to);
+        const fromResult = await this.fetchUserData(item?.from);
         const collection = await this.getCollectionData(item?.address);
+        const NFT = await this.getNFTData(item?.tokenId);
 
-        return {
+        const to =
+          item?.to !== ZERO_ADDR
+            ? Object.keys(toResult).length
+              ? toResult
+              : ({ signer: item?.to } as NullableUser)
+            : ({ signer: item?.to } as NullableUser);
+
+        const from =
+          item?.from !== ZERO_ADDR
+            ? Object.keys(fromResult).length
+              ? fromResult
+              : ({ signer: item?.from } as NullableUser)
+            : ({ signer: item?.from } as NullableUser);
+
+        const newItem = {
           ...item,
-          to: to !== ZERO_ADDR ? to : ({ signer: item?.to } as NullableUser),
-          from:
-            from !== ZERO_ADDR
-              ? from
-              : ({ signer: item?.from } as NullableUser),
+          timestamp: item?.timestampt,
+          to,
+          from,
           collection: collection
             ? collection
             : ({ address: item?.address } as NullableCollection),
+          NFT: NFT ? NFT : ({ u2uId: item?.tokenId } as NullableNFT),
         };
+
+        delete newItem.address;
+        delete newItem.tokenId;
+        delete newItem.timestampt;
+        return newItem;
+      }),
+    );
+    return result;
+  }
+
+  async processActivityUserData(blocks: any[]) {
+    const result = await Promise.all(
+      blocks.map(async (item) => {
+        const toResult = await this.fetchUserData(item?.to);
+        const fromResult = await this.fetchUserData(item?.from);
+        const collection = await this.getCollectionData(item?.address);
+        const NFT = await this.getNFTData(item?.tokenId);
+
+        const to =
+          item?.to !== ZERO_ADDR
+            ? Object.keys(toResult).length
+              ? toResult
+              : ({ signer: item?.to } as NullableUser)
+            : ({ signer: item?.to } as NullableUser);
+
+        const from =
+          item?.from !== ZERO_ADDR
+            ? Object.keys(fromResult).length
+              ? fromResult
+              : ({ signer: item?.from } as NullableUser)
+            : ({ signer: item?.from } as NullableUser);
+
+        const newItem = {
+          ...item,
+          timestamp: item?.timestampt,
+          to,
+          from,
+          collection: collection
+            ? collection
+            : ({ address: item?.address } as NullableCollection),
+          NFT: NFT ? NFT : ({ u2uId: item?.tokenId } as NullableNFT),
+        };
+
+        delete newItem.address;
+        delete newItem.tokenId;
+        delete newItem.timestampt;
+        return newItem;
       }),
     );
     return result;
