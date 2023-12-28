@@ -1,5 +1,4 @@
 import { CreateNftDto } from './dto/create-nft.dto';
-import { UpdateNftDto } from './dto/update-nft.dto';
 import { Prisma, TX_STATUS, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { NftDto } from './dto/nft.dto';
@@ -19,9 +18,10 @@ import { SellStatus } from 'src/generated/graphql';
 import { ZERO_ADDR } from 'src/constants/web3Const/messages';
 import { OwnerOutputDto } from '../user/dto/owners.dto';
 import { ValidatorService } from '../validator/validator.service';
-import { GraphQLClient, gql } from 'graphql-request';
+import { GraphQLClient } from 'graphql-request';
 import { GetActivityBase } from './dto/activity-nft.dto';
 import { ActivityService } from './activity.service';
+import { NftEntity } from './entities/nft.entity';
 
 @Injectable()
 export class NftService {
@@ -445,12 +445,149 @@ export class NftService {
     }
   }
 
-  async findOne(
-    id: string,
+  async getNftDetailTransactionInfo(
+    nftId: string,
     collectionAddress: string,
-    bidPage: number,
-    bidListLimit: number,
-  ): Promise<NftDto> {
+    page,
+    limit,
+  ) {
+    const collection = await this.prisma.collection.findUnique({
+      where: {
+        address: collectionAddress.toLowerCase(),
+      },
+    });
+    if (!collection) {
+      throw new NotFoundException('No collection was found');
+    }
+    const nft: NftEntity = await this.prisma.nFT.findUnique({
+      where: {
+        id_collectionId: {
+          id: nftId,
+          collectionId: collection.id,
+        },
+      },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            email: true,
+            avatar: true,
+            username: true,
+            publicKey: true,
+          },
+        },
+        collection: {
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        traits: true,
+      },
+    });
+    const { owners, totalSupply } = await this.getCurrentOwners(nft);
+    const sellInfo = await this.eventService.findEvents({
+      contractAddress: nft.collection.address,
+      nftId: nft.u2uId ? nft.u2uId : nft.id,
+      event: SellStatus.AskNew,
+      type: nft.collection.type,
+      page: 0,
+      limit: owners.length > 0 ? owners.length : 1,
+    });
+
+    const bidInfo = await this.eventService.findEvents({
+      contractAddress: nft.collection.address,
+      nftId: nft.u2uId ? nft.u2uId : nft.id,
+      event: SellStatus.Bid,
+      type: nft.collection.type,
+      page: (page - 1) * limit,
+      limit: limit,
+    });
+    return { bidInfo, sellInfo, owners, totalSupply };
+  }
+
+  async getCurrentOwners(
+    nft: NftEntity,
+  ): Promise<{ owners: OwnerOutputDto[]; totalSupply: number }> {
+    let owners: OwnerOutputDto[] = [];
+    let nftInfoWithOwner;
+    let totalSupply = 0;
+    if (nft.collection.type === 'ERC1155') {
+      nftInfoWithOwner = await this.GraphqlService.getOneNFTOwnersInfo1155(
+        nft.collection.address,
+        nft.u2uId ? nft.u2uId : nft.id,
+      );
+      const totalSupplyFilter = nftInfoWithOwner.erc1155Balances.filter(
+        (i) => i.value > 0 && !i.account,
+      );
+      totalSupply = totalSupplyFilter[0].value;
+      const ownerAddresses = nftInfoWithOwner.erc1155Balances
+        .map((i) => {
+          if (i.account && i.account.id !== ZERO_ADDR && i.value > 0)
+            return i.account.id;
+        })
+        .filter((i) => !!i);
+      const ownersFromLocal = await this.prisma.user.findMany({
+        where: {
+          signer: { in: ownerAddresses },
+        },
+        select: {
+          id: true,
+          email: true,
+          avatar: true,
+          username: true,
+          signer: true,
+          publicKey: true,
+        },
+      });
+      owners = ownersFromLocal.map((item2) => {
+        const item1 = nftInfoWithOwner.erc1155Balances.find(
+          (i1) => i1.account && i1.account.id === item2.signer,
+        );
+        if (item1) {
+          return {
+            ...item2,
+            quantity: item1.value,
+          };
+        }
+        return item2;
+      });
+    } else {
+      nftInfoWithOwner = await this.GraphqlService.getOneNFTOwnersInfo721(
+        nft.collection.address,
+        nft.u2uId ? nft.u2uId : nft.id,
+      );
+      totalSupply = 1;
+      owners = await this.prisma.user.findMany({
+        where: {
+          signer: nftInfoWithOwner.erc721Tokens[0].owner.id,
+        },
+        select: {
+          id: true,
+          email: true,
+          avatar: true,
+          username: true,
+          signer: true,
+          publicKey: true,
+        },
+      });
+    }
+    if (owners.length === 0) {
+      return {
+        // @ts-ignore
+        owners: [{ signer: nftInfoWithOwner.erc721Tokens[0].owner.id }],
+        totalSupply,
+      };
+    } else {
+      return { owners, totalSupply };
+    }
+  }
+
+  async findOne(id: string, collectionAddress: string): Promise<NftDto> {
     try {
       const collection = await this.prisma.collection.findUnique({
         where: {
@@ -460,7 +597,7 @@ export class NftService {
       if (!collection) {
         throw new NotFoundException('No collection was found');
       }
-      const nft = await this.prisma.nFT.findUnique({
+      const nft: NftEntity = await this.prisma.nFT.findUnique({
         where: {
           id_collectionId: {
             id,
@@ -478,13 +615,7 @@ export class NftService {
             },
           },
           collection: {
-            select: {
-              id: true,
-              txCreationHash: true,
-              name: true,
-              status: true,
-              type: true,
-              address: true,
+            include: {
               category: {
                 select: {
                   id: true,
@@ -499,96 +630,38 @@ export class NftService {
       if (!nft) {
         throw new NotFoundException('No NFT found');
       }
-      let owners: OwnerOutputDto[] = [];
-      let nftInfoWithOwner;
+      let owners: OwnerOutputDto[];
       if (nft.collection.type === 'ERC1155') {
-        nftInfoWithOwner = await this.GraphqlService.getOneNFTOwnersInfo1155(
-          nft.collection.address,
-          nft.u2uId ? nft.u2uId : nft.id,
-        );
-        const ownerAddresses = nftInfoWithOwner.erc1155Balances
-          .map((i) => {
-            if (i.account && i.account.id !== ZERO_ADDR && i.value > 0)
-              return i.account.id;
-          })
-          .filter((i) => !!i);
-        const ownersFromLocal = await this.prisma.user.findMany({
-          where: {
-            signer: { in: ownerAddresses },
-          },
-          select: {
-            id: true,
-            email: true,
-            avatar: true,
-            username: true,
-            signer: true,
-            publicKey: true,
-          },
-        });
-        const totalSupply = nftInfoWithOwner.erc1155Balances.filter(
-          (i) => i.value > 0 && !i.account,
-        );
-        // @ts-ignore
-        nft.totalSupply = totalSupply[0].value;
-        owners = ownersFromLocal.map((item2) => {
-          const item1 = nftInfoWithOwner.erc1155Balances.find(
-            (i1) => i1.account && i1.account.id === item2.signer,
-          );
-          if (item1) {
-            return {
-              ...item2,
-              quantity: item1.value,
-            };
-          }
-          return item2;
-        });
+        // const ownerAndSupplyInfo = await this.getCurrentOwners(nft);
+        // owners = ownerAndSupplyInfo.owners;
+        // nft.totalSupply = ownerAndSupplyInfo.totalSupply;
       } else {
-        nftInfoWithOwner = await this.GraphqlService.getOneNFTOwnersInfo721(
-          nft.collection.address,
-          nft.u2uId ? nft.u2uId : nft.id,
-        );
-        owners = await this.prisma.user.findMany({
-          where: {
-            signer: nftInfoWithOwner.erc721Tokens[0].owner.id,
-          },
-          select: {
-            id: true,
-            email: true,
-            avatar: true,
-            username: true,
-            signer: true,
-            publicKey: true,
-          },
-        });
+        // const ownerAndSupplyInfo = await this.getCurrentOwners(nft);
+        // owners = ownerAndSupplyInfo.owners;
       }
-      if (owners.length === 0) {
-        // @ts-ignore
-        nft.owners = [{ signer: nftInfoWithOwner.erc721Tokens[0].owner.id }];
-      } else {
-        // @ts-ignore
-        nft.owners = owners;
-      }
-      const sellInfo = await this.eventService.findEvents({
-        contractAddress: nft.collection.address,
-        nftId: nft.u2uId ? nft.u2uId : nft.id,
-        event: SellStatus.AskNew,
-        type: nft.collection.type,
-        page: 0,
-        limit: owners.length > 0 ? owners.length : 1,
-      });
+      // @ts-ignore
+      nft.owners = owners;
+      // const sellInfo = await this.eventService.findEvents({
+      //   contractAddress: nft.collection.address,
+      //   nftId: nft.u2uId ? nft.u2uId : nft.id,
+      //   event: SellStatus.AskNew,
+      //   type: nft.collection.type,
+      //   page: 0,
+      //   limit: owners.length > 0 ? owners.length : 1,
+      // });
 
-      const bidInfo = await this.eventService.findEvents({
-        contractAddress: nft.collection.address,
-        nftId: nft.u2uId ? nft.u2uId : nft.id,
-        event: SellStatus.Bid,
-        type: nft.collection.type,
-        page: (bidPage - 1) * bidListLimit,
-        limit: bidListLimit,
-      });
+      // const bidInfo = await this.eventService.findEvents({
+      //   contractAddress: nft.collection.address,
+      //   nftId: nft.u2uId ? nft.u2uId : nft.id,
+      //   event: SellStatus.Bid,
+      //   type: nft.collection.type,
+      //   page: (bidPage - 1) * bidListLimit,
+      //   limit: bidListLimit,
+      // });
       const returnNft: NftDto = {
         ...nft,
-        sellInfo: sellInfo,
-        bidInfo: bidInfo,
+        // sellInfo: sellInfo,
+        // bidInfo: bidInfo,
       };
       return returnNft;
     } catch (error) {
