@@ -783,7 +783,6 @@ export class NftService {
         type,
       });
 
-      console.log('ssssssssssssss', blocks);
       const result = await this.activityService.processActivityNFTData(blocks);
       return result;
     } catch (error) {

@@ -80,10 +80,33 @@ export class ActivityService {
     }
   };
 
-  getNFTData = async (id: string) => {
+  getNFTData = async (id: string, collectionAddress: string) => {
     try {
       return await this.prisma.nFT.findFirst({
-        where: { u2uId: id },
+        where: {
+          OR: [
+            {
+              AND: [
+                { u2uId: id },
+                {
+                  collection: {
+                    address: collectionAddress,
+                  },
+                },
+              ],
+            },
+            {
+              AND: [
+                { id },
+                {
+                  collection: {
+                    address: collectionAddress,
+                  },
+                },
+              ],
+            },
+          ],
+        },
         select: {
           id: true,
           u2uId: true,
@@ -183,7 +206,7 @@ export class ActivityService {
         const toResult = await this.fetchUserData(item?.to);
         const fromResult = await this.fetchUserData(item?.from);
         const collection = await this.getCollectionData(item?.address);
-        const NFT = await this.getNFTData(item?.tokenId);
+        const NFT = await this.getNFTData(item?.tokenId, item?.address);
 
         const to =
           item?.to !== ZERO_ADDR
@@ -225,7 +248,7 @@ export class ActivityService {
         const toResult = await this.fetchUserData(item?.to);
         const fromResult = await this.fetchUserData(item?.from);
         const collection = await this.getCollectionData(item?.address);
-        const NFT = await this.getNFTData(item?.tokenId);
+        const NFT = await this.getNFTData(item?.tokenId, item.address);
 
         const to =
           item?.to !== ZERO_ADDR
