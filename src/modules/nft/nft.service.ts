@@ -517,11 +517,32 @@ export class NftService {
         },
       },
     });
+
+    const sellerAddress = bidInfo.map((seller) => seller.from);
+
+    const sellerInfo = await this.prisma.user.findMany({
+      where: {
+        signer: {
+          in: sellerAddress.filter((i) => i !== null),
+        },
+      },
+    });
+
     const mergedBidder = bidInfo.map((item) => {
       const match = bidderInfo.find((item1) => item1.signer == item.to);
       return match ? { ...item, to: match } : item;
     });
-    return { bidInfo: mergedBidder, sellInfo, owners, totalSupply };
+
+    const mergedSeller = sellInfo.map((item) => {
+      const match = sellerInfo.find((item1) => item1.signer == item.from);
+      return match ? { ...item, from: match } : item;
+    });
+    return {
+      bidInfo: mergedBidder,
+      sellInfo: mergedSeller,
+      owners,
+      totalSupply,
+    };
   }
 
   async getCurrentOwners(
