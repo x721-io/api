@@ -9,7 +9,7 @@ query getStatusERC1155S{
     id
     from
     event
-    amounts
+    quantity
     address
     nftId {
       id

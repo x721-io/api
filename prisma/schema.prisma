@@ -55,6 +55,9 @@ model NFT {
   collection     Collection @relation(fields: [collectionId], references: [id])
 
   @@id([id, collectionId])
+  @@index([u2uId, collectionId])
+  @@index([collectionId])
+  @@index([creatorId])
 }
 
 model Trait {
@@ -65,6 +68,10 @@ model Trait {
   collectionId String  @db.Uuid
   nftId        String
   NFT          NFT     @relation(fields: [nftId, collectionId], references: [id, collectionId])
+
+  @@index([nftId, collectionId])
+  @@index([display_type])
+  @@index([value])
 }
 
 model UserNFT {
