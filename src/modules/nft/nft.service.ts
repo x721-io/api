@@ -327,7 +327,7 @@ export class NftService {
             ...(foundItem2 && {
               price: foundItem2.price,
               sellStatus: foundItem2.event,
-              quantity: foundItem2.amounts,
+              quantity: foundItem2.quantity,
               askId: foundItem2.id,
               quoteToken: foundItem2.quoteToken,
             }),
@@ -421,7 +421,7 @@ export class NftService {
             ...(foundItem2 && {
               price: foundItem2.price,
               sellStatus: foundItem2.event,
-              quantity: foundItem2.amounts,
+              quantity: foundItem2.quantity,
               askId: foundItem2.id,
               quoteToken: foundItem2.quoteToken,
             }),

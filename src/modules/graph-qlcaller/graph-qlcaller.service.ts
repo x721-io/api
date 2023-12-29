@@ -122,7 +122,7 @@ export class GraphQlcallerService {
         ) {
           id
           event
-          amounts
+          quantity
           nftId {
             id
             tokenId
@@ -220,7 +220,7 @@ export class GraphQlcallerService {
           price
           to
           from
-          amounts
+          quantity
           quoteToken
           operationId
           timestamp
@@ -334,7 +334,7 @@ export class GraphQlcallerService {
           price
           to
           from
-          amounts
+          quantity
           quoteToken
           operationId
           timestamp

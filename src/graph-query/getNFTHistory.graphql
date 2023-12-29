@@ -27,7 +27,7 @@ query GetNFTsHistory1155 ($minPrice: BigInt, $maxPrice: BigInt, $event: SellStat
   ) {
     id
     event
-    amounts
+    quantity
     nftId {
       id
       contract {
@@ -61,7 +61,7 @@ query GetOneNFTSellInfo($nftId: String!, $event: SellStatus, $quoteToken: String
     price
     to
     from
-    amounts
+    quantity
     quoteToken
     operationId
   }
