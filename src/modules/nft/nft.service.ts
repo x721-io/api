@@ -516,9 +516,17 @@ export class NftService {
           in: bidderAddress,
         },
       },
+      select: {
+        signer: true,
+        publicKey: true,
+        id: true,
+        username: true,
+        avatar: true,
+        email: true,
+      },
     });
 
-    const sellerAddress = bidInfo.map((seller) => seller.from);
+    const sellerAddress = bidInfo.concat(sellInfo).map((seller) => seller.from);
 
     const sellerInfo = await this.prisma.user.findMany({
       where: {
@@ -526,16 +534,24 @@ export class NftService {
           in: sellerAddress.filter((i) => i !== null),
         },
       },
+      select: {
+        signer: true,
+        publicKey: true,
+        id: true,
+        username: true,
+        avatar: true,
+        email: true,
+      },
     });
 
     const mergedBidder = bidInfo.map((item) => {
       const match = bidderInfo.find((item1) => item1.signer == item.to);
-      return match ? { ...item, to: match } : item;
+      return match ? { ...item, to: match as OwnerOutputDto } : item;
     });
 
     const mergedSeller = sellInfo.map((item) => {
       const match = sellerInfo.find((item1) => item1.signer == item.from);
-      return match ? { ...item, from: match } : item;
+      return match ? { ...item, from: match as OwnerOutputDto } : item;
     });
     return {
       bidInfo: mergedBidder,
