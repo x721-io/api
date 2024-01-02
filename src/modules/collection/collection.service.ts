@@ -201,6 +201,16 @@ export class CollectionService {
     };
 
     if (input.max || input.min) {
+      if (input.max && input.min && Number(input.min) > Number(input.max)) {
+        return {
+          data: [],
+          paging: {
+            total: 0,
+            page: input.page,
+            limit: input.limit,
+          },
+        };
+      }
       const filteredContractId =
         await this.collectionPriceService.filterFloorPriceFromSubgraph(
           input.min,

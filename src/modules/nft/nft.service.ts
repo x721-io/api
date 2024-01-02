@@ -266,7 +266,6 @@ export class NftService {
         });
       // console.log(whereCondition.OR.map((i) => i.AND));
       if (!filter.priceMin && !filter.priceMax && !filter.sellStatus) {
-        console.log(whereCondition);
         const nfts = await this.prisma.nFT.findMany({
           skip: (filter.page - 1) * filter.limit,
           take: filter.limit,
@@ -345,6 +344,17 @@ export class NftService {
           },
         };
       } else {
+        if (Number(filter.priceMin) > Number(filter.priceMax)) {
+          // If priceMin is higher than priceMax, return an empty array
+          return {
+            data: [],
+            paging: {
+              total: 0,
+              limit: filter.limit,
+              page: filter.page,
+            },
+          };
+        }
         const whereCondition1: Prisma.NFTWhereInput = {
           AND: [
             {
