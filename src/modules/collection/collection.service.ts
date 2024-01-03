@@ -112,7 +112,6 @@ export class CollectionService {
       this.collectionData.getCollectionTokens(collectionAddress),
       this.getVolumeCollection(collectionAddress),
     ]);
-
     if (type === 'ERC721') {
       const uniqueOwnerIdsCount = new Set(
         count.erc721Tokens.map((obj) => obj.owner.id),
@@ -183,7 +182,7 @@ export class CollectionService {
       },
     });
     const addresses = creators.map((item) => item.id);
-    const whereCondition: Prisma.CollectionWhereInput = {
+    let whereCondition: Prisma.CollectionWhereInput = {
       ...(input.name && {
         name: {
           contains: input.name,
@@ -199,9 +198,11 @@ export class CollectionService {
       },
       status: TX_STATUS.SUCCESS,
     };
-
+    let addressObject = {};
     if (input.max || input.min) {
-      if (input.max && input.min && Number(input.min) > Number(input.max)) {
+      const min = Number(input.min);
+      const max = Number(input.max);
+      if (min > max) {
         return {
           data: [],
           paging: {
@@ -211,13 +212,27 @@ export class CollectionService {
           },
         };
       }
+      // IF min == 0 and max > 0 => | Get all item from item don't have value in subgraph and value < max
+      if (min === 0) {
+        const filteredContractId =
+          await this.collectionPriceService.filterFloorPriceFromSubgraphWithoutMinMax();
+        addressObject = {
+          address: {
+            notIn: filteredContractId,
+          },
+        };
+      }
       const filteredContractId =
         await this.collectionPriceService.filterFloorPriceFromSubgraph(
           input.min,
           input.max,
         );
-      whereCondition.address = {
-        in: filteredContractId,
+      addressObject = {
+        OR: [{ ...addressObject }, { address: { in: filteredContractId } }],
+      };
+      whereCondition = {
+        ...whereCondition,
+        ...addressObject,
       };
       const filterPriceCollection = await this.prisma.collection.findMany({
         where: whereCondition,
@@ -261,6 +276,18 @@ export class CollectionService {
         },
       };
     } else {
+      // IF Min and Max == 0 => | return just item don't have value in subgraph
+      // ÌF Just Max == 0    => | return just item don't have value in subgraph
+      if (
+        (Number(input.min) == 0 && Number(input.max) == 0) ||
+        Number(input.max) == 0
+      ) {
+        const filteredContractId =
+          await this.collectionPriceService.filterFloorPriceFromSubgraphWithoutMinMax();
+        whereCondition.address = {
+          notIn: filteredContractId,
+        };
+      }
       const collections = await this.prisma.collection.findMany({
         where: whereCondition,
         skip: (input.page - 1) * input.limit,

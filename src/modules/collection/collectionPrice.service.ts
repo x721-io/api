@@ -72,4 +72,19 @@ export class CollectionPriceService {
 
     return floorPrices;
   }
+
+  async filterFloorPriceFromSubgraphWithoutMinMax(): Promise<any[]> {
+    const {
+      marketEvent1155S: filterSelling1155,
+      marketEvent721S: filterSelling721,
+    } = await this.graphQL.getNFTSellStatus1({
+      and: [{ event: SellStatus.AskNew }],
+      // or: [{ from: filter.owner }, { to: filter.owner }],
+    });
+    const collectionsWithFloorPrice = this.getFloorPrices([
+      ...filterSelling1155,
+      ...filterSelling721,
+    ]);
+    return collectionsWithFloorPrice.map((i) => i.contractId);
+  }
 }
