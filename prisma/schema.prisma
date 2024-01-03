@@ -70,8 +70,6 @@ model Trait {
   NFT          NFT     @relation(fields: [nftId, collectionId], references: [id, collectionId])
 
   @@index([nftId, collectionId])
-  @@index([display_type])
-  @@index([value])
 }
 
 model UserNFT {
