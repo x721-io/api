@@ -262,15 +262,13 @@ export class NftService {
             {
               from:
                 filter.sellStatus === SellStatus.AskNew && filter.owner
-                  ? filter.owner
+                  ? filter.owner.toLowerCase()
                   : filter.from,
             },
             { to: filter.to },
           ],
           // or: [{ from: filter.owner }, { to: filter.owner }],
         });
-      console.log(marketEvent1155S);
-      // console.log(whereCondition.OR.map((i) => i.AND));
       if (!filter.priceMin && !filter.priceMax && !filter.sellStatus) {
         const nfts = await this.prisma.nFT.findMany({
           skip: (filter.page - 1) * filter.limit,
