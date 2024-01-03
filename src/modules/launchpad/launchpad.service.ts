@@ -65,14 +65,21 @@ export class LaunchpadService {
       filteredProjects = projects.filter((project) =>
         project.rounds.some((round) => {
           return (
-            new Date(round.start) <= new Date() &&
-            new Date(round.end) >= new Date()
+            (new Date(round.start) <= new Date() &&
+              new Date(round.end) >= new Date()) ||
+            new Date(round.claimableStart) === new Date(0)
           );
         }),
       );
     } else if (query.mode === ProjectStat.ENDED) {
       filteredProjects = projects.filter((project) =>
         project.rounds.every((round) => new Date(round.end) < new Date()),
+      );
+    } else if (query.mode === ProjectStat.CLAIM) {
+      filteredProjects = projects.filter((project) =>
+        project.rounds.some(
+          (round) => new Date(round.claimableStart) < new Date(),
+        ),
       );
     } else {
       filteredProjects = projects;
