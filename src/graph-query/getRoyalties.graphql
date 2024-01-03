@@ -1,0 +1,9 @@
+query getRoyalties($address: String) {
+    royaltiesRegistries(where: { collectionId: $address }) {
+    value
+    id
+    collectionId
+    tokenId
+    account
+    }
+}

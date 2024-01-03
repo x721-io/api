@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { CreateCollectionDto } from './dto/create-collection.dto';
 import { UpdateCollectionDto } from './dto/update-collection.dto';
+import { CollectionDetailDto } from './dto/get-detail-collection.dto';
 import { CollectionEntity } from './entities/collection.entity';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CONTRACT_TYPE, Prisma, TX_STATUS, User } from '@prisma/client';
@@ -17,7 +18,7 @@ import { GetCollectionMarketData } from '../graph-qlcaller/getCollectionMarketDa
 import { CollectionPriceService } from './collectionPrice.service';
 import { GetCollectionByUserDto } from './dto/get-collection-by-user.dto';
 import SecureUtil from '../../commons/Secure.common';
-import { GraphQLClient } from 'graphql-request';
+import { GraphQLClient, gql } from 'graphql-request';
 import { getSdk } from '../../generated/graphql';
 import { oneWeekInMilliseconds } from '../../constants/Timestamp.constant';
 interface CollectionGeneral {
@@ -304,11 +305,7 @@ export class CollectionService {
     }
   }
 
-  async findOne(id: string): Promise<{
-    collection: CollectionEntity;
-    traitAvailable: TraitGeneralInfo[];
-    generalInfo: any;
-  }> {
+  async findOne(id: string): Promise<CollectionDetailDto> {
     try {
       let whereCondition: Prisma.CollectionWhereInput;
       if (!isValidUUID(id)) {
@@ -351,13 +348,30 @@ export class CollectionService {
       if (!collection) {
         throw new NotFoundException();
       }
-      const traitsAvailable =
-        await this.traitService.findUniqueTraitsInCollection(collection.id);
-      const generalInfo = await this.getGeneralCollectionData(
-        collection.address,
-        collection.type,
+      const { id: collectionId, address, type } = collection;
+
+      // Parallelize async operations
+      const [traitsAvailable, generalInfo, royalties] = await Promise.all([
+        this.traitService.findUniqueTraitsInCollection(collectionId),
+        this.getGeneralCollectionData(address, type),
+        this.collectionPriceService.FetchRoyaltiesFromGraph(address),
+      ]);
+      const totalRoyalties = royalties.reduce(
+        (acc, item) => acc + item.value,
+        0,
       );
-      return { collection, traitAvailable: traitsAvailable, generalInfo };
+
+      const collectionReponse = {
+        ...collection,
+        totalRoyalties,
+        listRoyalties: royalties,
+      };
+
+      return {
+        collection: collectionReponse,
+        traitAvailable: traitsAvailable,
+        generalInfo,
+      };
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }

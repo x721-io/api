@@ -15,4 +15,5 @@ export class NftDto {
   // owners?: Array<UserNFT>;
   sellInfo?: unknown;
   bidInfo?: unknown;
+  collection?: unknown;
 }

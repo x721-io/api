@@ -22,6 +22,7 @@ import { GraphQLClient } from 'graphql-request';
 import { GetActivityBase } from './dto/activity-nft.dto';
 import { ActivityService } from './activity.service';
 import { NftEntity } from './entities/nft.entity';
+import { CollectionPriceService } from '../collection/collectionPrice.service';
 
 @Injectable()
 export class NftService {
@@ -31,6 +32,7 @@ export class NftService {
     private readonly eventService: MarketplaceService,
     private validatorService: ValidatorService,
     private activityService: ActivityService,
+    private collectionPriceService: CollectionPriceService,
   ) {}
 
   private readonly endpoint = process.env.SUBGRAPH_URL;
@@ -719,8 +721,21 @@ export class NftService {
       //   page: (bidPage - 1) * bidListLimit,
       //   limit: bidListLimit,
       // });
+      const royalties =
+        await this.collectionPriceService.FetchRoyaltiesFromGraph(
+          collectionAddress,
+        );
+      const totalRoyalties = royalties.reduce(
+        (acc, item) => acc + item.value,
+        0,
+      );
       const returnNft: NftDto = {
         ...nft,
+        collection: {
+          ...nft.collection,
+          totalRoyalties,
+          listRoyalties: royalties,
+        },
         // sellInfo: sellInfo,
         // bidInfo: bidInfo,
       };

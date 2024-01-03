@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import {
   getSdk,
   SellStatus,
@@ -11,6 +11,7 @@ import {
   GetOneNftSellInfoQuery,
   GetNfTwithAccountIdQueryVariables,
   GetCollectionTokensQueryVariables,
+  Query,
 } from '../../generated/graphql';
 import { GraphQLClient, gql } from 'graphql-request';
 @Injectable()
@@ -468,5 +469,19 @@ export class GraphQlcallerService {
     const whereClause =
       whereParts.length > 0 ? `where: {${whereParts.join(', ')}}` : '';
     return { isWhereEmpty, whereClause };
+  }
+
+  async FetchRoyaltiesFromGraph(address: string) {
+    try {
+      const client = this.getGraphqlClient();
+      const sdk = getSdk(client);
+      const { royaltiesRegistries } = (await sdk.getRoyalties({
+        address,
+      })) as unknown as Query;
+      return royaltiesRegistries;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
   }
 }
