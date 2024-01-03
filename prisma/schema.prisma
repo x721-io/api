@@ -157,6 +157,7 @@ model ProjectRound {
   maxPerWallet   Int?
   totalNftt      Int?
   price          String?
+  instruction    String?
   claimableStart DateTime  @default(now())
   claimableIds   String[]  @default([])
 

@@ -4,4 +4,7 @@ import { IsString } from 'class-validator';
 export class SubcribeProjectDto {
   @IsString()
   projectId: string;
+
+  @IsString()
+  walletAddress: string;
 }
