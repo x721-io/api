@@ -259,11 +259,17 @@ export class NftService {
             { price_lte: filter.priceMax },
             { event: filter.sellStatus },
             { quoteToken: filter.quoteToken },
-            { from: filter.from },
+            {
+              from:
+                filter.sellStatus === SellStatus.AskNew && filter.owner
+                  ? filter.owner
+                  : filter.from,
+            },
             { to: filter.to },
           ],
           // or: [{ from: filter.owner }, { to: filter.owner }],
         });
+      console.log(marketEvent1155S);
       // console.log(whereCondition.OR.map((i) => i.AND));
       if (!filter.priceMin && !filter.priceMax && !filter.sellStatus) {
         const nfts = await this.prisma.nFT.findMany({
@@ -355,23 +361,22 @@ export class NftService {
             },
           };
         }
-        const whereCondition1: Prisma.NFTWhereInput = {
-          AND: [
-            {
-              OR: marketEvent1155S
-                // @ts-ignore
-                .concat(marketEvent721S)
-                .filter((i) => !!i.nftId)
-                .map((pair) => ({
-                  AND: [
-                    { collection: { address: pair.nftId.contract.id } },
-                    { u2uId: pair.nftId.tokenId },
-                  ],
-                })),
-            },
-            whereCondition,
-          ],
-        };
+        const marketEvents = marketEvent1155S
+          // @ts-ignore
+          .concat(marketEvent721S)
+          .filter((i) => !!i.nftId)
+          .map((pair) => ({
+            AND: [
+              { collection: { address: pair.nftId.contract.id } },
+              { u2uId: pair.nftId.tokenId },
+            ],
+          }));
+
+        const whereCondition1: Prisma.NFTWhereInput =
+          marketEvents.length > 0
+            ? { AND: [{ OR: marketEvents }, whereCondition] }
+            : { AND: [{ id: '' }, whereCondition] };
+
         const nfts = await this.prisma.nFT.findMany({
           skip: (filter.page - 1) * filter.limit,
           take: filter.limit,
