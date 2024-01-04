@@ -263,9 +263,9 @@ export class LaunchpadService {
         signer: walletAddress.toLowerCase(),
       },
     });
-    if (!subscriber) {
-      throw new NotFoundException('Subscriber not found');
-    }
+    // if (!subscriber) {
+    //   throw new NotFoundException('Subscriber not found');
+    // }
     const isSubcribe = await this.prisma.userProject.findUnique({
       where: {
         userId_projectId: {
