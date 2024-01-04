@@ -56,8 +56,6 @@ model NFT {
 
   @@id([id, collectionId])
   @@index([u2uId, collectionId])
-  @@index([collectionId])
-  @@index([creatorId])
 }
 
 model Trait {

@@ -51,6 +51,9 @@ export class LaunchpadService {
           include: {
             round: true,
           },
+          orderBy: {
+            start: 'asc',
+          },
         },
       },
     });
@@ -107,6 +110,9 @@ export class LaunchpadService {
         rounds: {
           include: {
             round: true,
+          },
+          orderBy: {
+            start: 'asc',
           },
         },
       },
