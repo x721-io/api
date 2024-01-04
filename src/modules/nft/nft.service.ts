@@ -246,6 +246,8 @@ export class NftService {
             ],
           });
         }
+      } else if (filter.owner) {
+        console.log(whereConditionInternal);
       } else {
         whereCondition.AND = whereConditionInternal.AND;
         delete whereCondition.OR;
