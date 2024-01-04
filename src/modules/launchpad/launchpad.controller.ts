@@ -33,7 +33,7 @@ export class LaunchpadController {
     return this.launchpadService.configNextRound(id);
   }
 
-  @Post('/subcribe')
+  @Post('/subscribe')
   async subcribeProject(@Body() input: SubcribeProjectDto) {
     return await this.launchpadService.subcribeProject(input);
   }
