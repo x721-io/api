@@ -1,4 +1,10 @@
-import { IsDate, IsDateString, IsEnum, IsOptional } from 'class-validator';
+import {
+  IsDate,
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { ProjectStat } from 'src/constants/enums/ProjectStat.enum';
 
 export class FindAllProjectDto {
