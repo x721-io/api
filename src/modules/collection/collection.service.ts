@@ -421,23 +421,28 @@ export class CollectionService {
     }
   }
 
-  async findWithUserID(
+  async findWithUserIDOrAddress(
     id: string,
     input: GetCollectionByUserDto,
   ): Promise<PagingResponse<CollectionEntity>> {
     try {
+      let isUuid = true;
       if (!isValidUUID(id)) {
-        throw new Error('Invalid User. Please try again !');
+        isUuid = false;
+        console.log('alo');
       }
-      const checkExist = await this.prisma.user.findFirst({
-        where: { id: id },
-      });
-      if (!checkExist) {
-        throw new NotFoundException();
-      }
+      // const checkExist = await this.prisma.user.findFirst({
+      //   where: { id: id },
+      // });
+      // if (!checkExist) {
+      //   throw new NotFoundException();
+      // }
+      console.log(...(isUuid ? 'a' : 'b'));
       const userWithCollection = await this.prisma.userCollection.findMany({
         where: {
-          userId: id,
+          user: {
+            ...(isUuid ? { id } : { signer: id }),
+          },
         },
         skip: (input.page - 1) * input.limit,
         take: input.limit,
@@ -499,7 +504,9 @@ export class CollectionService {
 
       const total = await this.prisma.userCollection.count({
         where: {
-          userId: id,
+          user: {
+            ...(isUuid ? { id } : { signer: id }),
+          },
         },
       });
 
