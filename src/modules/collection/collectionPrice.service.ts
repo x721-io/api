@@ -1,15 +1,21 @@
-import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
-import { SellStatus } from 'src/generated/graphql';
-
+import { SellStatus, GetRoyaltiesQuery } from 'src/generated/graphql';
+import {
+  Injectable,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+} from '@nestjs/common';
+import { Query } from '../../generated/graphql';
+import { ZERO_ADDR } from 'src/constants/web3Const/messages';
+import { GraphQLClient, gql } from 'graphql-request';
 @Injectable()
 export class CollectionPriceService {
   constructor(
     private prisma: PrismaService,
     private readonly graphQL: GraphQlcallerService,
   ) {}
-
   async filterFloorPriceFromSubgraph(
     min?: string,
     max?: string,
@@ -71,5 +77,69 @@ export class CollectionPriceService {
     });
 
     return floorPrices;
+  }
+  async FetchRoyaltiesFromGraph(address: string) {
+    try {
+      const royaltiesRegistries =
+        await this.graphQL.FetchRoyaltiesFromGraph(address);
+      const result = await this.processUserData(royaltiesRegistries);
+      return result;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async processUserData(royaltiesRegistries: any[]) {
+    try {
+      const result = await Promise.all(
+        royaltiesRegistries.map(async (item) => {
+          const userResponse = await this.fetchUserData(item?.account);
+
+          const user =
+            item?.account !== ZERO_ADDR
+              ? Object.keys(userResponse).length
+                ? userResponse
+                : { signer: item?.account }
+              : { signer: item?.account };
+
+          const newItem = {
+            ...item,
+            account: user,
+          };
+          return newItem;
+        }),
+      );
+      return result;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getUserData(signer: string) {
+    try {
+      return await this.prisma.user.findFirst({
+        where: { signer },
+        select: {
+          id: true,
+          email: true,
+          avatar: true,
+          username: true,
+          signer: true,
+          shortLink: true,
+        },
+      });
+    } catch (error) {
+      console.error(`Error fetching user data for signer ${signer}:`, error);
+      throw error; // You may want to handle or log the error accordingly
+    }
+  }
+  async fetchUserData(signer: string) {
+    if (signer !== ZERO_ADDR) {
+      const response = await this.getUserData(signer);
+      return response || {};
+    }
+    return signer;
   }
 }
