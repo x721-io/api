@@ -127,7 +127,7 @@ export class LaunchpadService {
     };
   }
 
-  async checkStaking(input: CheckStakingDto, user: User) {
+  async checkStaking(input: CheckStakingDto) {
     try {
       const { projectId } = input;
       if (!projectId) {
@@ -151,6 +151,7 @@ export class LaunchpadService {
                   avatar: true,
                   username: true,
                   publicKey: true,
+                  signer: true,
                 },
               },
             },
@@ -179,7 +180,7 @@ export class LaunchpadService {
         subscriber.map(async (item) => {
           const { user } = item;
           const response = await this.client.request(query, {
-            id: user.publicKey.toLowerCase(),
+            id: user.signer.toLowerCase(),
           });
           const { delegator }: any = response;
           return { ...item, ...delegator };
