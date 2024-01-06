@@ -285,7 +285,7 @@ export class UserService {
       }
       const result = await this.prisma.userProject.findMany({
         where: {
-          OR: [
+          AND: [
             {
               userId: user.id,
             },
@@ -341,6 +341,7 @@ export class UserService {
       const res = this.formatData(response);
       return res;
     } catch (error) {
+      console.error(error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
@@ -386,8 +387,10 @@ export class UserService {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
-
   formatData(data) {
+    if (data.length === 0) {
+      throw new NotFoundException('User has not subscribed project');
+    }
     const { userId, subscribeDate, stakingTotal, lastDateRecord, projectId } =
       data[0];
     const projects = data.map((item) => item?.project);
