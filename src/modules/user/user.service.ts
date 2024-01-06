@@ -10,6 +10,7 @@ import { Prisma, User } from '@prisma/client';
 import { GetAllUser } from './dto/get-all-user.dto';
 import { validate as isValidUUID } from 'uuid';
 import { FindAllProjectDto } from '../launchpad/dto/find-all-project.dto';
+import { findProjectsUserSubscribe } from '../launchpad/dto/find-project.dto';
 import { ListProjectEntity } from './entities/project.entity';
 import { UserEntity } from './entities/user.entity';
 import { ActivityService } from '../nft/activity.service';
@@ -261,12 +262,11 @@ export class UserService {
     return !!existingUser;
   }
   async getProjectByUser(
-    query: FindAllProjectDto,
+    query: findProjectsUserSubscribe,
     user: User,
-  ): Promise<ListProjectEntity[]> {
+  ): Promise<ListProjectEntity> {
     try {
       const whereRounds: Prisma.ProjectRoundWhereInput = {};
-
       if (query.start) {
         whereRounds.start = { gte: new Date(query.start) };
       }
@@ -274,9 +274,18 @@ export class UserService {
       if (query.end) {
         whereRounds.end = { lte: new Date(query.end) };
       }
+
+      console.log(whereRounds);
       const result = await this.prisma.userProject.findMany({
         where: {
-          userId: user.id,
+          OR: [
+            {
+              userId: user.id,
+            },
+            {
+              projectId: query.projectId,
+            },
+          ],
         },
         include: {
           project: {
@@ -321,7 +330,9 @@ export class UserService {
           },
         };
       });
-      return response;
+
+      const res = this.formatData(response);
+      return res;
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
@@ -367,5 +378,20 @@ export class UserService {
       console.log(error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
+  }
+
+  formatData(data) {
+    const { userId, subscribeDate, stakingTotal, lastDateRecord, projectId } =
+      data[0];
+    const projects = data.map((item) => item?.project);
+
+    return {
+      userId,
+      subscribeDate,
+      stakingTotal,
+      lastDateRecord,
+      projectId,
+      projects,
+    };
   }
 }
