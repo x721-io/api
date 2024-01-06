@@ -76,12 +76,8 @@ export class UserController {
   }
 
   @Get('/projects')
-  @UseGuards(AuthenticationGuard)
-  async getProjectByUser(
-    @GetCurrentUser() user: User,
-    @Query() query: findProjectsUserSubscribe,
-  ) {
-    return await this.userService.getProjectByUser(query, user);
+  async getProjectByUser(@Query() query: findProjectsUserSubscribe) {
+    return await this.userService.getProjectByUser(query, query.userId);
   }
 
   @Post('/activity')

@@ -263,7 +263,7 @@ export class UserService {
   }
   async getProjectByUser(
     query: findProjectsUserSubscribe,
-    user: User,
+    userId: string,
   ): Promise<ListProjectEntity> {
     try {
       const whereRounds: Prisma.ProjectRoundWhereInput = {};
@@ -275,7 +275,14 @@ export class UserService {
         whereRounds.end = { lte: new Date(query.end) };
       }
 
-      console.log(whereRounds);
+      const user = await this.prisma.user.findFirst({
+        where: {
+          signer: userId.toLowerCase(),
+        },
+      });
+      if (!user) {
+        throw new NotFoundException('Subscriber not found');
+      }
       const result = await this.prisma.userProject.findMany({
         where: {
           OR: [
