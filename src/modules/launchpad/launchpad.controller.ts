@@ -33,6 +33,19 @@ export class LaunchpadController {
     return this.launchpadService.configNextRound(id);
   }
 
+  @Post('/subscribe')
+  async subcribeProject(@Body() input: SubcribeProjectDto) {
+    return await this.launchpadService.subcribeProject(input);
+  }
+
+  @Get('isSubscribed')
+  async isSubscribed(
+    @Query('walletAddress') walletAddress: string,
+    @Query('projectId') projectId: string,
+  ) {
+    return await this.launchpadService.isSubscribed(walletAddress, projectId);
+  }
+
   @Get()
   findAll(@Query() query: FindAllProjectDto) {
     return this.launchpadService.findAll(query);
@@ -50,14 +63,5 @@ export class LaunchpadController {
     @GetCurrentUser() user: User,
   ) {
     return await this.launchpadService.checkStaking(inputStaking, user);
-  }
-
-  @Post('/subcribe')
-  @UseGuards(AuthenticationGuard)
-  async subcribeProject(
-    @Body() input: SubcribeProjectDto,
-    @GetCurrentUser() user: User,
-  ) {
-    return await this.launchpadService.subcribeProject(input, user);
   }
 }

@@ -23,11 +23,15 @@ import { FilterNFTUserDetail } from './dto/get-nft-user.dto';
 import { UserServiceExtend } from './user-graph.service';
 import { AuthenticationCustomizeGuard } from '../auth/guards/authCustomize.guard';
 import { FindAllProjectDto } from '../launchpad/dto/find-all-project.dto';
+import { findProjectsUserSubscribe } from '../launchpad/dto/find-project.dto';
+import { GetActivityBase } from './dto/activity-user.dto';
+import { ActivityService } from '../nft/activity.service';
 @Controller('user')
 export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly userServiceExtend: UserServiceExtend,
+    private readonly activityService: ActivityService,
   ) {}
 
   @Post('profile')
@@ -75,8 +79,13 @@ export class UserController {
   @UseGuards(AuthenticationGuard)
   async getProjectByUser(
     @GetCurrentUser() user: User,
-    @Query() query: FindAllProjectDto,
+    @Query() query: findProjectsUserSubscribe,
   ) {
     return await this.userService.getProjectByUser(query, user);
+  }
+
+  @Post('/activity')
+  findActivityNFT(@Body() input: GetActivityBase) {
+    return this.userService.findActivityNFT(input);
   }
 }

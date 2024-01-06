@@ -56,6 +56,7 @@ export class CollectionController {
     @Param('id') id: string,
     @Query() input: GetCollectionByUserDto,
   ) {
-    return this.collectionService.findWithUserID(id, input);
+    const lowerCaseId = id.toLowerCase();
+    return this.collectionService.findWithUserIDOrAddress(lowerCaseId, input);
   }
 }

@@ -51,6 +51,9 @@ export class LaunchpadService {
           include: {
             round: true,
           },
+          orderBy: {
+            start: 'asc',
+          },
         },
       },
     });
@@ -58,26 +61,28 @@ export class LaunchpadService {
     if (query.mode === ProjectStat.UPCOMING) {
       filteredProjects = projects.filter((project) =>
         project.rounds.every((round) => {
-          console.log(project.id, new Date(round.start) > new Date());
           return new Date(round.start) > new Date();
         }),
       );
     } else if (query.mode === ProjectStat.MINTING) {
       filteredProjects = projects.filter((project) =>
         project.rounds.some((round) => {
-          console.log(
-            new Date(round.start) <= new Date() &&
-              new Date(round.end) >= new Date(),
-          );
           return (
-            new Date(round.start) <= new Date() &&
-            new Date(round.end) >= new Date()
+            (new Date(round.start) <= new Date() &&
+              new Date(round.end) >= new Date()) ||
+            new Date(round.claimableStart) === new Date(0)
           );
         }),
       );
     } else if (query.mode === ProjectStat.ENDED) {
       filteredProjects = projects.filter((project) =>
         project.rounds.every((round) => new Date(round.end) < new Date()),
+      );
+    } else if (query.mode === ProjectStat.CLAIM) {
+      filteredProjects = projects.filter((project) =>
+        project.rounds.some(
+          (round) => new Date(round.claimableStart) < new Date(),
+        ),
       );
     } else {
       filteredProjects = projects;
@@ -105,6 +110,9 @@ export class LaunchpadService {
         rounds: {
           include: {
             round: true,
+          },
+          orderBy: {
+            start: 'asc',
           },
         },
       },
@@ -199,10 +207,7 @@ export class LaunchpadService {
     }
   }
 
-  async subcribeProject(
-    input: SubcribeProjectDto,
-    user: User,
-  ): Promise<SubcribeEntity> {
+  async subcribeProject(input: SubcribeProjectDto): Promise<SubcribeEntity> {
     try {
       if (!isValidUUID(input.projectId)) {
         throw new Error('Invalid Project. Please try again !');
@@ -212,29 +217,71 @@ export class LaunchpadService {
           id: input.projectId,
         },
       });
-      if (!projectExists) {
-        throw new NotFoundException();
-      }
 
-      const isSubcribe = await this.prisma.userProject.findFirst({
+      const user = await this.prisma.user.findFirst({
         where: {
-          userId: user.id,
-          projectId: input.projectId,
+          signer: input.walletAddress.toLowerCase(),
         },
       });
-
-      if (isSubcribe) {
-        throw Error('You are a subscriber to this project');
+      if (!projectExists) {
+        throw new NotFoundException('Project not found');
       }
-      const response = await this.prisma.userProject.create({
-        data: {
-          userId: user.id,
-          projectId: input.projectId,
-        },
-      });
-      return response;
+
+      if (!user) {
+        const newUser = await this.prisma.user.create({
+          data: {
+            signer: input.walletAddress.toLowerCase(),
+          },
+        });
+        const response = await this.prisma.userProject.create({
+          data: {
+            userId: newUser.id,
+            projectId: input.projectId,
+          },
+        });
+        return response;
+      } else {
+        const subscriber = await this.prisma.user.findFirst({
+          where: {
+            signer: input.walletAddress.toLowerCase(),
+          },
+        });
+        if (subscriber) {
+          throw new Error('You have subscribed to the project');
+        }
+        const response = await this.prisma.userProject.create({
+          data: {
+            userId: user.id,
+            projectId: input.projectId,
+          },
+        });
+        return response;
+      }
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
+  }
+
+  async isSubscribed(
+    walletAddress: string,
+    projectId: string,
+  ): Promise<boolean> {
+    const subscriber = await this.prisma.user.findFirst({
+      where: {
+        signer: walletAddress.toLowerCase(),
+      },
+    });
+    if (!subscriber) {
+      return false;
+    }
+    const isSubcribe = await this.prisma.userProject.findUnique({
+      where: {
+        userId_projectId: {
+          userId: subscriber.id,
+          projectId,
+        },
+      },
+    });
+    return !!isSubcribe;
   }
 }

@@ -12,7 +12,8 @@ export class NftDto {
   tokenUri: string;
   creatorId: string;
   collectionId: string;
-  owners?: Array<UserNFT>;
+  // owners?: Array<UserNFT>;
   sellInfo?: unknown;
   bidInfo?: unknown;
+  collection?: unknown;
 }

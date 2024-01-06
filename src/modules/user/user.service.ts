@@ -10,11 +10,17 @@ import { Prisma, User } from '@prisma/client';
 import { GetAllUser } from './dto/get-all-user.dto';
 import { validate as isValidUUID } from 'uuid';
 import { FindAllProjectDto } from '../launchpad/dto/find-all-project.dto';
+import { findProjectsUserSubscribe } from '../launchpad/dto/find-project.dto';
 import { ListProjectEntity } from './entities/project.entity';
 import { UserEntity } from './entities/user.entity';
+import { ActivityService } from '../nft/activity.service';
+import { GetActivityBase } from './dto/activity-user.dto';
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private activetiService: ActivityService,
+  ) {}
 
   // Remove few prop secret
   private minifyUserObject(user: any): any {
@@ -256,12 +262,11 @@ export class UserService {
     return !!existingUser;
   }
   async getProjectByUser(
-    query: FindAllProjectDto,
+    query: findProjectsUserSubscribe,
     user: User,
-  ): Promise<ListProjectEntity[]> {
+  ): Promise<ListProjectEntity> {
     try {
       const whereRounds: Prisma.ProjectRoundWhereInput = {};
-
       if (query.start) {
         whereRounds.start = { gte: new Date(query.start) };
       }
@@ -269,9 +274,18 @@ export class UserService {
       if (query.end) {
         whereRounds.end = { lte: new Date(query.end) };
       }
+
+      console.log(whereRounds);
       const result = await this.prisma.userProject.findMany({
         where: {
-          userId: user.id,
+          OR: [
+            {
+              userId: user.id,
+            },
+            {
+              projectId: query.projectId,
+            },
+          ],
         },
         include: {
           project: {
@@ -316,9 +330,68 @@ export class UserService {
           },
         };
       });
-      return response;
+
+      const res = this.formatData(response);
+      return res;
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
+  }
+  async findActivityNFT(input: GetActivityBase) {
+    try {
+      const { user, page, limit, type } = input;
+      const resultUser = await this.getUser(user);
+
+      const or = [{ to: resultUser?.signer }, { from: resultUser?.signer }];
+      const blocks = await this.activetiService.fetchActivityFromGraph({
+        or,
+        page,
+        limit,
+        type,
+      });
+      const result = await this.activetiService.processActivityUserData(blocks);
+      return result;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getUser(user: any) {
+    try {
+      if (isValidUUID(user)) {
+        // If user is a valid UUID, search by ID
+        const responseUser = await this.prisma.user.findFirst({
+          where: { id: user },
+        });
+        return responseUser;
+      } else {
+        // If user is not a valid UUID, search by username or shortLink
+        const responseUser = await this.prisma.user.findFirst({
+          where: {
+            OR: [{ username: user }, { shortLink: user }, { signer: user }],
+          },
+        });
+        return responseUser;
+      }
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  formatData(data) {
+    const { userId, subscribeDate, stakingTotal, lastDateRecord, projectId } =
+      data[0];
+    const projects = data.map((item) => item?.project);
+
+    return {
+      userId,
+      subscribeDate,
+      stakingTotal,
+      lastDateRecord,
+      projectId,
+      projects,
+    };
   }
 }

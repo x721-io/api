@@ -24,6 +24,8 @@ const whitelist = [
   'https://marketplace-dev.uniultra.xyz',
   'https://marketplace.uniultra.xyz/',
   'https://marketplace.uniultra.xyz',
+  'https://nft-launchpad.uniultra.xyz/',
+  'https://nft-launchpad.uniultra.xyz',
 ];
 
 async function bootstrap() {

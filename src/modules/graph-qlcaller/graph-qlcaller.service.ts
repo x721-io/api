@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import {
   getSdk,
   SellStatus,
@@ -11,6 +11,7 @@ import {
   GetOneNftSellInfoQuery,
   GetNfTwithAccountIdQueryVariables,
   GetCollectionTokensQueryVariables,
+  Query,
 } from '../../generated/graphql';
 import { GraphQLClient, gql } from 'graphql-request';
 @Injectable()
@@ -122,7 +123,7 @@ export class GraphQlcallerService {
         ) {
           id
           event
-          amounts
+          quantity
           nftId {
             id
             tokenId
@@ -220,7 +221,7 @@ export class GraphQlcallerService {
           price
           to
           from
-          amounts
+          quantity
           quoteToken
           operationId
           timestamp
@@ -334,7 +335,7 @@ export class GraphQlcallerService {
           price
           to
           from
-          amounts
+          quantity
           quoteToken
           operationId
           timestamp
@@ -419,5 +420,68 @@ export class GraphQlcallerService {
     };
     const response = sdk.GetCollectionTokens(variables);
     return response;
+  }
+  async formatWherecondition(conditions: { or?: any[]; and?: any[] }) {
+    const { or, and } = conditions;
+
+    const processCondition = (condition: any): string => {
+      return Object.entries(condition)
+        .filter(([key, value]) => !!value) // Filter out null values
+        .map(([key, value]) => {
+          if (typeof value === 'object' && value !== null) {
+            // Process nested object
+            return `${key}: {${processCondition(value)}}`;
+          } else {
+            // Process simple key-value pair
+            return `${key}: "${value}"`;
+          }
+        })
+        .join(', ');
+    };
+
+    const whereParts = [];
+
+    // Process AND conditions
+    if (and && and.length > 0) {
+      const andConditions = and
+        .map(processCondition)
+        .filter((condition) => condition) // Filter out empty conditions
+        .map((condition) => `{${condition}}`);
+
+      if (andConditions.length > 0) {
+        whereParts.push(`and: [${andConditions.join(', ')}]`);
+      }
+    }
+
+    // Process OR conditions
+    if (or && or.length > 0) {
+      const orConditions = or
+        .map(processCondition)
+        .filter((condition) => condition) // Filter out empty conditions
+        .map((condition) => `{${condition}}`);
+
+      if (orConditions.length > 0) {
+        whereParts.push(`or: [${orConditions.join(', ')}]`);
+      }
+    }
+
+    const isWhereEmpty = whereParts.length === 0;
+    const whereClause =
+      whereParts.length > 0 ? `where: {${whereParts.join(', ')}}` : '';
+    return { isWhereEmpty, whereClause };
+  }
+
+  async FetchRoyaltiesFromGraph(address: string) {
+    try {
+      const client = this.getGraphqlClient();
+      const sdk = getSdk(client);
+      const { royaltiesRegistries } = (await sdk.getRoyalties({
+        address,
+      })) as unknown as Query;
+      return royaltiesRegistries;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
   }
 }
