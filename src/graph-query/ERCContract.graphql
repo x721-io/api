@@ -1,0 +1,25 @@
+query ErcContract($id: ID!) {
+  erc1155Contract(id: $id) {
+    id
+    count
+  }
+  erc721Contract(id: $id) {
+    id
+    count
+  }
+}
+
+query GetUniqueOwnersCount($contractAddress: String!, $skip: Int = 0, $first: Int = 1000) {
+  ownedTokenCounts(
+    where: {contract: $contractAddress, count_gt: 0}
+    orderBy: timestamp
+    orderDirection: desc
+    skip: $skip
+    first: $first
+  ) {
+    id
+    count
+    contract
+    timestamp
+  }
+}

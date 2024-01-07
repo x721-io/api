@@ -33,6 +33,12 @@ interface CollectionVolumeInterface {
   total: string;
 }
 
+interface CollectionOwnernterface {
+  timestamp: string;
+  total: string;
+  lastId: string;
+}
+
 @Injectable()
 export class CollectionService {
   constructor(
@@ -108,16 +114,18 @@ export class CollectionService {
     collectionAddress: string,
     type: CONTRACT_TYPE,
   ): Promise<CollectionGeneral> {
-    const [response, count, sum] = await Promise.all([
+    const [response, statetusCollection, sum, countOwner] = await Promise.all([
       this.collectionData.getCollectionSumData(collectionAddress),
-      this.collectionData.getCollectionTokens(collectionAddress),
+      this.collectionData.getCollectionCount(collectionAddress),
       this.getVolumeCollection(collectionAddress),
+      this.getCountOwnerCollection(collectionAddress),
     ]);
 
     if (type === 'ERC721') {
-      const uniqueOwnerIdsCount = new Set(
-        count.erc721Tokens.map((obj) => obj.owner.id),
-      ).size;
+      // const uniqueOwnerIdsCount = new Set(
+      //   count.erc721Tokens.map((obj) => obj.owner.id),
+      // ).size;
+
       const filterSelling = response.marketEvent721S.filter(
         (obj) => obj.event === 'AskNew',
       );
@@ -133,19 +141,16 @@ export class CollectionService {
           : BigInt(0);
       return {
         volumn: sum.toString(),
-        totalOwner: uniqueOwnerIdsCount,
-        totalNft: count.erc721Tokens.length,
+        totalOwner: Number(countOwner),
+        totalNft: statetusCollection.erc721Contract.count,
         floorPrice: floorPrice.toString(),
       };
     } else {
-      // const respose = await this.collectionData.getCollectionSumData('0xc2587c1b945b1a7be4be5423c24f1bbf54495daa')
-      // count owners
-      const owners =
-        await this.collectionData.getCollectionHolder(collectionAddress);
-      const uniqueOwnerIdsCount = owners.erc1155Balances.filter(
-        (obj) => BigInt(obj.value) > BigInt(0) && !!obj.account,
-      ).length;
-      // volumn
+      // const owners =
+      //   await this.collectionData.getCollectionHolder(collectionAddress);
+      // const uniqueOwnerIdsCount = owners.erc1155Balances.filter(
+      //   (obj) => BigInt(obj.value) > BigInt(0) && !!obj.account,
+      // ).length;
 
       // filter floor price
       const filterSelling = response.marketEvent1155S.filter(
@@ -164,8 +169,8 @@ export class CollectionService {
       // filter name
       return {
         volumn: sum.toString(),
-        totalOwner: uniqueOwnerIdsCount,
-        totalNft: count.erc1155Tokens.length,
+        totalOwner: Number(countOwner),
+        totalNft: statetusCollection.erc1155Contract.count,
         floorPrice: floorPrice.toString(),
       };
     }
@@ -548,6 +553,20 @@ export class CollectionService {
     }
   }
 
+  async saveOwnerCollection(address: string, input: CollectionOwnernterface) {
+    try {
+      const result = await SecureUtil.storeObjectSession(
+        address,
+        input,
+        oneWeekInMilliseconds,
+      );
+      return result;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
   async getVolumeCollection(address: string) {
     const { blocks = [] } = await this.sdk.getActivity({ address });
     const redisData = await this.checkRecord(address);
@@ -584,6 +603,50 @@ export class CollectionService {
         total: sum.toString(),
       });
       return sum;
+    }
+  }
+
+  async getCountOwnerCollection(address: string) {
+    const { ownedTokenCounts = [] } = await this.sdk.GetUniqueOwnersCount({
+      contractAddress: address,
+    });
+    const redisData = await this.checkRecord(`${address}-owner`);
+    const lastUpdate = `${ownedTokenCounts?.[0]?.timestamp || ''}`;
+    const lastId = `${ownedTokenCounts?.[0]?.id || ''}`;
+
+    const totalOwner = ownedTokenCounts.length;
+
+    if (redisData !== null) {
+      const redisTimestamp = parseInt(redisData.timestamp, 10);
+      const redisLastId = redisData.lastId;
+
+      const newOwner = ownedTokenCounts.filter(
+        (item) =>
+          item.timestamp > redisTimestamp ||
+          (item.timestamp === redisTimestamp && item.id !== redisLastId),
+      );
+
+      if (newOwner.length > 0) {
+        const newTotalOwner = newOwner.length;
+
+        const updatedTotal = (
+          BigInt(redisData.total) + BigInt(newTotalOwner)
+        ).toString();
+        await this.saveOwnerCollection(`${address}-owner`, {
+          lastId: lastId,
+          timestamp: lastUpdate,
+          total: updatedTotal,
+        });
+        return updatedTotal;
+      }
+      return totalOwner;
+    } else {
+      await this.saveOwnerCollection(`${address}-owner`, {
+        lastId: lastId,
+        timestamp: lastUpdate,
+        total: totalOwner.toString(),
+      });
+      return totalOwner;
     }
   }
 }
