@@ -1,5 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { getSdk, GetCollectionsDataQueryVariables, GetCollectionsDataQuery, GetCollectionHoldersQuery, GetCollectionTokensQueryVariables, GetCollectionTokensQuery } from '../../generated/graphql'
+import {
+  getSdk,
+  GetCollectionsDataQueryVariables,
+  GetCollectionsDataQuery,
+  GetCollectionHoldersQuery,
+  GetCollectionTokensQueryVariables,
+  GetCollectionTokensQuery,
+  ErcContractQuery,
+  ErcContractQueryVariables,
+} from '../../generated/graphql';
 import { GraphQLClient } from 'graphql-request';
 @Injectable()
 export class GetCollectionMarketData {
@@ -8,14 +17,15 @@ export class GetCollectionMarketData {
 
   constructor() {
     this.graphqlClient = new GraphQLClient(this.endpoint);
-
   }
 
   private getGraphqlClient() {
     return new GraphQLClient(this.endpoint);
   }
 
-  async getCollectionSumData(collectionAddress: string): Promise<GetCollectionsDataQuery> {
+  async getCollectionSumData(
+    collectionAddress: string,
+  ): Promise<GetCollectionsDataQuery> {
     const client = this.getGraphqlClient();
     const sdk = getSdk(client);
     const variables: GetCollectionsDataQueryVariables = { collectionAddress };
@@ -23,17 +33,30 @@ export class GetCollectionMarketData {
     return reponse;
   }
 
-  async getCollectionHolder(collectionAddress: string): Promise<GetCollectionHoldersQuery> {
+  async getCollectionHolder(
+    collectionAddress: string,
+  ): Promise<GetCollectionHoldersQuery> {
     const client = this.getGraphqlClient();
     const sdk = getSdk(client);
-    const variables: GetCollectionsDataQueryVariables = { collectionAddress }
+    const variables: GetCollectionsDataQueryVariables = { collectionAddress };
     return await sdk.GetCollectionHolders(variables);
   }
 
-  async getCollectionTokens(collectionAddress: string): Promise<GetCollectionTokensQuery> {
+  async getCollectionTokens(
+    collectionAddress: string,
+  ): Promise<GetCollectionTokensQuery> {
     const client = this.getGraphqlClient();
     const sdk = getSdk(client);
-    const variables: GetCollectionTokensQueryVariables = { collectionAddress }
+    const variables: GetCollectionTokensQueryVariables = { collectionAddress };
     return await sdk.GetCollectionTokens(variables);
+  }
+
+  async getCollectionCount(
+    collectionAddress: string,
+  ): Promise<ErcContractQuery> {
+    const client = this.getGraphqlClient();
+    const sdk = getSdk(client);
+    const variables: ErcContractQueryVariables = { id: collectionAddress };
+    return await sdk.ErcContract(variables);
   }
 }
