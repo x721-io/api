@@ -242,14 +242,14 @@ export class LaunchpadService {
         });
         return response;
       } else {
-        const subscriber = await this.prisma.user.findFirst({
-          where: {
-            signer: input.walletAddress.toLowerCase(),
-          },
-        });
-        if (subscriber) {
-          throw new Error('You have subscribed to the project');
-        }
+        // const subscriber = await this.prisma.user.findFirst({
+        //   where: {
+        //     signer: input.walletAddress.toLowerCase(),
+        //   },
+        // });
+        // if (subscriber) {
+        //   throw new Error('You have subscribed to the project');
+        // }
         const response = await this.prisma.userProject.create({
           data: {
             userId: user.id,
