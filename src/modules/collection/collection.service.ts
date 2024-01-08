@@ -114,6 +114,14 @@ export class CollectionService {
     collectionAddress: string,
     type: CONTRACT_TYPE,
   ): Promise<CollectionGeneral> {
+    if (!collectionAddress) {
+      return {
+        volumn: '0',
+        totalOwner: Number(0),
+        totalNft: Number(0),
+        floorPrice: '0',
+      };
+    }
     const [response, statetusCollection, sum, countOwner] = await Promise.all([
       this.collectionData.getCollectionSumData(collectionAddress),
       this.collectionData.getCollectionCount(collectionAddress),
@@ -614,7 +622,7 @@ export class CollectionService {
     const lastUpdate = `${ownedTokenCounts?.[0]?.timestamp || ''}`;
     const lastId = `${ownedTokenCounts?.[0]?.id || ''}`;
 
-    const totalOwner = ownedTokenCounts.length;
+    const totalOwner = redisData.total;
 
     if (redisData !== null) {
       const redisTimestamp = parseInt(redisData.timestamp, 10);
