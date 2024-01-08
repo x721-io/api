@@ -122,11 +122,10 @@ export class CollectionService {
         floorPrice: '0',
       };
     }
-    const [response, statetusCollection, sum, countOwner] = await Promise.all([
+    const [response, statusCollection, sum] = await Promise.all([
       this.collectionData.getCollectionSumData(collectionAddress),
       this.collectionData.getCollectionCount(collectionAddress),
       this.getVolumeCollection(collectionAddress),
-      this.getCountOwnerCollection(collectionAddress),
     ]);
 
     if (type === 'ERC721') {
@@ -149,8 +148,8 @@ export class CollectionService {
           : BigInt(0);
       return {
         volumn: sum.toString(),
-        totalOwner: Number(countOwner),
-        totalNft: statetusCollection.erc721Contract.count,
+        totalOwner: statusCollection.erc721Contract.holderCount,
+        totalNft: statusCollection.erc721Contract.count,
         floorPrice: floorPrice.toString(),
       };
     } else {
@@ -177,8 +176,8 @@ export class CollectionService {
       // filter name
       return {
         volumn: sum.toString(),
-        totalOwner: Number(countOwner),
-        totalNft: statetusCollection.erc1155Contract.count,
+        totalOwner: statusCollection.erc1155Contract.holderCount,
+        totalNft: statusCollection.erc1155Contract.count,
         floorPrice: floorPrice.toString(),
       };
     }
