@@ -614,6 +614,28 @@ export class CollectionService {
     }
   }
 
+  async getAllDataOwner(address: string) {
+    let skip = 0;
+    const first = 1000;
+    let hasMore = true;
+    let totalItems = 0;
+    while (hasMore) {
+      const { ownedTokenCounts = [] } = await this.sdk.GetUniqueOwnersCount({
+        contractAddress: address,
+        first,
+        skip,
+      });
+      const fetchedTokensCount = ownedTokenCounts.length;
+      totalItems += fetchedTokensCount;
+      if (fetchedTokensCount < first) {
+        hasMore = false;
+      } else {
+        skip += fetchedTokensCount; // Increment skip by the number of tokens fetched
+      }
+    }
+    return totalItems;
+  }
+
   async getCountOwnerCollection(address: string) {
     const { ownedTokenCounts = [] } = await this.sdk.GetUniqueOwnersCount({
       contractAddress: address,
@@ -622,7 +644,15 @@ export class CollectionService {
     const lastUpdate = `${ownedTokenCounts?.[0]?.timestamp || ''}`;
     const lastId = `${ownedTokenCounts?.[0]?.id || ''}`;
 
-    if (redisData !== null) {
+    if (redisData === null) {
+      const totalItems = await this.getAllDataOwner(address);
+      await this.saveOwnerCollection(`${address}-owner`, {
+        lastId: lastId,
+        timestamp: lastUpdate,
+        total: `${totalItems}`,
+      });
+      return totalItems;
+    } else {
       const totalOwner = redisData.total;
       const redisTimestamp = parseInt(redisData.timestamp, 10);
       const redisLastId = redisData.lastId;
@@ -647,14 +677,6 @@ export class CollectionService {
         return updatedTotal;
       }
       return totalOwner;
-    } else {
-      const totalOwnerNullable = ownedTokenCounts.length;
-      await this.saveOwnerCollection(`${address}-owner`, {
-        lastId: lastId,
-        timestamp: lastUpdate,
-        total: totalOwnerNullable.toString(),
-      });
-      return totalOwnerNullable;
     }
   }
 }

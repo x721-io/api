@@ -9,7 +9,7 @@ query ErcContract($id: ID!) {
   }
 }
 
-query GetUniqueOwnersCount($contractAddress: String!, $skip: Int = 0, $first: Int = 1000) {
+query GetUniqueOwnersCount($contractAddress: String!, $skip: Int, $first: Int) {
   ownedTokenCounts(
     where: {contract: $contractAddress, count_gt: 0}
     orderBy: timestamp
