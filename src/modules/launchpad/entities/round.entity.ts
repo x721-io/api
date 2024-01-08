@@ -1,6 +1,7 @@
 import { ProjectRound } from '@prisma/client';
 
 export class RoundEntity implements ProjectRound {
+  requiredStaking: string;
   instruction: string;
   price: string;
   maxPerWallet: number;

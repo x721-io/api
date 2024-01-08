@@ -154,6 +154,7 @@ model ProjectRound {
   totalNftt      Int?
   price          String?
   instruction    String?
+  requiredStaking String?
   claimableStart DateTime  @default(now())
   claimableIds   String[]  @default([])
 

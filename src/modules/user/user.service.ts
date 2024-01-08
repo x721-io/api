@@ -263,7 +263,7 @@ export class UserService {
   }
   async getProjectByUser(
     query: findProjectsUserSubscribe,
-    user: User,
+    userId: string,
   ): Promise<ListProjectEntity> {
     try {
       const whereRounds: Prisma.ProjectRoundWhereInput = {};
@@ -275,10 +275,17 @@ export class UserService {
         whereRounds.end = { lte: new Date(query.end) };
       }
 
-      console.log(whereRounds);
+      const user = await this.prisma.user.findFirst({
+        where: {
+          signer: userId.toLowerCase(),
+        },
+      });
+      if (!user) {
+        throw new NotFoundException('Subscriber not found');
+      }
       const result = await this.prisma.userProject.findMany({
         where: {
-          OR: [
+          AND: [
             {
               userId: user.id,
             },
@@ -334,6 +341,7 @@ export class UserService {
       const res = this.formatData(response);
       return res;
     } catch (error) {
+      console.error(error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
@@ -379,8 +387,10 @@ export class UserService {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
-
   formatData(data) {
+    if (data.length === 0) {
+      throw new NotFoundException('User has not subscribed project');
+    }
     const { userId, subscribeDate, stakingTotal, lastDateRecord, projectId } =
       data[0];
     const projects = data.map((item) => item?.project);
