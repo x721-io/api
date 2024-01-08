@@ -127,6 +127,36 @@ export class LaunchpadService {
     };
   }
 
+  async checkStakingSingle(user: User, projectId: string) {
+    const query = gql`
+      query getStaking($id: ID) {
+        delegator(id: $id) {
+          totalLockStake
+          totalClaimedRewards
+          stakedAmount
+          id
+          createdOn
+          address
+        }
+      }
+    `;
+    const response = await this.client.request(query, {
+      id: user.signer.toLowerCase(),
+    });
+    const { delegator }: any = response;
+    console.log(delegator);
+    await this.prisma.userProject.update({
+      where: {
+        userId_projectId: { userId: user.id, projectId: projectId },
+      },
+      data: {
+        stakingTotal: delegator && delegator.stakedAmount,
+        lastDateRecord: new Date(),
+      },
+    });
+    return delegator ? delegator.stakedAmount : null;
+  }
+
   async checkStaking(input: CheckStakingDto) {
     try {
       const { projectId } = input;
@@ -240,22 +270,35 @@ export class LaunchpadService {
             projectId: input.projectId,
           },
         });
+        const stakedAmount = await this.checkStakingSingle(
+          newUser,
+          input.projectId,
+        );
+        response.stakingTotal = stakedAmount;
         return response;
       } else {
-        // const subscriber = await this.prisma.user.findFirst({
-        //   where: {
-        //     signer: input.walletAddress.toLowerCase(),
-        //   },
-        // });
-        // if (subscriber) {
-        //   throw new Error('You have subscribed to the project');
-        // }
+        const subscriber = await this.prisma.userProject.findUnique({
+          where: {
+            userId_projectId: {
+              userId: user.id,
+              projectId: input.projectId,
+            },
+          },
+        });
+        if (subscriber) {
+          throw new Error('You have subscribed to the project');
+        }
         const response = await this.prisma.userProject.create({
           data: {
             userId: user.id,
             projectId: input.projectId,
           },
         });
+        const stakedAmount = await this.checkStakingSingle(
+          user,
+          input.projectId,
+        );
+        response.stakingTotal = stakedAmount;
         return response;
       }
     } catch (error) {
