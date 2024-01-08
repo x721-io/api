@@ -150,6 +150,7 @@ model ProjectRound {
   address        String?
   start          DateTime
   end            DateTime
+  stakeBefore    DateTime?
   maxPerWallet   Int?
   totalNftt      Int?
   price          String?
