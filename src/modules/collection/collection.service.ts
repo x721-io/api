@@ -622,9 +622,8 @@ export class CollectionService {
     const lastUpdate = `${ownedTokenCounts?.[0]?.timestamp || ''}`;
     const lastId = `${ownedTokenCounts?.[0]?.id || ''}`;
 
-    const totalOwner = redisData.total;
-
     if (redisData !== null) {
+      const totalOwner = redisData.total;
       const redisTimestamp = parseInt(redisData.timestamp, 10);
       const redisLastId = redisData.lastId;
 
@@ -649,12 +648,13 @@ export class CollectionService {
       }
       return totalOwner;
     } else {
+      const totalOwnerNullable = ownedTokenCounts.length;
       await this.saveOwnerCollection(`${address}-owner`, {
         lastId: lastId,
         timestamp: lastUpdate,
-        total: totalOwner.toString(),
+        total: totalOwnerNullable.toString(),
       });
-      return totalOwner;
+      return totalOwnerNullable;
     }
   }
 }
