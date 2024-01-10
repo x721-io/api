@@ -517,7 +517,7 @@ export class CollectionService {
       const total = await this.prisma.userCollection.count({
         where: {
           user: {
-            ...(isUuid ? { id } : { signer: id }),
+            ...(isUuid ? { id } : { OR: [{ signer: id }, { shortLink: id }] }),
           },
         },
       });
