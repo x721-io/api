@@ -449,11 +449,11 @@ export class CollectionService {
       // if (!checkExist) {
       //   throw new NotFoundException();
       // }
-      console.log(...(isUuid ? 'a' : 'b'));
       const userWithCollection = await this.prisma.userCollection.findMany({
         where: {
           user: {
-            ...(isUuid ? { id } : { signer: id }),
+            // ...(isUuid ? { id } : (OR:[{ signer: id }])),
+            ...(isUuid ? { id } : { OR: [{ signer: id }, { shortLink: id }] }),
           },
         },
         skip: (input.page - 1) * input.limit,
