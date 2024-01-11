@@ -127,7 +127,37 @@ export class LaunchpadService {
     };
   }
 
-  async checkStaking(input: CheckStakingDto, user: User) {
+  async checkStakingSingle(user: User, projectId: string) {
+    const query = gql`
+      query getStaking($id: ID) {
+        delegator(id: $id) {
+          totalLockStake
+          totalClaimedRewards
+          stakedAmount
+          id
+          createdOn
+          address
+        }
+      }
+    `;
+    const response = await this.client.request(query, {
+      id: user.signer.toLowerCase(),
+    });
+    const { delegator }: any = response;
+    console.log(delegator);
+    await this.prisma.userProject.update({
+      where: {
+        userId_projectId: { userId: user.id, projectId: projectId },
+      },
+      data: {
+        stakingTotal: delegator && delegator.stakedAmount,
+        lastDateRecord: new Date(),
+      },
+    });
+    return delegator ? delegator.stakedAmount : null;
+  }
+
+  async checkStaking(input: CheckStakingDto) {
     try {
       const { projectId } = input;
       if (!projectId) {
@@ -151,6 +181,7 @@ export class LaunchpadService {
                   avatar: true,
                   username: true,
                   publicKey: true,
+                  signer: true,
                 },
               },
             },
@@ -179,7 +210,7 @@ export class LaunchpadService {
         subscriber.map(async (item) => {
           const { user } = item;
           const response = await this.client.request(query, {
-            id: user.publicKey.toLowerCase(),
+            id: user.signer.toLowerCase(),
           });
           const { delegator }: any = response;
           return { ...item, ...delegator };
@@ -239,11 +270,19 @@ export class LaunchpadService {
             projectId: input.projectId,
           },
         });
+        const stakedAmount = await this.checkStakingSingle(
+          newUser,
+          input.projectId,
+        );
+        response.stakingTotal = stakedAmount;
         return response;
       } else {
-        const subscriber = await this.prisma.user.findFirst({
+        const subscriber = await this.prisma.userProject.findUnique({
           where: {
-            signer: input.walletAddress.toLowerCase(),
+            userId_projectId: {
+              userId: user.id,
+              projectId: input.projectId,
+            },
           },
         });
         if (subscriber) {
@@ -255,6 +294,11 @@ export class LaunchpadService {
             projectId: input.projectId,
           },
         });
+        const stakedAmount = await this.checkStakingSingle(
+          user,
+          input.projectId,
+        );
+        response.stakingTotal = stakedAmount;
         return response;
       }
     } catch (error) {

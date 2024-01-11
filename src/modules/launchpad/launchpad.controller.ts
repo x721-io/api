@@ -57,11 +57,7 @@ export class LaunchpadController {
   }
 
   @Post()
-  @UseGuards(AuthenticationGuard)
-  async checkStak(
-    @Body() inputStaking: CheckStakingDto,
-    @GetCurrentUser() user: User,
-  ) {
-    return await this.launchpadService.checkStaking(inputStaking, user);
+  async checkStak(@Body() inputStaking: CheckStakingDto) {
+    return await this.launchpadService.checkStaking(inputStaking);
   }
 }

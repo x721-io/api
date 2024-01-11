@@ -150,10 +150,12 @@ model ProjectRound {
   address        String?
   start          DateTime
   end            DateTime
+  stakeBefore    DateTime?
   maxPerWallet   Int?
   totalNftt      Int?
   price          String?
   instruction    String?
+  requiredStaking String?
   claimableStart DateTime  @default(now())
   claimableIds   String[]  @default([])
 

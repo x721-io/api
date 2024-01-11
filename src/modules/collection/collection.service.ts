@@ -114,11 +114,18 @@ export class CollectionService {
     collectionAddress: string,
     type: CONTRACT_TYPE,
   ): Promise<CollectionGeneral> {
-    const [response, statetusCollection, sum, countOwner] = await Promise.all([
+    if (!collectionAddress) {
+      return {
+        volumn: '0',
+        totalOwner: Number(0),
+        totalNft: Number(0),
+        floorPrice: '0',
+      };
+    }
+    const [response, statusCollection, sum] = await Promise.all([
       this.collectionData.getCollectionSumData(collectionAddress),
       this.collectionData.getCollectionCount(collectionAddress),
       this.getVolumeCollection(collectionAddress),
-      this.getCountOwnerCollection(collectionAddress),
     ]);
 
     if (type === 'ERC721') {
@@ -141,8 +148,8 @@ export class CollectionService {
           : BigInt(0);
       return {
         volumn: sum.toString(),
-        totalOwner: Number(countOwner),
-        totalNft: statetusCollection.erc721Contract.count,
+        totalOwner: statusCollection.erc721Contract.holderCount,
+        totalNft: statusCollection.erc721Contract.count,
         floorPrice: floorPrice.toString(),
       };
     } else {
@@ -169,8 +176,8 @@ export class CollectionService {
       // filter name
       return {
         volumn: sum.toString(),
-        totalOwner: Number(countOwner),
-        totalNft: statetusCollection.erc1155Contract.count,
+        totalOwner: statusCollection.erc1155Contract.holderCount,
+        totalNft: statusCollection.erc1155Contract.count,
         floorPrice: floorPrice.toString(),
       };
     }
@@ -442,11 +449,11 @@ export class CollectionService {
       // if (!checkExist) {
       //   throw new NotFoundException();
       // }
-      console.log(...(isUuid ? 'a' : 'b'));
       const userWithCollection = await this.prisma.userCollection.findMany({
         where: {
           user: {
-            ...(isUuid ? { id } : { signer: id }),
+            // ...(isUuid ? { id } : (OR:[{ signer: id }])),
+            ...(isUuid ? { id } : { OR: [{ signer: id }, { shortLink: id }] }),
           },
         },
         skip: (input.page - 1) * input.limit,
@@ -510,7 +517,7 @@ export class CollectionService {
       const total = await this.prisma.userCollection.count({
         where: {
           user: {
-            ...(isUuid ? { id } : { signer: id }),
+            ...(isUuid ? { id } : { OR: [{ signer: id }, { shortLink: id }] }),
           },
         },
       });
@@ -614,9 +621,8 @@ export class CollectionService {
     const lastUpdate = `${ownedTokenCounts?.[0]?.timestamp || ''}`;
     const lastId = `${ownedTokenCounts?.[0]?.id || ''}`;
 
-    const totalOwner = ownedTokenCounts.length;
-
     if (redisData !== null) {
+      const totalOwner = redisData.total;
       const redisTimestamp = parseInt(redisData.timestamp, 10);
       const redisLastId = redisData.lastId;
 
@@ -641,12 +647,13 @@ export class CollectionService {
       }
       return totalOwner;
     } else {
+      const totalOwnerNullable = ownedTokenCounts.length;
       await this.saveOwnerCollection(`${address}-owner`, {
         lastId: lastId,
         timestamp: lastUpdate,
-        total: totalOwner.toString(),
+        total: totalOwnerNullable.toString(),
       });
-      return totalOwner;
+      return totalOwnerNullable;
     }
   }
 }
