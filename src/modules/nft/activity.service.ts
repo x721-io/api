@@ -72,6 +72,8 @@ export class ActivityService {
           username: true,
           signer: true,
           shortLink: true,
+          accountStatus: true,
+          verifyEmail: true,
         },
       });
     } catch (error) {

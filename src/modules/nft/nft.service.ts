@@ -287,6 +287,8 @@ export class NftService {
                 avatar: true,
                 username: true,
                 publicKey: true,
+                accountStatus: true,
+                verifyEmail: true,
               },
             },
             collection: {
@@ -391,6 +393,8 @@ export class NftService {
                 avatar: true,
                 username: true,
                 publicKey: true,
+                accountStatus: true,
+                verifyEmail: true,
               },
             },
             collection: {
@@ -610,6 +614,8 @@ export class NftService {
           username: true,
           signer: true,
           publicKey: true,
+          accountStatus: true,
+          verifyEmail: true,
         },
       });
       owners = ownersFromLocal.map((item2) => {
@@ -641,6 +647,8 @@ export class NftService {
           username: true,
           signer: true,
           publicKey: true,
+          accountStatus: true,
+          verifyEmail: true,
         },
       });
     }
@@ -680,6 +688,8 @@ export class NftService {
               avatar: true,
               username: true,
               publicKey: true,
+              accountStatus: true,
+              verifyEmail: true,
             },
           },
           collection: {
@@ -788,6 +798,8 @@ export class NftService {
                       username: true,
                       signer: true,
                       publicKey: true,
+                      accountStatus: true,
+                      verifyEmail: true,
                     },
                   },
                   collection: {

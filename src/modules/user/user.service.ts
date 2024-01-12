@@ -15,12 +15,40 @@ import { ListProjectEntity } from './entities/project.entity';
 import { UserEntity } from './entities/user.entity';
 import { ActivityService } from '../nft/activity.service';
 import { GetActivityBase } from './dto/activity-user.dto';
+import { Redis } from 'src/database';
+import { SendVerifyEmailDto, VerifyEmailDto } from './dto/verify-email.dto';
+import * as jwt from 'jsonwebtoken';
+import { JwtPayload } from 'jsonwebtoken';
+import { GraphQLClient, gql } from 'graphql-request';
+import {
+  Query,
+  getSdk,
+  GetTransferNftQueryVariables,
+} from '../../generated/graphql';
+import SecureUtil from '../../commons/Secure.common';
+interface UserRedisinterface {
+  timestamp: string;
+  email: string;
+  userId: string;
+  verifyToken: string;
+}
+
 @Injectable()
 export class UserService {
   constructor(
     private prisma: PrismaService,
     private activetiService: ActivityService,
   ) {}
+
+  private readonly secretKeyConfirm = process.env.MAIL_KEY_CONFIRM;
+  private readonly tokenExpirationTime = 60;
+  private readonly redisExpirationTime = 60;
+  private readonly endpoint = process.env.SUBGRAPH_URL;
+  private client = this.getGraphqlClient();
+
+  private getGraphqlClient() {
+    return new GraphQLClient(this.endpoint);
+  }
 
   // Remove few prop secret
   private minifyUserObject(user: any): any {
@@ -231,6 +259,11 @@ export class UserService {
         coverImage: input.coverImage,
         shortLink: input.shortLink,
         avatar: input.avatar,
+        verifyEmail: user.verifyEmail
+          ? input.email === user.email
+            ? true
+            : false
+          : false,
       };
 
       // Remove shortLink if not provided
@@ -403,5 +436,176 @@ export class UserService {
       projectId,
       projects,
     };
+  }
+  async sendverifyEmail(input: SendVerifyEmailDto, user: User) {
+    try {
+      const { id } = user;
+      const currentUser = await this.prisma.user.findUnique({
+        where: {
+          id: id,
+        },
+      });
+      if (!currentUser) {
+        throw new NotFoundException();
+      }
+      if (input.email !== currentUser.email) {
+        throw new Error('Email is incorrect');
+      }
+
+      const redisData = await this.checkRecord(`${currentUser.signer}-Verify`);
+
+      if (redisData !== null) {
+        throw new Error('Please Resend After 60 Seconds!');
+      } else {
+        const verifyToken = this.generateTokenConfirm(
+          currentUser.email,
+          currentUser.username,
+          currentUser.id,
+        );
+        await this.saveTokenConfirm(`${currentUser.signer}-Verify`, {
+          timestamp: `${Math.floor(Date.now() / 1000)}`,
+          email: input.email,
+          verifyToken: verifyToken,
+          userId: `${currentUser.id}`,
+        });
+        await Redis.publish('user-channel', {
+          data: {
+            isVerify: true,
+            email: input.email,
+            name: currentUser.username,
+            id: currentUser.id,
+            verifyToken: verifyToken,
+          },
+          process: 'email-verify',
+        });
+      }
+      return true;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async checkVerifyEmail(input: VerifyEmailDto, user: User) {
+    try {
+      const validatie = this.verifyTokenConfirm(input.token);
+      if (!validatie) {
+        throw Error('Token is invalid');
+      }
+      if (user.id != validatie?.id) {
+        throw new Error('This email cannot be confirmed');
+      }
+      if (user && user?.verifyEmail) {
+        throw new Error('This email has been verified');
+      }
+      const resultUpdate = await this.prisma.user.update({
+        where: { id: validatie?.id },
+        data: {
+          verifyEmail: true,
+        },
+      });
+      return resultUpdate;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async checkListVerify(user: User) {
+    try {
+      const listVerify = {};
+      const client = this.getGraphqlClient();
+      const sdk = getSdk(client);
+      const variables: GetTransferNftQueryVariables = {
+        id: user.signer,
+      };
+      const reponse = await sdk.getTransferNFT(variables);
+
+      const nftTransfers =
+        reponse?.erc1155Transfers?.length > 0 ||
+        reponse?.erc721Transfers?.length > 0;
+
+      if (!nftTransfers) {
+        listVerify['ownerOrCreater'] = false;
+      }
+      const requiredFields = [
+        'bio',
+        'twitterLink',
+        'username',
+        'avatar',
+        'verifyEmail',
+      ];
+
+      requiredFields.forEach((field) => {
+        if (!user[field]) {
+          listVerify[field] = false;
+        }
+      });
+      if (Object.values(listVerify).some((value) => value === false)) {
+        return listVerify;
+      }
+      const resultGetVerify = await this.prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          accountStatus: true,
+        },
+      });
+
+      return resultGetVerify;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  verifyTokenConfirm(token: string): any {
+    try {
+      const decodedToken = jwt.verify(
+        token,
+        this.secretKeyConfirm,
+      ) as JwtPayload;
+
+      // Check expiration time manually if needed
+      if (decodedToken && decodedToken.exp) {
+        const currentTimestamp = Math.floor(Date.now() / 1000); // Convert to seconds
+        if (decodedToken.exp < currentTimestamp) {
+          // Token has expired
+          return null;
+        }
+      }
+      return decodedToken;
+    } catch (error) {
+      return null; // Token verification failed
+    }
+  }
+
+  generateTokenConfirm(email: string, name: string, id: string): string {
+    // Set expiration time to 5 minutes
+    const expirationTime = this.tokenExpirationTime;
+
+    return jwt.sign({ email, name, id }, this.secretKeyConfirm, {
+      expiresIn: expirationTime,
+    });
+  }
+
+  async saveTokenConfirm(address: string, input: UserRedisinterface) {
+    try {
+      const result = await SecureUtil.storeObjectSession(
+        address,
+        input,
+        this.redisExpirationTime,
+      );
+      return result;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+  async checkRecord(address: string) {
+    try {
+      const result = await SecureUtil.getSessionInfo(address);
+      return result ? JSON.parse(result) : null;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
   }
 }

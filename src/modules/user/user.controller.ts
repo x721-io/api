@@ -18,6 +18,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { GetCurrentUser } from 'src/decorators/get-current-user.decorator';
 import { User } from '@prisma/client';
 import { AuthenticationGuard } from '../auth/guards/auth.guard';
+
 import { GetAllUser } from './dto/get-all-user.dto';
 import { FilterNFTUserDetail } from './dto/get-nft-user.dto';
 import { UserServiceExtend } from './user-graph.service';
@@ -26,6 +27,7 @@ import { FindAllProjectDto } from '../launchpad/dto/find-all-project.dto';
 import { findProjectsUserSubscribe } from '../launchpad/dto/find-project.dto';
 import { GetActivityBase } from './dto/activity-user.dto';
 import { ActivityService } from '../nft/activity.service';
+import { SendVerifyEmailDto, VerifyEmailDto } from './dto/verify-email.dto';
 @Controller('user')
 export class UserController {
   constructor(
@@ -83,5 +85,28 @@ export class UserController {
   @Post('/activity')
   findActivityNFT(@Body() input: GetActivityBase) {
     return this.userService.findActivityNFT(input);
+  }
+  @Post('/send-verify-email')
+  @UseGuards(AuthenticationGuard)
+  async sendVerifyEmail(
+    @GetCurrentUser() user: User,
+    @Body() verifyEmailDto: SendVerifyEmailDto,
+  ) {
+    return await this.userService.sendverifyEmail(verifyEmailDto, user);
+  }
+
+  @Post('/verify-email')
+  @UseGuards(AuthenticationGuard)
+  async verifyEmail(
+    @GetCurrentUser() user: User,
+    @Body() verifyEmailDto: VerifyEmailDto,
+  ) {
+    return await this.userService.checkVerifyEmail(verifyEmailDto, user);
+  }
+
+  @Post('/list-verify')
+  @UseGuards(AuthenticationGuard)
+  async checkListVerify(@GetCurrentUser() user: User) {
+    return await this.userService.checkListVerify(user);
   }
 }
