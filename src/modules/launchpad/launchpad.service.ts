@@ -262,6 +262,7 @@ export class LaunchpadService {
         const newUser = await this.prisma.user.create({
           data: {
             signer: input.walletAddress.toLowerCase(),
+            publicKey: input.walletAddress,
           },
         });
         const response = await this.prisma.userProject.create({
