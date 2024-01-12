@@ -70,7 +70,7 @@ export class CollectionService {
       });
       if (checkExist) {
         throw new Error(
-          'Transaction hash or name or Short URL , symbol are already exists',
+          'Transaction hash or name or Short URL, symbol are already exists',
         );
       } else {
         const collection = await this.prisma.collection.create({
@@ -81,7 +81,7 @@ export class CollectionService {
             description: input.description,
             status: TX_STATUS.PENDING,
             type: input.type,
-            shortUrl: input.shortUrl,
+            ...(input.shortUrl && { shortUrl: input.shortUrl }),
             coverImage: input.coverImage,
             metadata: input.metadata,
             avatar: input.avatar,
@@ -319,16 +319,12 @@ export class CollectionService {
 
   async findOne(id: string): Promise<CollectionDetailDto> {
     try {
-      let whereCondition: Prisma.CollectionWhereInput;
+      const whereCondition: Prisma.CollectionWhereInput = {};
+      whereCondition.OR = [];
       if (!isValidUUID(id)) {
-        // throw new Error('Invalid ID. Please try again !');
-        whereCondition = {
-          shortUrl: id,
-        };
+        whereCondition.OR.push({ shortUrl: id }, { address: id });
       } else {
-        whereCondition = {
-          id,
-        };
+        whereCondition.OR.push({ id });
       }
 
       const collection = await this.prisma.collection.findFirst({
@@ -418,16 +414,36 @@ export class CollectionService {
         throw new Error(`You can't update this collection`);
       }
 
-      // Update Collection
-      const updatedCollection = await this.prisma.collection.update({
-        where: { id: id },
-        data: {
-          description: input.description,
-          coverImage: input.coverImage,
-        },
-      });
+      const dataUpdateCollection: Prisma.CollectionUpdateInput = {};
 
-      return updatedCollection;
+      if (input.description) {
+        dataUpdateCollection.description = input.description;
+      }
+
+      if (input.coverImage) {
+        dataUpdateCollection.coverImage = input.coverImage;
+      }
+
+      if (input.shortUrl) {
+        // Add a condition to check if input.shortUrl is different from existing shortUrl
+        if (
+          !existingCollection.shortUrl ||
+          input.shortUrl !== existingCollection.shortUrl
+        ) {
+          dataUpdateCollection.shortUrl = input.shortUrl;
+        }
+      }
+
+      // Update Collection
+      try {
+        const updatedCollection = await this.prisma.collection.update({
+          where: { id: id },
+          data: dataUpdateCollection,
+        });
+        return updatedCollection;
+      } catch (error) {
+        throw new Error(`Short URL already exists`);
+      }
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }

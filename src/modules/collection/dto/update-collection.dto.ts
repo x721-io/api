@@ -19,6 +19,10 @@ export class UpdateCollectionDto {
   @IsNotEmpty({ message: 'Please Enter Symbol Collection' })
   symbol: string;
 
+  @IsString({ message: 'Short url is invalid' })
+  @IsOptional()
+  shortUrl: string;
+
   @IsOptional()
   description: string;
 
