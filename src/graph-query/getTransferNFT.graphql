@@ -1,0 +1,18 @@
+query getTransferNFT($id: String!) {
+    erc721Transfers(where: { to: $id }) {
+      timestamp
+      id
+      to {
+        id
+      }
+    }
+    erc1155Transfers(where: { to: $id }) {
+      valueExact
+      value
+      timestamp
+      id
+      to {
+        id
+      }
+    }
+  }

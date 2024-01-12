@@ -37,6 +37,9 @@ model User {
   following         Int?            @default(0)
   user              UserFollow[]    @relation(name: "UserTracked")
   follower          UserFollow[]    @relation(name: "Follower")
+  accountStatus   Boolean        @default(false)
+  verifyEmail     Boolean        @default(false)
+
 }
 
 model NFT {
