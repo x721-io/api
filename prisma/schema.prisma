@@ -88,7 +88,7 @@ model Collection {
   symbol         String           @unique
   description    String?
   address        String?          @unique
-  shortUrl       String           @unique
+  shortUrl       String?           @unique
   metadata       String?
   isU2U          Boolean          @default(true)
   status         TX_STATUS

@@ -11,7 +11,7 @@ export class CreateCollectionDto {
   txCreationHash: string;
 
   @IsString({ message: 'Short url is invalid' })
-  @IsNotEmpty({ message: 'Please Enter Shorturl for your Collection' })
+  @IsOptional()
   shortUrl: string;
 
   @IsString({ message: 'Name Collection is invalid' })

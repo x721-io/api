@@ -20,10 +20,10 @@ function matchRegexArray(arr: string[], str: string): boolean {
 
 const whitelist = [
   'http://localhost:3000',
-  'https://marketplace-dev.uniultra.xyz/',
-  'https://marketplace-dev.uniultra.xyz',
-  'https://marketplace.uniultra.xyz/',
-  'https://marketplace.uniultra.xyz',
+  'nebulas.u2nft.io',
+  'nebulas.u2nft.io/',
+  'u2nft.io',
+  'u2nft.io/',
   'https://nft-launchpad.uniultra.xyz/',
   'https://nft-launchpad.uniultra.xyz',
 ];
