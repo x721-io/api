@@ -662,16 +662,25 @@ export class NftService {
           address: collectionAddress.toLowerCase(),
         },
       });
+
       if (!collection) {
         throw new NotFoundException('No collection was found');
       }
-      const nft: NftEntity = await this.prisma.nFT.findUnique({
-        where: {
-          id_collectionId: {
-            id,
-            collectionId: collection.id,
-          },
-        },
+
+      const nftCondition: Prisma.NFTWhereInput = {};
+      nftCondition.OR = [];
+
+      const nftOrConditionId: Prisma.NFTWhereInput = {
+        AND: [{ id, collectionId: collection.id }],
+      };
+      const nftOrConditionu2uId: Prisma.NFTWhereInput = {
+        AND: [{ u2uId: id, collectionId: collection.id }],
+      };
+
+      nftCondition.OR.push(nftOrConditionId, nftOrConditionu2uId);
+
+      const nft: NftEntity = await this.prisma.nFT.findFirst({
+        where: nftCondition,
         include: {
           creator: {
             select: {
