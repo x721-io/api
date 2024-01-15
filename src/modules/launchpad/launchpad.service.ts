@@ -15,6 +15,7 @@ import { Redis } from 'src/database';
 import { SubcribeProjectDto } from './dto/subcribe-project.dto';
 import { SubcribeEntity } from './entities/subcribe.entity';
 import { ProjectStat } from 'src/constants/enums/ProjectStat.enum';
+import OtherCommon from 'src/commons/Other.common';
 
 @Injectable()
 export class LaunchpadService {
@@ -40,7 +41,7 @@ export class LaunchpadService {
     });
   }
 
-  async findAll(query: FindAllProjectDto): Promise<any> {
+  async findAll(query: FindAllProjectDto): Promise<ProjectEntity[]> {
     const projects = await this.prisma.project.findMany({
       where: {
         isActivated: true,
@@ -49,7 +50,11 @@ export class LaunchpadService {
         collection: true,
         rounds: {
           include: {
-            round: true,
+            round: {
+              include: {
+                rangeTime: true,
+              },
+            },
           },
           orderBy: {
             start: 'asc',
@@ -87,16 +92,25 @@ export class LaunchpadService {
     } else {
       filteredProjects = projects;
     }
-    const returnProject = filteredProjects.map((item) => {
-      return {
-        ...item,
-        rounds: item.rounds.map((round) => ({
-          ...round,
-          ...round.round,
-        })),
-      };
-    });
-    // console.log(returnProject[0].rounds)
+
+    const returnProject = filteredProjects.map((item) => ({
+      ...item,
+      rounds: (item.rounds || []).map((roundItem) => {
+        const round = roundItem?.round || {};
+        const rangeTime = round?.rangeTime || [];
+        const formattedRanges = this.formatRanges(rangeTime);
+        return {
+          ...roundItem,
+          ...roundItem.round,
+          round: {
+            ...roundItem.round,
+            rangeTime: formattedRanges,
+          },
+          rangeTime: formattedRanges,
+        };
+      }),
+    }));
+
     return returnProject;
   }
 
@@ -109,7 +123,11 @@ export class LaunchpadService {
         collection: true,
         rounds: {
           include: {
-            round: true,
+            round: {
+              include: {
+                rangeTime: true,
+              },
+            },
           },
           orderBy: {
             start: 'asc',
@@ -117,14 +135,39 @@ export class LaunchpadService {
         },
       },
     });
-    if (!project) throw new NotFoundException('Project not found');
-    return {
+
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    const returnProject = {
       ...project,
-      rounds: project.rounds.map((round) => ({
-        ...round,
-        ...round.round,
-      })),
+      rounds: (project.rounds || []).map((roundItem) => {
+        const { round } = roundItem;
+        const rangeTime = round?.rangeTime || [];
+        const formattedRanges = this.formatRanges(rangeTime);
+
+        return {
+          ...roundItem,
+          ...roundItem.round,
+          round: {
+            ...roundItem.round,
+            rangeTime: formattedRanges,
+          },
+          rangeTime: formattedRanges,
+        };
+      }),
     };
+
+    return returnProject;
+  }
+
+  private formatRanges(rangeTime: any[]): any[] {
+    return rangeTime.map((range) => ({
+      ...range,
+      start: OtherCommon.convertToTimeFormat(range.start),
+      end: OtherCommon.convertToTimeFormat(range.end),
+    }));
   }
 
   async checkStakingSingle(user: User, projectId: string) {
