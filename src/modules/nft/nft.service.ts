@@ -238,7 +238,7 @@ export class NftService {
         for (let i = 0; i < nftIdFromOwner.length; i++) {
           whereCondition.OR.push({
             AND: [
-              { u2uId: nftIdFromOwner[i] },
+              { OR: [{ u2uId: nftIdFromOwner[i] }, { id: nftIdFromOwner[i] }] },
               {
                 collection: {
                   address: nftCollectionFromOwner[i],
