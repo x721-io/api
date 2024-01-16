@@ -21,6 +21,7 @@ import SecureUtil from '../../commons/Secure.common';
 import { GraphQLClient, gql } from 'graphql-request';
 import { getSdk } from '../../generated/graphql';
 import { oneWeekInMilliseconds } from '../../constants/Timestamp.constant';
+import OtherCommon from 'src/commons/Other.common';
 interface CollectionGeneral {
   totalOwner: number;
   volumn: string;
@@ -199,8 +200,9 @@ export class CollectionService {
     const whereCondition: Prisma.CollectionWhereInput = {
       ...(input.name && {
         name: {
-          contains: input.name,
-          mode: 'insensitive',
+          // contains: input.name.trim(),
+          // mode: 'insensitive',
+          search: OtherCommon.combineWords(input.name),
         },
       }),
       creators: {
@@ -457,18 +459,10 @@ export class CollectionService {
       let isUuid = true;
       if (!isValidUUID(id)) {
         isUuid = false;
-        console.log('alo');
       }
-      // const checkExist = await this.prisma.user.findFirst({
-      //   where: { id: id },
-      // });
-      // if (!checkExist) {
-      //   throw new NotFoundException();
-      // }
       const userWithCollection = await this.prisma.userCollection.findMany({
         where: {
           user: {
-            // ...(isUuid ? { id } : (OR:[{ signer: id }])),
             ...(isUuid ? { id } : { OR: [{ signer: id }, { shortLink: id }] }),
           },
         },
@@ -538,8 +532,19 @@ export class CollectionService {
         },
       });
 
+      const collections = response.map((i) => i.collection);
+
+      const subgraphCollection = collections.map(async (item) => {
+        const generalInfo = await this.getGeneralCollectionData(
+          item.address,
+          item.type,
+        );
+        return { ...item, ...generalInfo };
+      });
+      const dataArray = await Promise.all(subgraphCollection);
+
       return {
-        data: response.map((i) => i.collection),
+        data: dataArray,
         paging: {
           total: total,
           limit: input.limit,
