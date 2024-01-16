@@ -23,6 +23,7 @@ import { GetActivityBase } from './dto/activity-nft.dto';
 import { ActivityService } from './activity.service';
 import { NftEntity } from './entities/nft.entity';
 import { CollectionPriceService } from '../collection/collectionPrice.service';
+import OtherCommon from 'src/commons/Other.common';
 
 @Injectable()
 export class NftService {
@@ -188,7 +189,6 @@ export class NftService {
         ).concat(account.ERC1155balances.map((item) => item.token.contract.id));
       }
 
-      console.log(nftIdFromOwner, nftCollectionFromOwner);
       const whereCondition: Prisma.NFTWhereInput = {};
       const whereConditionInternal: Prisma.NFTWhereInput = {};
       whereConditionInternal.AND = [];
@@ -228,8 +228,10 @@ export class NftService {
       if (filter.name) {
         whereConditionInternal.AND.push({
           name: {
-            contains: filter.name,
-            mode: 'insensitive',
+            search: OtherCommon.combineWords(filter.name),
+            // ...(filter.name.includes('&')
+            //   ? { contains: filter.name.trim(), mode: 'insensitive' }
+            //   : { search: OtherCommon.combineWords(filter.name) }),
           },
         });
       }
@@ -249,7 +251,7 @@ export class NftService {
           });
         }
       } else if (filter.owner) {
-        console.log(whereConditionInternal);
+        // console.log(whereConditionInternal);
       } else {
         whereCondition.AND = whereConditionInternal.AND;
         delete whereCondition.OR;

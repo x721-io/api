@@ -280,11 +280,17 @@ class OtherCommon {
     return `${hours}:${minutes}:${seconds}`;
   }
   combineWords(input: string): string {
-    // Split the input string into an array of words
-    const words: string[] = input.split(' ');
+    // Replace special characters with whitespace
+    const cleanedInput: string = input.replace(/[^\w\s]/g, ' ');
 
-    // Join the words with the "&" symbol
-    const result: string = words.join(' & ');
+    // Remove leading and trailing spaces from the cleaned input string
+    const trimmedInput: string = cleanedInput.trim();
+
+    // Split the cleaned input string into an array of words
+    const words: string[] = trimmedInput.split(/\s+/);
+
+    // Filter out empty words and join the remaining words with the "&" symbol
+    const result: string = words.filter(Boolean).join(' & ');
 
     return result;
   }
