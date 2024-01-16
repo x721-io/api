@@ -14,5 +14,6 @@ export class findProjectsUserSubscribe extends FindAllProjectDto {
   projectId: string;
 
   @IsString()
+  @IsOptional()
   userId: string;
 }
