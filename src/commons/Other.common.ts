@@ -279,6 +279,15 @@ class OtherCommon {
     const seconds = date.getSeconds().toString().padStart(2, '0');
     return `${hours}:${minutes}:${seconds}`;
   }
+  combineWords(input: string): string {
+    // Split the input string into an array of words
+    const words: string[] = input.split(' ');
+
+    // Join the words with the "&" symbol
+    const result: string = words.join(' & ');
+
+    return result;
+  }
 }
 
 export default new OtherCommon();
