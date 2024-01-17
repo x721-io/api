@@ -228,10 +228,8 @@ export class NftService {
       if (filter.name) {
         whereConditionInternal.AND.push({
           name: {
-            search: OtherCommon.combineWords(filter.name),
-            // ...(filter.name.includes('&')
-            //   ? { contains: filter.name.trim(), mode: 'insensitive' }
-            //   : { search: OtherCommon.combineWords(filter.name) }),
+            contains: filter.name,
+            mode: 'insensitive',
           },
         });
       }

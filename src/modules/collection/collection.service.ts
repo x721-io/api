@@ -200,10 +200,8 @@ export class CollectionService {
     const whereCondition: Prisma.CollectionWhereInput = {
       ...(input.name && {
         name: {
-          search: OtherCommon.combineWords(input.name),
-          // ...(input.name.includes('&')
-          //   ? { contains: input.name.trim(), mode: 'insensitive' }
-          //   : { search: OtherCommon.combineWords(input.name) }),
+          contains: input.name,
+          mode: 'insensitive',
         },
       }),
       creators: {
