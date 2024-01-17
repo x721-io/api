@@ -30,9 +30,9 @@ export class CommonService {
           OR: [
             {
               name: {
-                // contains: input.text,
-                // mode: 'insensitive',
-                search: OtherCommon.combineWords(input.text),
+                contains: input.text,
+                mode: 'insensitive',
+                // search: OtherCommon.combineWords(input.text),
               },
             },
             {
@@ -95,9 +95,9 @@ export class CommonService {
           OR: [
             {
               name: {
-                // contains: input.text,
-                // mode: 'insensitive',
-                search: OtherCommon.combineWords(input.text),
+                contains: input.text,
+                mode: 'insensitive',
+                // search: OtherCommon.combineWords(input.text),
               },
             },
           ],
