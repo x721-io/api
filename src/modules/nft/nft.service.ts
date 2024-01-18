@@ -23,7 +23,7 @@ import { GetActivityBase } from './dto/activity-nft.dto';
 import { ActivityService } from './activity.service';
 import { NftEntity } from './entities/nft.entity';
 import { CollectionPriceService } from '../collection/collectionPrice.service';
-import OtherCommon from 'src/commons/Other.common';
+// import OtherCommon from 'src/commons/Other.common';
 
 @Injectable()
 export class NftService {
@@ -235,13 +235,39 @@ export class NftService {
       }
 
       if (nftIdFromOwner.length > 0) {
+        const collectionToTokenIds: Record<string, string[]> = {};
         for (let i = 0; i < nftIdFromOwner.length; i++) {
+          const collection = nftCollectionFromOwner[i];
+          if (!collectionToTokenIds[collection]) {
+            collectionToTokenIds[collection] = [];
+          }
+          collectionToTokenIds[collection].push(nftIdFromOwner[i]);
+
+          // whereCondition.OR.push({
+          //   AND: [
+          //     { OR: [{ u2uId: nftIdFromOwner[i] }, { id: nftIdFromOwner[i] }] },
+          //     {
+          //       collection: {
+          //         address: nftCollectionFromOwner[i],
+          //       },
+          //     },
+          //     ...whereConditionInternal.AND,
+          //   ],
+          // });
+        }
+        for (const [collection, tokenIds] of Object.entries(
+          collectionToTokenIds,
+        )) {
+          const tokenIdConditions = tokenIds.map((tokenId) => ({
+            OR: [{ u2uId: tokenId }, { id: tokenId }],
+          }));
+
           whereCondition.OR.push({
             AND: [
-              { OR: [{ u2uId: nftIdFromOwner[i] }, { id: nftIdFromOwner[i] }] },
+              { OR: tokenIdConditions },
               {
                 collection: {
-                  address: nftCollectionFromOwner[i],
+                  address: collection,
                 },
               },
               ...whereConditionInternal.AND,
