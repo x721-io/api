@@ -26,6 +26,8 @@ const whitelist = [
   'u2nft.io/',
   'https://nft-launchpad.uniultra.xyz/',
   'https://nft-launchpad.uniultra.xyz',
+  'https://marketplace-dev.uniultra.xyz/',
+  'https://marketplace-dev.uniultra.xyz',
 ];
 
 async function bootstrap() {
