@@ -37,7 +37,7 @@ export class UserService {
   async findByPublicKey(publicKey: string): Promise<any> {
     const account = await this.prisma.user.findFirst({
       where: {
-        publicKey: publicKey,
+        OR: [{ publicKey: publicKey }, { signer: publicKey.toLowerCase() }],
       },
     });
     if (!account) {
