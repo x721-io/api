@@ -40,8 +40,8 @@ export class ValidatorService {
         case TypeValidator.collectionShortUrl:
           return this.checkCollectionExistence('shortUrl', value);
 
-        case TypeValidator.collectionSymbol:
-          return this.checkCollectionExistence('symbol', value);
+        // case TypeValidator.collectionSymbol:
+        //   return this.checkCollectionExistence('symbol', value);
 
         case TypeValidator.nftName:
           if (!collectionId) {

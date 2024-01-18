@@ -85,7 +85,7 @@ model Collection {
   id             String           @id @default(uuid()) @db.Uuid
   txCreationHash String           @unique
   name           String           @unique
-  symbol         String           @unique
+  symbol         String
   description    String?
   address        String?          @unique
   shortUrl       String?           @unique

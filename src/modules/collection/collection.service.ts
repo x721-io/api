@@ -63,7 +63,6 @@ export class CollectionService {
         where: {
           OR: [
             { txCreationHash: input.txCreationHash },
-            { symbol: input.symbol },
             { name: input.name },
             { shortUrl: input.shortUrl },
           ],
@@ -71,7 +70,7 @@ export class CollectionService {
       });
       if (checkExist) {
         throw new Error(
-          'Transaction hash or name or Short URL, symbol are already exists',
+          'Transaction hash or name or Short URL are already exists',
         );
       } else {
         const collection = await this.prisma.collection.create({
