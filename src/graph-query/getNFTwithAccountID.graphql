@@ -1,7 +1,7 @@
-query getNFTwithAccountID($id: ID!) {
+query getNFTwithAccountID($id: ID!, $skip: Int = 0, $first: Int = 1000) {
   account(id: $id) {
     id
-    ERC721tokens {
+    ERC721tokens (first: $first, skip: $skip){
       uri
       txCreation
       id
@@ -10,7 +10,7 @@ query getNFTwithAccountID($id: ID!) {
         id
       }
     }
-    ERC1155balances {
+    ERC1155balances (first: $first, skip: $skip) {
       valueExact
       value
       id

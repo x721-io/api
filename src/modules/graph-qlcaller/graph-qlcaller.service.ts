@@ -152,7 +152,7 @@ export class GraphQlcallerService {
     limit?: number,
   ) {
     const { or, and } = conditions;
-
+    console.log(page, limit)
     const processCondition = (condition: any): string => {
       return Object.entries(condition)
         .filter(([key, value]) => !!value) // Filter out null values
@@ -405,11 +405,17 @@ export class GraphQlcallerService {
     return response;
   }
 
-  async getNFTFromOwner(owner: string) {
+  async getNFTFromOwner(owner: string, page: number, limit: number) {
+    console.log('alo: ', page, limit)
     const client = this.getGraphqlClient();
     const sdk = getSdk(client);
-    const variables: GetNfTwithAccountIdQueryVariables = { id: owner };
+    const variables: GetNfTwithAccountIdQueryVariables = {
+      id: owner,
+      first: limit,
+      skip: page,
+    };
     const response = sdk.getNFTwithAccountID(variables);
+    console.log('response: ', await response)
     return response;
   }
   async getNFTFromCollection(contractAddress: string) {

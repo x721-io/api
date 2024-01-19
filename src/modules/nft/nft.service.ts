@@ -179,6 +179,8 @@ export class NftService {
       if (filter.owner) {
         const { account } = await this.GraphqlService.getNFTFromOwner(
           filter.owner.toLocaleLowerCase(),
+          (filter.page - 1) * filter.limit,
+          filter.limit,
         );
         nftIdFromOwner = account.ERC721tokens.map(
           (item) => item.tokenId,
@@ -255,6 +257,7 @@ export class NftService {
           //   ],
           // });
         }
+        console.log(collectionToTokenIds);
         for (const [collection, tokenIds] of Object.entries(
           collectionToTokenIds,
         )) {
@@ -283,25 +286,32 @@ export class NftService {
 
       //----------
       const { marketEvent1155S, marketEvent721S } =
-        await this.GraphqlService.getNFTSellStatus1({
-          and: [
-            { price_gte: filter.priceMin },
-            { price_lte: filter.priceMax },
-            { event: filter.sellStatus },
-            { quoteToken: filter.quoteToken },
-            {
-              from:
-                filter.sellStatus === SellStatus.AskNew && filter.owner
-                  ? filter.owner.toLowerCase()
-                  : filter.from,
-            },
-            { to: filter.to },
-          ],
-          // or: [{ from: filter.owner }, { to: filter.owner }],
-        });
+        await this.GraphqlService.getNFTSellStatus1(
+          {
+            and: [
+              { price_gte: filter.priceMin },
+              { price_lte: filter.priceMax },
+              { event: filter.sellStatus },
+              { quoteToken: filter.quoteToken },
+              {
+                from:
+                  filter.sellStatus === SellStatus.AskNew && filter.owner
+                    ? filter.owner.toLowerCase()
+                    : filter.from,
+              },
+              { to: filter.to },
+            ],
+            // or: [{ from: filter.owner }, { to: filter.owner }],
+          },
+          (filter.page - 1) * filter.limit,
+          filter.limit,
+        );
       if (!filter.priceMin && !filter.priceMax && !filter.sellStatus) {
+        // console.log(whereCondition.OR[0].AND[0])
         const nfts = await this.prisma.nFT.findMany({
-          skip: (filter.page - 1) * filter.limit,
+          // skip: (filter.page - 1) * filter.limit,
+          // take: filter.limit,
+          skip: 0,
           take: filter.limit,
           // where: whereCondition.OR.length > 0 || whereConditionInternal.AND.length > 0 ? whereCondition : { AND: [] },
           where: whereCondition,
@@ -409,7 +419,8 @@ export class NftService {
             : { AND: [{ id: '' }, whereCondition] };
 
         const nfts = await this.prisma.nFT.findMany({
-          skip: (filter.page - 1) * filter.limit,
+          // skip: (filter.page - 1) * filter.limit,
+          skip: 0,
           take: filter.limit,
           where: whereCondition1,
           include: {
