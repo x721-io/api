@@ -21,6 +21,7 @@ export class CollectionEntity implements Collection {
   metadata: string;
   shortUrl: string;
   address: string;
+  nameSlug: string;
   totalOwner?: number;
   floorPrice?: string;
   totalNft?: number;

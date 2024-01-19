@@ -29,10 +29,13 @@ export class CommonService {
         where: {
           OR: [
             {
-              name: {
-                contains: input.text,
+              // name: {
+              //   contains: input.text,
+              //   mode: 'insensitive',
+              // },
+              nameSlug: {
+                contains: OtherCommon.stringToSlugSearch(input.text),
                 mode: 'insensitive',
-                // search: OtherCommon.combineWords(input.text),
               },
             },
             {
@@ -94,10 +97,14 @@ export class CommonService {
         where: {
           OR: [
             {
-              name: {
-                contains: input.text,
+              // name: {
+              //   contains: input.text,
+              //   mode: 'insensitive',
+              //   // search: OtherCommon.combineWords(input.text),
+              // },
+              nameSlug: {
+                contains: OtherCommon.stringToSlugSearch(input.text),
                 mode: 'insensitive',
-                // search: OtherCommon.combineWords(input.text),
               },
             },
           ],
