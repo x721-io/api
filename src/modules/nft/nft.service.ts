@@ -23,7 +23,7 @@ import { GetActivityBase } from './dto/activity-nft.dto';
 import { ActivityService } from './activity.service';
 import { NftEntity } from './entities/nft.entity';
 import { CollectionPriceService } from '../collection/collectionPrice.service';
-// import OtherCommon from 'src/commons/Other.common';
+import OtherCommon from 'src/commons/Other.common';
 
 @Injectable()
 export class NftService {
@@ -227,8 +227,12 @@ export class NftService {
 
       if (filter.name) {
         whereConditionInternal.AND.push({
-          name: {
-            contains: filter.name,
+          // name: {
+          //   contains: filter.name,
+          //   mode: 'insensitive',
+          // },
+          nameSlug: {
+            contains: OtherCommon.stringToSlugSearch(filter.name),
             mode: 'insensitive',
           },
         });

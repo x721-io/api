@@ -198,8 +198,8 @@ export class CollectionService {
     const addresses = creators.map((item) => item.id);
     const whereCondition: Prisma.CollectionWhereInput = {
       ...(input.name && {
-        name: {
-          contains: input.name,
+        nameSlug: {
+          contains: OtherCommon.stringToSlugSearch(input.name),
           mode: 'insensitive',
         },
       }),
@@ -485,6 +485,7 @@ export class CollectionService {
               coverImage: true,
               updatedAt: true,
               projectId: true,
+              nameSlug: true,
               isU2U: true,
               category: {
                 select: {
