@@ -37,6 +37,24 @@ class OtherCommon {
     return sorted;
   }
 
+  recursiveConsoleLog(input: any, indentLevel = 0): void {
+    const indent = ' '.repeat(indentLevel * 2); // Adjust the multiplier to change indentation width
+
+    if (Array.isArray(input)) {
+      console.log(indent + '[');
+      input.forEach((item) => this.recursiveConsoleLog(item, indentLevel + 1));
+      console.log(indent + ']');
+    } else if (typeof input === 'object' && input !== null) {
+      console.log(indent + '{');
+      for (const key in input) {
+        process.stdout.write(indent + '  ' + key + ': ');
+        this.recursiveConsoleLog(input[key], indentLevel + 1);
+      }
+      console.log(indent + '}');
+    } else {
+      console.log(indent + input);
+    }
+  }
   async handleUploadMultipleItems(asset: Promise<FileUpload[]>, id: string) {
     try {
       if (asset && (await asset).length > 0) {

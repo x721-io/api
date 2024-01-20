@@ -23,6 +23,7 @@ import { GetActivityBase } from './dto/activity-nft.dto';
 import { ActivityService } from './activity.service';
 import { NftEntity } from './entities/nft.entity';
 import { CollectionPriceService } from '../collection/collectionPrice.service';
+import OtherCommon from 'src/commons/Other.common';
 // import OtherCommon from 'src/commons/Other.common';
 
 @Injectable()
@@ -236,7 +237,7 @@ export class NftService {
         });
       }
 
-      if (nftIdFromOwner.length > 0) {
+      if (nftIdFromOwner.length > 0 && filter.sellStatus !== SellStatus.AskNew) {
         const collectionToTokenIds: Record<string, string[]> = {};
         for (let i = 0; i < nftIdFromOwner.length; i++) {
           const collection = nftCollectionFromOwner[i];
@@ -277,8 +278,6 @@ export class NftService {
             ],
           });
         }
-      } else if (filter.owner) {
-        // console.log(whereConditionInternal);
       } else {
         whereCondition.AND = whereConditionInternal.AND;
         delete whereCondition.OR;
@@ -376,13 +375,13 @@ export class NftService {
             }),
           };
         });
-        const total = await this.prisma.nFT.count({
-          where: whereCondition,
-        });
+        // const total = await this.prisma.nFT.count({
+        //   where: whereCondition,
+        // });
         return {
           data: mergedArray,
           paging: {
-            total,
+            total:0,
             limit: filter.limit,
             page: filter.page,
           },
@@ -412,12 +411,14 @@ export class NftService {
               },
             ],
           }));
-
+        // console.log('alo: ', whereCondition)
         const whereCondition1: Prisma.NFTWhereInput =
           marketEvents.length > 0
             ? { AND: [{ OR: marketEvents }, whereCondition] }
             : { AND: [{ id: '' }, whereCondition] };
 
+        // console.log('hú: ', whereCondition1)
+        // OtherCommon.recursiveConsoleLog(whereCondition1)
         const nfts = await this.prisma.nFT.findMany({
           // skip: (filter.page - 1) * filter.limit,
           skip: 0,
@@ -484,13 +485,13 @@ export class NftService {
             }),
           };
         });
-        const total = await this.prisma.nFT.count({
-          where: whereCondition1,
-        });
+        // const total = await this.prisma.nFT.count({
+        //   where: whereCondition1,
+        // });
         return {
           data: mergedArray,
           paging: {
-            total,
+            total: 0,
             limit: filter.limit,
             page: filter.page,
           },
