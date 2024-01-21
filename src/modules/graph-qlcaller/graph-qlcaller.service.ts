@@ -152,7 +152,7 @@ export class GraphQlcallerService {
     limit?: number,
   ) {
     const { or, and } = conditions;
-
+    console.log('skip: ', page, ' first: ', limit)
     const processCondition = (condition: any): string => {
       return Object.entries(condition)
         .filter(([key, value]) => !!value) // Filter out null values
