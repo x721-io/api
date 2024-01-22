@@ -6,6 +6,7 @@ export class UpdateUserDto {
   email: string;
   @IsString()
   @IsNotEmpty()
+  @IsOptional()
   @MaxLength(25, {
     message: 'Username is too long, maximum length is 25 characters',
   })
