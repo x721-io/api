@@ -219,18 +219,18 @@ export class UserService {
       }
 
       const updateData = {
-        email: input.email,
-        username: input.username,
-        acceptedTerms: input.acceptedTerms,
-        bio: input.bio,
-        facebookLink: input.facebookLink,
-        twitterLink: input.twitterLink,
-        telegramLink: input.telegramLink,
-        discordLink: input.discordLink,
-        webURL: input.webURL,
-        coverImage: input.coverImage,
-        shortLink: input.shortLink,
-        avatar: input.avatar,
+        email: input.email || undefined,
+        username: input.username || undefined,
+        acceptedTerms: input.acceptedTerms || undefined,
+        bio: input.bio || undefined,
+        facebookLink: input.facebookLink || undefined,
+        twitterLink: input.twitterLink || undefined,
+        telegramLink: input.telegramLink || undefined,
+        discordLink: input.discordLink || undefined,
+        webURL: input.webURL || undefined,
+        coverImage: input.coverImage || undefined,
+        shortLink: input.shortLink || undefined,
+        avatar: input.avatar || undefined,
       };
 
       // Remove shortLink if not provided
