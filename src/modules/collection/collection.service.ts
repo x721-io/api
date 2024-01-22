@@ -176,8 +176,8 @@ export class CollectionService {
       // filter name
       return {
         volumn: sum.toString(),
-        totalOwner: statusCollection.erc1155Contract.holderCount,
-        totalNft: statusCollection.erc1155Contract.count,
+        totalOwner: statusCollection.erc1155Contract?.holderCount || 0,
+        totalNft: statusCollection.erc1155Contract?.count || 0,
         floorPrice: floorPrice.toString(),
       };
     }
