@@ -59,4 +59,10 @@ export class CollectionController {
     const lowerCaseId = id.toLowerCase();
     return this.collectionService.findWithUserIDOrAddress(lowerCaseId, input);
   }
+
+  @Post('/follow/:id')
+  @UseGuards(AuthenticationGuard)
+  followCollection(@Param('id') id: string, @GetCurrentUser() user: User) {
+    return this.collectionService.followCollection(id, user);
+  }
 }

@@ -676,4 +676,49 @@ export class CollectionService {
       return totalOwnerNullable;
     }
   }
+  async followCollection(id: string, user: User) {
+    try {
+      const whereCondition: Prisma.CollectionWhereInput = {};
+      whereCondition.OR = [];
+      if (!isValidUUID(id)) {
+        whereCondition.OR.push({ shortUrl: id }, { address: id });
+      } else {
+        whereCondition.OR.push({ id });
+      }
+
+      const collection = await this.prisma.collection.findFirst({
+        where: whereCondition,
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          creators: {
+            select: {
+              userId: true,
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  avatar: true,
+                  username: true,
+                  publicKey: true,
+                  createdAt: true,
+                },
+              },
+            },
+          },
+        },
+      });
+      if (!collection) {
+        throw new NotFoundException();
+      }
+      return collection;
+    } catch (error) {
+      console.log(`Error - Follow Collection`, error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
 }
