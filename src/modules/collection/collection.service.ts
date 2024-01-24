@@ -176,8 +176,8 @@ export class CollectionService {
       // filter name
       return {
         volumn: sum.toString(),
-        totalOwner: statusCollection.erc1155Contract.holderCount,
-        totalNft: statusCollection.erc1155Contract.count,
+        totalOwner: statusCollection.erc1155Contract?.holderCount || 0,
+        totalNft: statusCollection.erc1155Contract?.count || 0,
         floorPrice: floorPrice.toString(),
       };
     }
@@ -198,8 +198,8 @@ export class CollectionService {
     const addresses = creators.map((item) => item.id);
     const whereCondition: Prisma.CollectionWhereInput = {
       ...(input.name && {
-        name: {
-          contains: input.name,
+        nameSlug: {
+          contains: OtherCommon.stringToSlugSearch(input.name),
           mode: 'insensitive',
         },
       }),
@@ -485,6 +485,7 @@ export class CollectionService {
               coverImage: true,
               updatedAt: true,
               projectId: true,
+              nameSlug: true,
               isU2U: true,
               category: {
                 select: {

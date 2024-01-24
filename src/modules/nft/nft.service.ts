@@ -23,7 +23,7 @@ import { GetActivityBase } from './dto/activity-nft.dto';
 import { ActivityService } from './activity.service';
 import { NftEntity } from './entities/nft.entity';
 import { CollectionPriceService } from '../collection/collectionPrice.service';
-// import OtherCommon from 'src/commons/Other.common';
+import OtherCommon from 'src/commons/Other.common';
 
 @Injectable()
 export class NftService {
@@ -159,6 +159,11 @@ export class NftService {
   }
 
   async findAll(filter: GetAllNftDto): Promise<PagingResponse<NftDto>> {
+    // TODO: Reimplement pagination strategy
+    // Get the result totally from subgraph and match data to local storage
+    // For each set of condition, use different subgraph query as source
+    // owner: getNFTFromOwner
+    // owner + sellStatus + priceMax + priceMin + collectionType: marketplace721S and marketplace1155S
     try {
       let traitsConditions = [];
 
@@ -227,8 +232,12 @@ export class NftService {
 
       if (filter.name) {
         whereConditionInternal.AND.push({
-          name: {
-            contains: filter.name,
+          // name: {
+          //   contains: filter.name,
+          //   mode: 'insensitive',
+          // },
+          nameSlug: {
+            contains: OtherCommon.stringToSlugSearch(filter.name),
             mode: 'insensitive',
           },
         });
@@ -282,23 +291,7 @@ export class NftService {
       }
 
       //----------
-      const { marketEvent1155S, marketEvent721S } =
-        await this.GraphqlService.getNFTSellStatus1({
-          and: [
-            { price_gte: filter.priceMin },
-            { price_lte: filter.priceMax },
-            { event: filter.sellStatus },
-            { quoteToken: filter.quoteToken },
-            {
-              from:
-                filter.sellStatus === SellStatus.AskNew && filter.owner
-                  ? filter.owner.toLowerCase()
-                  : filter.from,
-            },
-            { to: filter.to },
-          ],
-          // or: [{ from: filter.owner }, { to: filter.owner }],
-        });
+
       if (!filter.priceMin && !filter.priceMax && !filter.sellStatus) {
         const nfts = await this.prisma.nFT.findMany({
           skip: (filter.page - 1) * filter.limit,
@@ -334,38 +327,51 @@ export class NftService {
             traits: true,
           },
         });
-        const mergedArray = nfts.map((item) => {
-          const foundItem1 = marketEvent721S.find(
-            (obj) =>
-              obj.nftId &&
-              (obj.nftId.tokenId === item.u2uId ||
-                obj.nftId.tokenId === item.id) &&
-              obj.nftId.contract.id === item.collection.address,
-          );
-          const foundItem2 = marketEvent1155S.find(
-            (obj) =>
-              obj.nftId &&
-              (obj.nftId.tokenId === item.u2uId ||
-                obj.nftId.tokenId === item.id) &&
-              obj.nftId.contract.id === item.collection.address,
-          );
-          return {
-            ...item,
-            ...(foundItem1 && {
-              price: foundItem1.price,
-              sellStatus: foundItem1.event,
-              quantity: 1,
-              quoteToken: foundItem1.quoteToken,
-            }),
-            ...(foundItem2 && {
-              price: foundItem2.price,
-              sellStatus: foundItem2.event,
-              quantity: foundItem2.quantity,
-              askId: foundItem2.id,
-              quoteToken: foundItem2.quoteToken,
-            }),
-          };
-        });
+        const mergedArray = await Promise.all(
+          nfts.map(async (item) => {
+            const { marketEvent1155S, marketEvent721S } =
+              await this.GraphqlService.getNFTSellStatus1({
+                and: [
+                  {
+                    address: item.collection.address,
+                    nftId_: {
+                      tokenId: item.u2uId || item.id,
+                    },
+                  },
+                ],
+              });
+            const foundItem1 = marketEvent721S.find(
+              (obj) =>
+                obj.nftId &&
+                (obj.nftId.tokenId === item.u2uId ||
+                  obj.nftId.tokenId === item.id) &&
+                obj.nftId.contract.id === item.collection.address,
+            );
+            const foundItem2 = marketEvent1155S.find(
+              (obj) =>
+                obj.nftId &&
+                (obj.nftId.tokenId === item.u2uId ||
+                  obj.nftId.tokenId === item.id) &&
+                obj.nftId.contract.id === item.collection.address,
+            );
+            return {
+              ...item,
+              ...(foundItem1 && {
+                price: foundItem1.price,
+                sellStatus: foundItem1.event,
+                quantity: 1,
+                quoteToken: foundItem1.quoteToken,
+              }),
+              ...(foundItem2 && {
+                price: foundItem2.price,
+                sellStatus: foundItem2.event,
+                quantity: foundItem2.quantity,
+                askId: foundItem2.id,
+                quoteToken: foundItem2.quoteToken,
+              }),
+            };
+          }),
+        );
         const total = await this.prisma.nFT.count({
           where: whereCondition,
         });
@@ -389,6 +395,25 @@ export class NftService {
             },
           };
         }
+        const { marketEvent1155S, marketEvent721S } =
+          await this.GraphqlService.getNFTSellStatus1(
+            {
+              and: [
+                { price_gte: filter.priceMin },
+                { price_lte: filter.priceMax },
+                { event: filter.sellStatus },
+                { quoteToken: filter.quoteToken },
+                {
+                  from:
+                    filter.sellStatus === SellStatus.AskNew && filter.owner
+                      ? filter.owner.toLowerCase()
+                      : filter.from,
+                },
+              ],
+            },
+            null,
+            1000,
+          );
         const marketEvents = marketEvent1155S
           // @ts-ignore
           .concat(marketEvent721S)
