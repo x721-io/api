@@ -49,8 +49,9 @@ export class UserController {
   // }
 
   @Get('all')
-  async getAllUser(@Query() filter: GetAllUser) {
-    return await this.userService.findAll(filter);
+  @UseGuards(AuthenticationCustomizeGuard)
+  async getAllUser(@Query() filter: GetAllUser, @GetCurrentUser() user: User) {
+    return await this.userService.findAll(filter, user);
   }
 
   @Get('/nft/:id')
@@ -83,5 +84,11 @@ export class UserController {
   @Post('/activity')
   findActivityNFT(@Body() input: GetActivityBase) {
     return this.userService.findActivityNFT(input);
+  }
+
+  @Post('/follow/:id')
+  @UseGuards(AuthenticationCustomizeGuard)
+  followUser(@Param('id') id: string, @GetCurrentUser() follower: User) {
+    return this.userService.followUser(id, follower);
   }
 }
