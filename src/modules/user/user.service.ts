@@ -23,9 +23,13 @@ export class UserService {
   ) {}
 
   // Remove few prop secret
-  private minifyUserObject(user: any): any {
-    const propertiesToRemove = ['signature', 'signer', 'signedMessage'];
-    const minifiedUser = { ...user };
+  private minifyUserObject(params: any): any {
+    const { user = {} } = params;
+    const propertiesToRemove = ['signature', 'signer', 'signedMessage', 'user'];
+    const minifiedUser = {
+      ...params,
+      isFollowed: user && user.length > 0 ? user[0].isFollow : false,
+    };
     for (const property in minifiedUser) {
       if (propertiesToRemove.includes(property)) {
         delete minifiedUser[property];
@@ -70,7 +74,11 @@ export class UserService {
     return user;
   }
 
-  async findAll(filter: GetAllUser): Promise<PagingResponse<UserEntity>> {
+  async findAll(
+    filter: GetAllUser,
+    currentUser: User,
+  ): Promise<PagingResponse<any>> {
+    const currentUserId = currentUser?.id;
     // const limit = (filter.limit || 12) as number;
     // const cursor = filter.cursor;
     // @ts-ignore
@@ -112,21 +120,59 @@ export class UserService {
       },
     };
 
-    const users = await this.prisma.user.findMany({
+    const usersWithFollowStatus = await this.prisma.user.findMany({
       orderBy: {
         createdAt: filter.order,
       },
       where: whereCondition,
-      // take: take,
-      // cursor: cursor ? { id: cursor } : undefined,
-      // skip: cursor ? 0 : 0,
       skip: (filter.page - 1) * filter.limit,
       take: filter.limit,
+      select: {
+        id: true,
+        email: true,
+        avatar: true,
+        username: true,
+        signature: true,
+        signedMessage: true,
+        signDate: true,
+        signer: true,
+        acceptedTerms: true,
+        createdAt: true,
+        updatedAt: true,
+        bio: true,
+        facebookLink: true,
+        twitterLink: true,
+        telegramLink: true,
+        shortLink: true,
+        discordLink: true,
+        webURL: true,
+        coverImage: true,
+        followers: true,
+        following: true,
+        ...(currentUserId
+          ? {
+              user: {
+                select: {
+                  isFollow: true,
+                },
+                where: {
+                  followerId: currentUserId,
+                },
+              },
+            }
+          : {}),
+      },
     });
 
     const total = await this.prisma.user.count({
       where: whereCondition,
     });
+    const usersWithFollowStatusAndPaging = usersWithFollowStatus.map(
+      ({ user, ...rest }) => ({
+        ...rest,
+        isFollowed: user && user.length > 0 ? user[0].isFollow : false,
+      }),
+    );
     // let nextCursor: string | null = null;
     // if (users.length > limit) {
     //   const nextUser = users.pop();
@@ -135,7 +181,7 @@ export class UserService {
     // return { users, nextCursor };
 
     return {
-      data: users,
+      data: usersWithFollowStatusAndPaging,
       paging: {
         total,
         page: filter.page,
@@ -147,22 +193,64 @@ export class UserService {
   async getProfileWithShortLinkOrIdUser(input: string, user: any) {
     try {
       const currentUserId = user?.id;
-      let result: any = {};
-
+      // const result: any = {};
+      let isUuid = true;
       if (!isValidUUID(input)) {
-        result = await this.prisma.user.findFirst({
-          where: {
-            OR: [
-              { shortLink: { equals: input, mode: 'insensitive' } },
-              { signer: { equals: input.toLowerCase(), mode: 'insensitive' } },
-            ],
-          },
-        });
-      } else {
-        result = await this.prisma.user.findFirst({
-          where: { id: input },
-        });
+        isUuid = false;
       }
+
+      const result = await this.prisma.user.findFirst({
+        where: {
+          ...(isUuid
+            ? { id: input }
+            : {
+                OR: [
+                  { shortLink: { equals: input, mode: 'insensitive' } },
+                  {
+                    signer: {
+                      equals: input.toLowerCase(),
+                      mode: 'insensitive',
+                    },
+                  },
+                ],
+              }),
+        },
+        select: {
+          id: true,
+          email: true,
+          avatar: true,
+          username: true,
+          signature: true,
+          signedMessage: true,
+          signDate: true,
+          signer: true,
+          acceptedTerms: true,
+          createdAt: true,
+          updatedAt: true,
+          bio: true,
+          facebookLink: true,
+          twitterLink: true,
+          telegramLink: true,
+          shortLink: true,
+          discordLink: true,
+          webURL: true,
+          coverImage: true,
+          followers: true,
+          following: true,
+          ...(currentUserId
+            ? {
+                user: {
+                  select: {
+                    isFollow: true,
+                  },
+                  where: {
+                    followerId: currentUserId,
+                  },
+                },
+              }
+            : {}),
+        },
+      });
 
       if (!result) {
         throw new NotFoundException();
@@ -403,5 +491,74 @@ export class UserService {
       projectId,
       projects,
     };
+  }
+
+  async followUser(id: string, follower: User) {
+    try {
+      let isUuid = true;
+      if (!isValidUUID(id)) {
+        isUuid = false;
+      }
+      const user = await this.prisma.user.findFirst({
+        where: {
+          ...(isUuid ? { id } : { OR: [{ signer: id }, { shortLink: id }] }),
+        },
+      });
+      if (!user) {
+        throw new NotFoundException();
+      }
+      if (user.id == follower.id) {
+        throw new Error('You cannot follow yourself');
+      }
+      const userFollowMatch = await this.prisma.userFollow.findFirst({
+        where: {
+          userId: user.id,
+          followerId: follower.id,
+        },
+      });
+
+      const existingFollow = await this.prisma.userFollow.upsert({
+        where: {
+          userId_followerId: {
+            userId: user.id,
+            followerId: follower.id,
+          },
+        },
+        update: { isFollow: !userFollowMatch?.isFollow },
+        create: {
+          userId: user.id,
+          followerId: follower.id,
+          isFollow: true,
+        },
+      });
+
+      const increment = !existingFollow.isFollow ? -1 : 1;
+      // Followers
+      await this.prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          followers: {
+            increment,
+          },
+        },
+      });
+      // Following
+      await this.prisma.user.update({
+        where: {
+          id: follower.id,
+        },
+        data: {
+          following: {
+            increment,
+          },
+        },
+      });
+
+      return { isFollowed: existingFollow.isFollow };
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
   }
 }
