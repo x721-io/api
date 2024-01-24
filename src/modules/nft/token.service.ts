@@ -5,6 +5,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { createHash } from 'crypto';
 import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
 import { CONTRACT_TYPE } from '@prisma/client';
+import { GetCollectionMarketData } from '../graph-qlcaller/getCollectionMarketData.service';
 
 @Injectable()
 export class TokenService {
@@ -12,6 +13,7 @@ export class TokenService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly graphql: GraphQlcallerService,
+    private readonly tokenCountService: GetCollectionMarketData,
   ) {}
 
   async generateTokenId(
@@ -57,12 +59,12 @@ export class TokenService {
     let total;
     if (isValidAddress.type === CONTRACT_TYPE.ERC1155) {
       const nftsFromSubgraph =
-        await this.graphql.getNFTFromCollection(collectionAddress);
-      total = nftsFromSubgraph.erc1155Tokens.length;
+        await this.tokenCountService.getCollectionCount(collectionAddress);
+      total = nftsFromSubgraph.erc1155Contract.count;
     } else {
       const nftsFromSubgraph =
-        await this.graphql.getNFTFromCollection(collectionAddress);
-      total = nftsFromSubgraph.erc721Tokens.length;
+        await this.tokenCountService.getCollectionCount(collectionAddress);
+      total = nftsFromSubgraph.erc721Contract.count;
     }
     // const baseId = collectionAddress + current.toString();
     // const hash = createHash('sha256')
