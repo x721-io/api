@@ -108,7 +108,7 @@ export class UserController {
 
   @Post('/list-verify')
   @UseGuards(AuthenticationGuard)
-  async checkListVerify(@GetCurrentUser() user: User) 
+  async checkListVerify(@GetCurrentUser() user: User) {
     return await this.userService.checkListVerify(user);
   }
   @Post('/follow/:id')
