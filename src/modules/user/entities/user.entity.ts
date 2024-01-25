@@ -17,12 +17,12 @@ export class UserEntity {
   createdAt: Date;
   updatedAt: Date;
   signer: string;
-  bio? : string ;
-  facebookLink? : string;
-  twitterLink? : string;
-  telegramLink? : string;
-  discordLink? : string;
-  webURL? : string;
-  coverImage? : string
-
+  bio?: string;
+  facebookLink?: string;
+  twitterLink?: string;
+  telegramLink?: string;
+  discordLink?: string;
+  webURL?: string;
+  coverImage?: string;
+  isFollow?: string;
 }

@@ -51,8 +51,9 @@ export class UserController {
   // }
 
   @Get('all')
-  async getAllUser(@Query() filter: GetAllUser) {
-    return await this.userService.findAll(filter);
+  @UseGuards(AuthenticationCustomizeGuard)
+  async getAllUser(@Query() filter: GetAllUser, @GetCurrentUser() user: User) {
+    return await this.userService.findAll(filter, user);
   }
 
   @Get('/nft/:id')
@@ -86,6 +87,7 @@ export class UserController {
   findActivityNFT(@Body() input: GetActivityBase) {
     return this.userService.findActivityNFT(input);
   }
+
   @Post('/send-verify-email')
   @UseGuards(AuthenticationGuard)
   async sendVerifyEmail(
@@ -106,7 +108,12 @@ export class UserController {
 
   @Post('/list-verify')
   @UseGuards(AuthenticationGuard)
-  async checkListVerify(@GetCurrentUser() user: User) {
+  async checkListVerify(@GetCurrentUser() user: User) 
     return await this.userService.checkListVerify(user);
+  }
+  @Post('/follow/:id')
+  @UseGuards(AuthenticationCustomizeGuard)
+  followUser(@Param('id') id: string, @GetCurrentUser() follower: User) {
+    return this.userService.followUser(id, follower);
   }
 }
