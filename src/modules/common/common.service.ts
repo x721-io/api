@@ -9,6 +9,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { SearchAllType } from 'src/constants/searchType.enum';
 import { Readable } from 'stream';
 import { concat as uint8ArrayConcat } from 'uint8arrays/concat';
+import { Prisma } from '@prisma/client';
+import PaginationCommon from 'src/commons/HasNext.common';
 
 import * as path from 'path';
 
@@ -25,42 +27,86 @@ export class CommonService {
 
   async searchAll(input: SearchAllDto) {
     if (input.mode === SearchAllType.COLLECTION) {
-      return this.prisma.collection.findMany({
-        where: {
-          OR: [
-            {
-              // name: {
-              //   contains: input.text,
-              //   mode: 'insensitive',
-              // },
-              nameSlug: {
-                contains: OtherCommon.stringToSlugSearch(input.text),
-                mode: 'insensitive',
-              },
-            },
-            {
-              symbol: {
-                contains: input.text,
-                mode: 'insensitive',
-              },
-            },
-            {
-              shortUrl: {
-                contains: input.text,
-                mode: 'insensitive',
-              },
-            },
-            {
-              address: {
-                contains: input.text,
-                mode: 'insensitive',
-              },
-            },
-          ],
+      const whereConditionCollection: Prisma.CollectionWhereInput = {};
+      whereConditionCollection.OR = [];
+      whereConditionCollection.OR.push(
+        {
+          nameSlug: {
+            contains: OtherCommon.stringToSlugSearch(input.text),
+            mode: 'insensitive',
+          },
         },
+        {
+          nameSlug: {
+            contains: OtherCommon.stringToSlugSearch(input.text),
+            mode: 'insensitive',
+          },
+        },
+        {
+          symbol: {
+            contains: input.text,
+            mode: 'insensitive',
+          },
+        },
+        {
+          shortUrl: {
+            contains: input.text,
+            mode: 'insensitive',
+          },
+        },
+        {
+          address: {
+            contains: input.text,
+            mode: 'insensitive',
+          },
+        },
+      );
+
+      const dataCollection = await this.prisma.collection.findMany({
+        where: whereConditionCollection,
+        skip: (input.page - 1) * input.limit,
+        take: input.limit,
       });
+
+      const hasNext = await PaginationCommon.hasNextPage(
+        input.page,
+        input.limit,
+        'collection',
+        whereConditionCollection,
+      );
+      return {
+        data: dataCollection,
+        paging: {
+          hasNext,
+          page: input.page,
+          limit: input.limit,
+        },
+      };
     } else if (input.mode === SearchAllType.USER) {
-      return this.prisma.user.findMany({
+      const whereConditionUser: Prisma.UserWhereInput = {};
+      whereConditionUser.OR = [];
+      whereConditionUser.OR.push(
+        {
+          username: {
+            contains: input.text,
+            mode: 'insensitive',
+          },
+        },
+        {
+          signer: {
+            contains: input.text,
+            mode: 'insensitive',
+          },
+        },
+        {
+          shortLink: {
+            contains: input.text,
+            mode: 'insensitive',
+          },
+        },
+      );
+
+      const dataUser = await this.prisma.user.findMany({
         select: {
           id: true,
           signer: true,
@@ -69,46 +115,47 @@ export class CommonService {
           createdAt: true,
           shortLink: true,
         },
-        where: {
-          OR: [
-            {
-              username: {
-                contains: input.text,
-                mode: 'insensitive',
-              },
-            },
-            {
-              signer: {
-                contains: input.text,
-                mode: 'insensitive',
-              },
-            },
-            {
-              shortLink: {
-                contains: input.text,
-                mode: 'insensitive',
-              },
-            },
-          ],
+        where: whereConditionUser,
+        skip: (input.page - 1) * input.limit,
+        take: input.limit,
+      });
+      const hasNext = await PaginationCommon.hasNextPage(
+        input.page,
+        input.limit,
+        'user',
+        whereConditionUser,
+      );
+      return {
+        data: dataUser,
+        paging: {
+          hasNext,
+          page: input.page,
+          limit: input.limit,
+        },
+      };
+    } else if (input.mode === SearchAllType.NFT) {
+      const whereConditionNFT: Prisma.NFTWhereInput = {};
+      whereConditionNFT.OR = [];
+      whereConditionNFT.OR.push({
+        nameSlug: {
+          contains: OtherCommon.stringToSlugSearch(input.text),
+          mode: 'insensitive',
         },
       });
-    } else if (input.mode === SearchAllType.NFT) {
-      return this.prisma.nFT.findMany({
-        where: {
-          OR: [
-            {
-              // name: {
-              //   contains: input.text,
-              //   mode: 'insensitive',
-              //   // search: OtherCommon.combineWords(input.text),
-              // },
-              nameSlug: {
-                contains: OtherCommon.stringToSlugSearch(input.text),
-                mode: 'insensitive',
-              },
-            },
-          ],
-        },
+      const dataNFT = await this.prisma.nFT.findMany({
+        where: whereConditionNFT,
+        skip: (input.page - 1) * input.limit,
+        take: input.limit,
+        // {
+        //   OR: [
+        //     {
+        //       nameSlug: {
+        //         contains: OtherCommon.stringToSlugSearch(input.text),
+        //         mode: 'insensitive',
+        //       },
+        //     },
+        //   ],
+        // },
         include: {
           collection: {
             select: {
@@ -135,6 +182,20 @@ export class CommonService {
           },
         },
       });
+      const hasNext = await PaginationCommon.hasNextPage(
+        input.page,
+        input.limit,
+        'nFT',
+        whereConditionNFT,
+      );
+      return {
+        data: dataNFT,
+        paging: {
+          hasNext,
+          page: input.page,
+          limit: input.limit,
+        },
+      };
     }
   }
   async uploadIpfs(files: Express.Multer.File[], metadata: any) {

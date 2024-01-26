@@ -14,7 +14,7 @@ import { Redis } from 'src/database';
 import { GetAllNftDto } from './dto/get-all-nft.dto';
 import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
 import { MarketplaceService } from './nft-marketplace.service';
-import { SellStatus } from 'src/generated/graphql';
+import { SellStatus, OrderDirection } from 'src/generated/graphql';
 import { ZERO_ADDR } from 'src/constants/web3Const/messages';
 import { OwnerOutputDto } from '../user/dto/owners.dto';
 import { ValidatorService } from '../validator/validator.service';
@@ -25,7 +25,9 @@ import { NftEntity } from './entities/nft.entity';
 import { CollectionPriceService } from '../collection/collectionPrice.service';
 import OtherCommon from 'src/commons/Other.common';
 import { creatorSelect } from '../../commons/definitions/Constraint.Object';
-
+import { GetGeneralInforDto } from './dto/get-general-infor.dto';
+import { GeneralInfor } from 'src/constants/enums/GeneralInfor.enum';
+import PaginationCommon from 'src/commons/HasNext.common';
 @Injectable()
 export class NftService {
   constructor(
@@ -158,7 +160,7 @@ export class NftService {
     }
   }
 
-  async findAll(filter: GetAllNftDto): Promise<PagingResponse<NftDto>> {
+  async findAll(filter: GetAllNftDto): Promise<PagingResponseHasNext<NftDto>> {
     // TODO: Reimplement pagination strategy
     // Get the result totally from subgraph and match data to local storage
     // For each set of condition, use different subgraph query as source
@@ -184,14 +186,22 @@ export class NftService {
       if (filter.owner) {
         const { account } = await this.GraphqlService.getNFTFromOwner(
           filter.owner.toLocaleLowerCase(),
+          filter.order as OrderDirection,
         );
-        nftIdFromOwner = account.ERC721tokens.map(
-          (item) => item.tokenId,
-        ).concat(account.ERC1155balances.map((item) => item.token.tokenId));
+        // console.log(account);
+        if (account) {
+          const erc1155BalancesSort = this.sortERC1155balances(
+            account.ERC1155balances,
+            filter.order,
+          );
+          nftIdFromOwner = account.ERC721tokens.map(
+            (item) => item.tokenId,
+          ).concat(erc1155BalancesSort.map((item) => item.token.tokenId));
 
-        nftCollectionFromOwner = account.ERC721tokens.map(
-          (item) => item.contract.id,
-        ).concat(account.ERC1155balances.map((item) => item.token.contract.id));
+          nftCollectionFromOwner = account.ERC721tokens.map(
+            (item) => item.contract.id,
+          ).concat(erc1155BalancesSort.map((item) => item.token.contract.id));
+        }
       }
 
       const whereCondition: Prisma.NFTWhereInput = {};
@@ -298,6 +308,9 @@ export class NftService {
           take: filter.limit,
           // where: whereCondition.OR.length > 0 || whereConditionInternal.AND.length > 0 ? whereCondition : { AND: [] },
           where: whereCondition,
+          orderBy: {
+            createdAt: filter.order,
+          },
           include: {
             creator: {
               select: creatorSelect,
@@ -366,13 +379,16 @@ export class NftService {
             };
           }),
         );
-        const total = await this.prisma.nFT.count({
-          where: whereCondition,
-        });
+        const hasNext = await PaginationCommon.hasNextPage(
+          filter.page,
+          filter.limit,
+          'nFT',
+          whereCondition,
+        );
         return {
           data: mergedArray,
           paging: {
-            total,
+            hasNext: hasNext,
             limit: filter.limit,
             page: filter.page,
           },
@@ -383,13 +399,13 @@ export class NftService {
           return {
             data: [],
             paging: {
-              total: 0,
+              hasNext: false,
               limit: filter.limit,
               page: filter.page,
             },
           };
         }
-        const { marketEvent1155S, marketEvent721S } =
+        const { marketEvent1155S, marketEvent721S, hasNextSubGraph } =
           await this.GraphqlService.getNFTSellStatus1(
             {
               and: [
@@ -431,6 +447,9 @@ export class NftService {
           // skip: (filter.page - 1) * filter.limit,
           // take: filter.limit,
           where: whereCondition1,
+          orderBy: {
+            createdAt: filter.order,
+          },
           include: {
             creator: {
               select: creatorSelect,
@@ -486,13 +505,18 @@ export class NftService {
             }),
           };
         });
-        // const total = await this.prisma.nFT.count({
-        //   where: whereCondition1,
-        // });
+        // const hasNext = await PaginationCommon.hasNextPage(
+        //   filter.page,
+        //   filter.limit,
+        //   'nFT',
+        //   whereCondition1,
+        // );
+
+        // console.log(hasNextSubGraph);
         return {
           data: mergedArray,
           paging: {
-            total: 999999,
+            hasNext: hasNextSubGraph,
             limit: filter.limit,
             page: filter.page,
           },
@@ -878,4 +902,135 @@ export class NftService {
       throw error; // You may want to handle or log the error accordingly
     }
   };
+
+  sortERC1155balances(dataArray, inputOrder = 'asc') {
+    const compareTimestamps = (a, b) => a.createAt - b.createAt;
+
+    const sortedArray = dataArray.sort(compareTimestamps);
+    if (inputOrder === 'desc') {
+      sortedArray.reverse();
+    }
+
+    return sortedArray;
+  }
+
+  async getGeneralInfor(filter: GetGeneralInforDto) {
+    try {
+      switch (filter.mode) {
+        case GeneralInfor.OWNER:
+        case GeneralInfor.CREATOR:
+          let nftIdFromOwner = [];
+          let nftCollectionFromOwner = [];
+          if (filter.owner) {
+            const { account } = await this.GraphqlService.getNFTFromOwner(
+              filter.owner.toLocaleLowerCase(),
+              filter.order as OrderDirection,
+            );
+            if (account) {
+              const erc1155BalancesSort = this.sortERC1155balances(
+                account.ERC1155balances,
+                filter.order,
+              );
+              nftIdFromOwner = account.ERC721tokens.map(
+                (item) => item.tokenId,
+              ).concat(erc1155BalancesSort.map((item) => item.token.tokenId));
+
+              nftCollectionFromOwner = account.ERC721tokens.map(
+                (item) => item.contract.id,
+              ).concat(
+                erc1155BalancesSort.map((item) => item.token.contract.id),
+              );
+            }
+          }
+          const whereCondition: Prisma.NFTWhereInput = {};
+          const whereConditionInternal: Prisma.NFTWhereInput = {};
+          whereConditionInternal.AND = [];
+          whereCondition.OR = [];
+          whereConditionInternal.AND.push({
+            status: TX_STATUS.SUCCESS,
+          });
+          if (filter.creatorAddress) {
+            whereConditionInternal.AND.push({
+              creator: {
+                publicKey: filter.creatorAddress,
+              },
+            });
+          }
+          if (filter.collectionAddress) {
+            const collectionCondition: Prisma.CollectionWhereInput = {};
+            if (filter.collectionAddress) {
+              collectionCondition.address = filter.collectionAddress;
+            }
+            whereConditionInternal.AND.push({
+              collection: collectionCondition,
+            });
+          }
+          if (nftIdFromOwner.length > 0) {
+            const collectionToTokenIds: Record<string, string[]> = {};
+            for (let i = 0; i < nftIdFromOwner.length; i++) {
+              const collection = nftCollectionFromOwner[i];
+              if (!collectionToTokenIds[collection]) {
+                collectionToTokenIds[collection] = [];
+              }
+              collectionToTokenIds[collection].push(nftIdFromOwner[i]);
+            }
+            for (const [collection, tokenIds] of Object.entries(
+              collectionToTokenIds,
+            )) {
+              const tokenIdConditions = tokenIds.map((tokenId) => ({
+                OR: [{ u2uId: tokenId }, { id: tokenId }],
+              }));
+
+              whereCondition.OR.push({
+                AND: [
+                  { OR: tokenIdConditions },
+                  {
+                    collection: {
+                      address: collection,
+                    },
+                  },
+                  ...whereConditionInternal.AND,
+                ],
+              });
+            }
+          } else if (filter.owner) {
+          } else {
+            whereCondition.AND = whereConditionInternal.AND;
+            delete whereCondition.OR;
+          }
+          const totalOwnerCreator = await this.prisma.nFT.count({
+            where: whereCondition,
+          });
+          return totalOwnerCreator;
+        case GeneralInfor.ONSALES:
+          const response = await this.GraphqlService.getNFTOnSales(
+            filter.owner.toLowerCase(),
+          );
+          return (response && response.onSaleCount) || 0;
+        case GeneralInfor.COLLECTION:
+          let isUuid = true;
+          if (!isValidUUID(filter.owner)) {
+            isUuid = false;
+          }
+          const totalCollection = await this.prisma.userCollection.count({
+            where: {
+              user: {
+                ...(isUuid
+                  ? { id: filter.owner }
+                  : {
+                      OR: [
+                        { signer: filter.owner.toLowerCase() },
+                        { shortLink: filter.owner.toLowerCase() },
+                      ],
+                    }),
+              },
+            },
+          });
+          return totalCollection;
+      }
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
 }

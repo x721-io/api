@@ -27,6 +27,7 @@ export class CollectionEntity implements Collection {
   totalNft?: number;
   volumn?: string;
   coverImage: string;
+  isVerified: boolean;
 }
 export enum TXSTATUS {
   PENDING = 'PENDING',

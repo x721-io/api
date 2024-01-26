@@ -1,0 +1,6 @@
+query getNFTOnSales($id: ID!) {
+  account(id: $id) {
+    id
+    onSaleCount
+  }
+}

@@ -12,6 +12,7 @@ import {
   GetNfTwithAccountIdQueryVariables,
   GetCollectionTokensQueryVariables,
   Query,
+  OrderDirection,
 } from '../../generated/graphql';
 import { GraphQLClient, gql } from 'graphql-request';
 @Injectable()
@@ -152,7 +153,7 @@ export class GraphQlcallerService {
     limit?: number,
   ) {
     const { or, and } = conditions;
-    console.log('and: ', conditions);
+    // console.log('and: ', conditions);
     const processCondition = (condition: any): string => {
       return Object.entries(condition)
         .filter(([key, value]) => !!value) // Filter out null values
@@ -252,10 +253,21 @@ export class GraphQlcallerService {
     `;
 
     const pageCalculation = (page - 1) * limit;
-    return this.graphqlClient.request(query, {
+    const response = (await this.graphqlClient.request(query, {
       page: pageCalculation,
       limit,
-    }) as unknown as GetOneNftSellInfoQuery;
+    })) as unknown as GetOneNftSellInfoQuery;
+
+    const responseHasNext = (await this.graphqlClient.request(query, {
+      page: pageCalculation,
+      limit: limit * 2,
+    })) as unknown as GetOneNftSellInfoQuery;
+    const hasNextPage1155 = responseHasNext.marketEvent1155S.length > limit;
+    const hasNextPage721 = responseHasNext.marketEvent721S.length > limit;
+    return {
+      ...response,
+      hasNextSubGraph: hasNextPage1155 || hasNextPage721,
+    };
   }
 
   async getNFTSellStatus(
@@ -405,10 +417,13 @@ export class GraphQlcallerService {
     return response;
   }
 
-  async getNFTFromOwner(owner: string) {
+  async getNFTFromOwner(owner: string, orderDirection: OrderDirection) {
     const client = this.getGraphqlClient();
     const sdk = getSdk(client);
-    const variables: GetNfTwithAccountIdQueryVariables = { id: owner };
+    const variables: GetNfTwithAccountIdQueryVariables = {
+      id: owner,
+      orderDirection: orderDirection,
+    };
     const response = sdk.getNFTwithAccountID(variables);
     return response;
   }
@@ -479,6 +494,19 @@ export class GraphQlcallerService {
         address,
       })) as unknown as Query;
       return royaltiesRegistries;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+  async getNFTOnSales(address: string) {
+    try {
+      const client = this.getGraphqlClient();
+      const sdk = getSdk(client);
+      const { account } = (await sdk.getNFTOnSales({
+        id: address,
+      })) as unknown as Query;
+      return account;
     } catch (error) {
       console.log(error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
