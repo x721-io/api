@@ -10,7 +10,10 @@ query getNFTwithAccountID($id: ID!) {
         id
       }
     }
-    ERC1155balances (first: 1000) {
+    ERC1155balances (
+      first: 1000
+      where: {value_gt: 0}
+      ) {
       valueExact
       value
       id
