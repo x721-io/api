@@ -405,8 +405,8 @@ export class NftService {
                 },
               ],
             },
-            null,
-            1000,
+            filter.page,
+            filter.limit,
           );
         const marketEvents = marketEvent1155S
           // @ts-ignore
@@ -428,8 +428,8 @@ export class NftService {
             : { AND: [{ id: '' }, whereCondition] };
 
         const nfts = await this.prisma.nFT.findMany({
-          skip: (filter.page - 1) * filter.limit,
-          take: filter.limit,
+          // skip: (filter.page - 1) * filter.limit,
+          // take: filter.limit,
           where: whereCondition1,
           include: {
             creator: {
@@ -486,13 +486,13 @@ export class NftService {
             }),
           };
         });
-        const total = await this.prisma.nFT.count({
-          where: whereCondition1,
-        });
+        // const total = await this.prisma.nFT.count({
+        //   where: whereCondition1,
+        // });
         return {
           data: mergedArray,
           paging: {
-            total,
+            total: 999999,
             limit: filter.limit,
             page: filter.page,
           },
