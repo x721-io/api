@@ -178,6 +178,8 @@ export class UserService {
         coverImage: true,
         followers: true,
         following: true,
+        accountStatus: true,
+        verifyEmail: true,
         ...(currentUserId
           ? {
               user: {
@@ -267,6 +269,8 @@ export class UserService {
           coverImage: true,
           followers: true,
           following: true,
+          accountStatus: true,
+          verifyEmail: true,
           ...(currentUserId
             ? {
                 user: {
