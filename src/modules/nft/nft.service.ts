@@ -24,6 +24,7 @@ import { ActivityService } from './activity.service';
 import { NftEntity } from './entities/nft.entity';
 import { CollectionPriceService } from '../collection/collectionPrice.service';
 import OtherCommon from 'src/commons/Other.common';
+import { creatorSelect } from '../../commons/definitions/Constraint.Object';
 
 @Injectable()
 export class NftService {
@@ -41,7 +42,6 @@ export class NftService {
   private getGraphqlClient() {
     return new GraphQLClient(this.endpoint);
   }
-
   async crawlNftInfo(collectionAddress: string, txCreation?: string) {
     try {
       const collection = await this.prisma.collection.findUnique({
@@ -300,13 +300,7 @@ export class NftService {
           where: whereCondition,
           include: {
             creator: {
-              select: {
-                id: true,
-                email: true,
-                avatar: true,
-                username: true,
-                publicKey: true,
-              },
+              select: creatorSelect,
             },
             collection: {
               select: {
@@ -439,13 +433,7 @@ export class NftService {
           where: whereCondition1,
           include: {
             creator: {
-              select: {
-                id: true,
-                email: true,
-                avatar: true,
-                username: true,
-                publicKey: true,
-              },
+              select: creatorSelect,
             },
             collection: {
               select: {
@@ -657,14 +645,7 @@ export class NftService {
         where: {
           signer: { in: ownerAddresses },
         },
-        select: {
-          id: true,
-          email: true,
-          avatar: true,
-          username: true,
-          signer: true,
-          publicKey: true,
-        },
+        select: creatorSelect,
       });
       owners = ownersFromLocal.map((item2) => {
         const item1 = nftInfoWithOwner.erc1155Balances.find(
@@ -688,14 +669,7 @@ export class NftService {
         where: {
           signer: nftInfoWithOwner.erc721Tokens[0].owner.id,
         },
-        select: {
-          id: true,
-          email: true,
-          avatar: true,
-          username: true,
-          signer: true,
-          publicKey: true,
-        },
+        select: creatorSelect,
       });
     }
     if (owners.length === 0) {
@@ -737,13 +711,7 @@ export class NftService {
         where: nftCondition,
         include: {
           creator: {
-            select: {
-              id: true,
-              email: true,
-              avatar: true,
-              username: true,
-              publicKey: true,
-            },
+            select: creatorSelect,
           },
           collection: {
             include: {
@@ -844,14 +812,7 @@ export class NftService {
                   tokenUri: true,
                   txCreationHash: true,
                   creator: {
-                    select: {
-                      id: true,
-                      email: true,
-                      avatar: true,
-                      username: true,
-                      signer: true,
-                      publicKey: true,
-                    },
+                    select: creatorSelect,
                   },
                   collection: {
                     select: {

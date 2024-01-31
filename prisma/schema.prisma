@@ -33,6 +33,12 @@ model User {
   webURL           String?
   coverImage       String?
   projectSubscribe UserProject[]
+  followers        Int?             @default(0)
+  following        Int?             @default(0)
+  user             UserFollow[]     @relation(name: "UserTracked")
+  follower         UserFollow[]     @relation(name: "Follower")
+  accountStatus    Boolean          @default(false)
+  verifyEmail      Boolean          @default(false)
 }
 
 model NFT {
@@ -48,7 +54,7 @@ model NFT {
   updatedAt      DateTime   @updatedAt
   status         TX_STATUS
   tokenUri       String
-  txCreationHash String     
+  txCreationHash String
   owners         UserNFT[]
   creatorId      String?    @db.Uuid
   creator        User?      @relation(fields: [creatorId], references: [id])
@@ -90,7 +96,7 @@ model Collection {
   symbol         String
   description    String?
   address        String?          @unique
-  shortUrl       String?           @unique
+  shortUrl       String?          @unique
   metadata       String?
   isU2U          Boolean          @default(true)
   status         TX_STATUS
@@ -125,12 +131,12 @@ model Category {
 }
 
 model Project {
-  id           String         @id @default(uuid()) @db.Uuid
+  id           String           @id @default(uuid()) @db.Uuid
   idOnchain    Int
   name         String
   banner       String?
   description  String?
-  details      Json[]         @default([])
+  details      Json[]           @default([])
   organization String?
   website      String?
   telegram     String?
@@ -140,29 +146,29 @@ model Project {
   twitter      String?
   shortLink    String?
   logo         String?
-  isActivated  Boolean        @default(false)
+  isActivated  Boolean          @default(false)
   rounds       ProjectRound[]
   collection   Collection?
   subscriber   UserProject[]
-  rangeTime   RoundRangeTime[]
+  rangeTime    RoundRangeTime[]
 }
 
 model ProjectRound {
-  projectId      String    @db.Uuid
-  project        Project   @relation(fields: [projectId], references: [id])
-  roundId        Int
-  round          RoundInfo @relation(fields: [roundId], references: [id])
-  address        String?
-  start          DateTime
-  end            DateTime
-  stakeBefore    DateTime?
-  maxPerWallet   Int?
-  totalNftt      Int?
-  price          String?
-  instruction    String?
+  projectId       String    @db.Uuid
+  project         Project   @relation(fields: [projectId], references: [id])
+  roundId         Int
+  round           RoundInfo @relation(fields: [roundId], references: [id])
+  address         String?
+  start           DateTime
+  end             DateTime
+  stakeBefore     DateTime?
+  maxPerWallet    Int?
+  totalNftt       Int?
+  price           String?
+  instruction     String?
   requiredStaking String?
-  claimableStart DateTime  @default(now())
-  claimableIds   String[]  @default([])
+  claimableStart  DateTime  @default(now())
+  claimableIds    String[]  @default([])
 
   @@id([projectId, roundId])
 }
@@ -180,7 +186,7 @@ model UserProject {
 }
 
 model RoundInfo {
-  id          Int            @id @default(autoincrement())
+  id          Int              @id @default(autoincrement())
   name        String?
   description String?
   type        String?
@@ -200,11 +206,21 @@ enum CONTRACT_TYPE {
 }
 
 model RoundRangeTime {
-  id          String    @id @default(uuid()) @db.Uuid
-  roundId     Int
-  projectId   String    @db.Uuid
-  start       DateTime
-  end         DateTime
-  round       RoundInfo @relation(fields: [roundId], references: [id])
-  project     Project   @relation(fields: [projectId], references: [id])  
+  id        String    @id @default(uuid()) @db.Uuid
+  roundId   Int
+  projectId String    @db.Uuid
+  start     DateTime
+  end       DateTime
+  round     RoundInfo @relation(fields: [roundId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+}
+
+model UserFollow {
+  userId     String  @db.Uuid
+  followerId String  @db.Uuid
+  isFollow   Boolean @default(true)
+  user       User    @relation(fields: [userId], references: [id], name: "UserTracked")
+  follower   User    @relation(fields: [followerId], references: [id], name: "Follower")
+
+  @@id([userId, followerId])
 }

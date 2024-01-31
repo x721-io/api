@@ -22,6 +22,7 @@ import { GraphQLClient, gql } from 'graphql-request';
 import { getSdk } from '../../generated/graphql';
 import { oneWeekInMilliseconds } from '../../constants/Timestamp.constant';
 import OtherCommon from 'src/commons/Other.common';
+import { creatorSelect } from '../../commons/definitions/Constraint.Object';
 interface CollectionGeneral {
   totalOwner: number;
   volumn: string;
@@ -241,13 +242,7 @@ export class CollectionService {
             select: {
               userId: true,
               user: {
-                select: {
-                  id: true,
-                  email: true,
-                  avatar: true,
-                  username: true,
-                  publicKey: true,
-                },
+                select: creatorSelect,
               },
             },
           },
@@ -283,13 +278,7 @@ export class CollectionService {
             select: {
               userId: true,
               user: {
-                select: {
-                  id: true,
-                  email: true,
-                  avatar: true,
-                  username: true,
-                  publicKey: true,
-                },
+                select: creatorSelect,
               },
             },
           },
@@ -340,14 +329,7 @@ export class CollectionService {
             select: {
               userId: true,
               user: {
-                select: {
-                  id: true,
-                  email: true,
-                  avatar: true,
-                  username: true,
-                  publicKey: true,
-                  createdAt: true,
-                },
+                select: creatorSelect,
               },
             },
           },
