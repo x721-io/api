@@ -23,6 +23,8 @@ import { GetActivityBase } from './dto/activity-nft.dto';
 import { ActivityService } from './activity.service';
 import { NftEntity } from './entities/nft.entity';
 import { CollectionPriceService } from '../collection/collectionPrice.service';
+import OtherCommon from 'src/commons/Other.common';
+import { creatorSelect } from '../../commons/definitions/Constraint.Object';
 
 @Injectable()
 export class NftService {
@@ -40,7 +42,6 @@ export class NftService {
   private getGraphqlClient() {
     return new GraphQLClient(this.endpoint);
   }
-
   async crawlNftInfo(collectionAddress: string, txCreation?: string) {
     try {
       const collection = await this.prisma.collection.findUnique({
@@ -158,6 +159,11 @@ export class NftService {
   }
 
   async findAll(filter: GetAllNftDto): Promise<PagingResponse<NftDto>> {
+    // TODO: Reimplement pagination strategy
+    // Get the result totally from subgraph and match data to local storage
+    // For each set of condition, use different subgraph query as source
+    // owner: getNFTFromOwner
+    // owner + sellStatus + priceMax + priceMin + collectionType: marketplace721S and marketplace1155S
     try {
       let traitsConditions = [];
 
@@ -188,7 +194,6 @@ export class NftService {
         ).concat(account.ERC1155balances.map((item) => item.token.contract.id));
       }
 
-      console.log(nftIdFromOwner, nftCollectionFromOwner);
       const whereCondition: Prisma.NFTWhereInput = {};
       const whereConditionInternal: Prisma.NFTWhereInput = {};
       whereConditionInternal.AND = [];
@@ -227,21 +232,51 @@ export class NftService {
 
       if (filter.name) {
         whereConditionInternal.AND.push({
-          name: {
-            contains: filter.name,
+          // name: {
+          //   contains: filter.name,
+          //   mode: 'insensitive',
+          // },
+          nameSlug: {
+            contains: OtherCommon.stringToSlugSearch(filter.name),
             mode: 'insensitive',
           },
         });
       }
 
       if (nftIdFromOwner.length > 0) {
+        const collectionToTokenIds: Record<string, string[]> = {};
         for (let i = 0; i < nftIdFromOwner.length; i++) {
+          const collection = nftCollectionFromOwner[i];
+          if (!collectionToTokenIds[collection]) {
+            collectionToTokenIds[collection] = [];
+          }
+          collectionToTokenIds[collection].push(nftIdFromOwner[i]);
+
+          // whereCondition.OR.push({
+          //   AND: [
+          //     { OR: [{ u2uId: nftIdFromOwner[i] }, { id: nftIdFromOwner[i] }] },
+          //     {
+          //       collection: {
+          //         address: nftCollectionFromOwner[i],
+          //       },
+          //     },
+          //     ...whereConditionInternal.AND,
+          //   ],
+          // });
+        }
+        for (const [collection, tokenIds] of Object.entries(
+          collectionToTokenIds,
+        )) {
+          const tokenIdConditions = tokenIds.map((tokenId) => ({
+            OR: [{ u2uId: tokenId }, { id: tokenId }],
+          }));
+
           whereCondition.OR.push({
             AND: [
-              { u2uId: nftIdFromOwner[i] },
+              { OR: tokenIdConditions },
               {
                 collection: {
-                  address: nftCollectionFromOwner[i],
+                  address: collection,
                 },
               },
               ...whereConditionInternal.AND,
@@ -249,30 +284,14 @@ export class NftService {
           });
         }
       } else if (filter.owner) {
-        console.log(whereConditionInternal);
+        // console.log(whereConditionInternal);
       } else {
         whereCondition.AND = whereConditionInternal.AND;
         delete whereCondition.OR;
       }
 
       //----------
-      const { marketEvent1155S, marketEvent721S } =
-        await this.GraphqlService.getNFTSellStatus1({
-          and: [
-            { price_gte: filter.priceMin },
-            { price_lte: filter.priceMax },
-            { event: filter.sellStatus },
-            { quoteToken: filter.quoteToken },
-            {
-              from:
-                filter.sellStatus === SellStatus.AskNew && filter.owner
-                  ? filter.owner.toLowerCase()
-                  : filter.from,
-            },
-            { to: filter.to },
-          ],
-          // or: [{ from: filter.owner }, { to: filter.owner }],
-        });
+
       if (!filter.priceMin && !filter.priceMax && !filter.sellStatus) {
         const nfts = await this.prisma.nFT.findMany({
           skip: (filter.page - 1) * filter.limit,
@@ -281,13 +300,7 @@ export class NftService {
           where: whereCondition,
           include: {
             creator: {
-              select: {
-                id: true,
-                email: true,
-                avatar: true,
-                username: true,
-                publicKey: true,
-              },
+              select: creatorSelect,
             },
             collection: {
               select: {
@@ -308,38 +321,51 @@ export class NftService {
             traits: true,
           },
         });
-        const mergedArray = nfts.map((item) => {
-          const foundItem1 = marketEvent721S.find(
-            (obj) =>
-              obj.nftId &&
-              (obj.nftId.tokenId === item.u2uId ||
-                obj.nftId.tokenId === item.id) &&
-              obj.nftId.contract.id === item.collection.address,
-          );
-          const foundItem2 = marketEvent1155S.find(
-            (obj) =>
-              obj.nftId &&
-              (obj.nftId.tokenId === item.u2uId ||
-                obj.nftId.tokenId === item.id) &&
-              obj.nftId.contract.id === item.collection.address,
-          );
-          return {
-            ...item,
-            ...(foundItem1 && {
-              price: foundItem1.price,
-              sellStatus: foundItem1.event,
-              quantity: 1,
-              quoteToken: foundItem1.quoteToken,
-            }),
-            ...(foundItem2 && {
-              price: foundItem2.price,
-              sellStatus: foundItem2.event,
-              quantity: foundItem2.quantity,
-              askId: foundItem2.id,
-              quoteToken: foundItem2.quoteToken,
-            }),
-          };
-        });
+        const mergedArray = await Promise.all(
+          nfts.map(async (item) => {
+            const { marketEvent1155S, marketEvent721S } =
+              await this.GraphqlService.getNFTSellStatus1({
+                and: [
+                  {
+                    address: item.collection.address,
+                    nftId_: {
+                      tokenId: item.u2uId || item.id,
+                    },
+                  },
+                ],
+              });
+            const foundItem1 = marketEvent721S.find(
+              (obj) =>
+                obj.nftId &&
+                (obj.nftId.tokenId === item.u2uId ||
+                  obj.nftId.tokenId === item.id) &&
+                obj.nftId.contract.id === item.collection.address,
+            );
+            const foundItem2 = marketEvent1155S.find(
+              (obj) =>
+                obj.nftId &&
+                (obj.nftId.tokenId === item.u2uId ||
+                  obj.nftId.tokenId === item.id) &&
+                obj.nftId.contract.id === item.collection.address,
+            );
+            return {
+              ...item,
+              ...(foundItem1 && {
+                price: foundItem1.price,
+                sellStatus: foundItem1.event,
+                quantity: 1,
+                quoteToken: foundItem1.quoteToken,
+              }),
+              ...(foundItem2 && {
+                price: foundItem2.price,
+                sellStatus: foundItem2.event,
+                quantity: foundItem2.quantity,
+                askId: foundItem2.id,
+                quoteToken: foundItem2.quoteToken,
+              }),
+            };
+          }),
+        );
         const total = await this.prisma.nFT.count({
           where: whereCondition,
         });
@@ -363,6 +389,25 @@ export class NftService {
             },
           };
         }
+        const { marketEvent1155S, marketEvent721S } =
+          await this.GraphqlService.getNFTSellStatus1(
+            {
+              and: [
+                { price_gte: filter.priceMin },
+                { price_lte: filter.priceMax },
+                { event: filter.sellStatus },
+                { quoteToken: filter.quoteToken },
+                {
+                  from:
+                    filter.sellStatus === SellStatus.AskNew && filter.owner
+                      ? filter.owner.toLowerCase()
+                      : filter.from,
+                },
+              ],
+            },
+            filter.page,
+            filter.limit,
+          );
         const marketEvents = marketEvent1155S
           // @ts-ignore
           .concat(marketEvent721S)
@@ -370,7 +415,10 @@ export class NftService {
           .map((pair) => ({
             AND: [
               { collection: { address: pair.nftId.contract.id } },
-              { u2uId: pair.nftId.tokenId },
+              // { OR: u2uId: pair.nftId.tokenId },
+              {
+                OR: [{ u2uId: pair.nftId.tokenId }, { id: pair.nftId.tokenId }],
+              },
             ],
           }));
 
@@ -380,18 +428,12 @@ export class NftService {
             : { AND: [{ id: '' }, whereCondition] };
 
         const nfts = await this.prisma.nFT.findMany({
-          skip: (filter.page - 1) * filter.limit,
-          take: filter.limit,
+          // skip: (filter.page - 1) * filter.limit,
+          // take: filter.limit,
           where: whereCondition1,
           include: {
             creator: {
-              select: {
-                id: true,
-                email: true,
-                avatar: true,
-                username: true,
-                publicKey: true,
-              },
+              select: creatorSelect,
             },
             collection: {
               select: {
@@ -444,13 +486,13 @@ export class NftService {
             }),
           };
         });
-        const total = await this.prisma.nFT.count({
-          where: whereCondition1,
-        });
+        // const total = await this.prisma.nFT.count({
+        //   where: whereCondition1,
+        // });
         return {
           data: mergedArray,
           paging: {
-            total,
+            total: 999999,
             limit: filter.limit,
             page: filter.page,
           },
@@ -603,14 +645,7 @@ export class NftService {
         where: {
           signer: { in: ownerAddresses },
         },
-        select: {
-          id: true,
-          email: true,
-          avatar: true,
-          username: true,
-          signer: true,
-          publicKey: true,
-        },
+        select: creatorSelect,
       });
       owners = ownersFromLocal.map((item2) => {
         const item1 = nftInfoWithOwner.erc1155Balances.find(
@@ -634,14 +669,7 @@ export class NftService {
         where: {
           signer: nftInfoWithOwner.erc721Tokens[0].owner.id,
         },
-        select: {
-          id: true,
-          email: true,
-          avatar: true,
-          username: true,
-          signer: true,
-          publicKey: true,
-        },
+        select: creatorSelect,
       });
     }
     if (owners.length === 0) {
@@ -662,25 +690,28 @@ export class NftService {
           address: collectionAddress.toLowerCase(),
         },
       });
+
       if (!collection) {
         throw new NotFoundException('No collection was found');
       }
-      const nft: NftEntity = await this.prisma.nFT.findUnique({
-        where: {
-          id_collectionId: {
-            id,
-            collectionId: collection.id,
-          },
-        },
+
+      const nftCondition: Prisma.NFTWhereInput = {};
+      nftCondition.OR = [];
+
+      const nftOrConditionId: Prisma.NFTWhereInput = {
+        AND: [{ id, collectionId: collection.id }],
+      };
+      const nftOrConditionu2uId: Prisma.NFTWhereInput = {
+        AND: [{ u2uId: id, collectionId: collection.id }],
+      };
+
+      nftCondition.OR.push(nftOrConditionId, nftOrConditionu2uId);
+
+      const nft: NftEntity = await this.prisma.nFT.findFirst({
+        where: nftCondition,
         include: {
           creator: {
-            select: {
-              id: true,
-              email: true,
-              avatar: true,
-              username: true,
-              publicKey: true,
-            },
+            select: creatorSelect,
           },
           collection: {
             include: {
@@ -781,14 +812,7 @@ export class NftService {
                   tokenUri: true,
                   txCreationHash: true,
                   creator: {
-                    select: {
-                      id: true,
-                      email: true,
-                      avatar: true,
-                      username: true,
-                      signer: true,
-                      publicKey: true,
-                    },
+                    select: creatorSelect,
                   },
                   collection: {
                     select: {

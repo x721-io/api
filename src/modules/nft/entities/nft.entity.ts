@@ -24,6 +24,7 @@ export class NftEntity implements NFT {
   u2uId: string;
   image: string;
   totalSupply?: number;
+  nameSlug: string;
 }
 
 export enum TXSTATUS {

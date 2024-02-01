@@ -23,6 +23,8 @@ import { Query } from '../../generated/graphql';
 import { GetEventMarketplace } from './dto/event-marketplace.dto';
 import { GetEventBase } from './dto/event-base.dto';
 import { GetActivityBase } from './dto/activity-nft.dto';
+import { creatorSelect } from '../../commons/definitions/Constraint.Object';
+
 interface NullableUser {
   id: string | null;
   email: string | null;
@@ -65,14 +67,7 @@ export class ActivityService {
     try {
       return await this.prisma.user.findFirst({
         where: { signer },
-        select: {
-          id: true,
-          email: true,
-          avatar: true,
-          username: true,
-          signer: true,
-          shortLink: true,
-        },
+        select: creatorSelect,
       });
     } catch (error) {
       console.error(`Error fetching user data for signer ${signer}:`, error);

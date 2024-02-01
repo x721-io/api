@@ -21,6 +21,8 @@ import SecureUtil from '../../commons/Secure.common';
 import { GraphQLClient, gql } from 'graphql-request';
 import { getSdk } from '../../generated/graphql';
 import { oneWeekInMilliseconds } from '../../constants/Timestamp.constant';
+import OtherCommon from 'src/commons/Other.common';
+import { creatorSelect } from '../../commons/definitions/Constraint.Object';
 interface CollectionGeneral {
   totalOwner: number;
   volumn: string;
@@ -62,7 +64,6 @@ export class CollectionService {
         where: {
           OR: [
             { txCreationHash: input.txCreationHash },
-            { symbol: input.symbol },
             { name: input.name },
             { shortUrl: input.shortUrl },
           ],
@@ -70,7 +71,7 @@ export class CollectionService {
       });
       if (checkExist) {
         throw new Error(
-          'Transaction hash or name or Short URL, symbol are already exists',
+          'Transaction hash or name or Short URL are already exists',
         );
       } else {
         const collection = await this.prisma.collection.create({
@@ -176,8 +177,8 @@ export class CollectionService {
       // filter name
       return {
         volumn: sum.toString(),
-        totalOwner: statusCollection.erc1155Contract.holderCount,
-        totalNft: statusCollection.erc1155Contract.count,
+        totalOwner: statusCollection.erc1155Contract?.holderCount || 0,
+        totalNft: statusCollection.erc1155Contract?.count || 0,
         floorPrice: floorPrice.toString(),
       };
     }
@@ -198,8 +199,8 @@ export class CollectionService {
     const addresses = creators.map((item) => item.id);
     const whereCondition: Prisma.CollectionWhereInput = {
       ...(input.name && {
-        name: {
-          contains: input.name,
+        nameSlug: {
+          contains: OtherCommon.stringToSlugSearch(input.name),
           mode: 'insensitive',
         },
       }),
@@ -241,13 +242,7 @@ export class CollectionService {
             select: {
               userId: true,
               user: {
-                select: {
-                  id: true,
-                  email: true,
-                  avatar: true,
-                  username: true,
-                  publicKey: true,
-                },
+                select: creatorSelect,
               },
             },
           },
@@ -283,13 +278,7 @@ export class CollectionService {
             select: {
               userId: true,
               user: {
-                select: {
-                  id: true,
-                  email: true,
-                  avatar: true,
-                  username: true,
-                  publicKey: true,
-                },
+                select: creatorSelect,
               },
             },
           },
@@ -340,14 +329,7 @@ export class CollectionService {
             select: {
               userId: true,
               user: {
-                select: {
-                  id: true,
-                  email: true,
-                  avatar: true,
-                  username: true,
-                  publicKey: true,
-                  createdAt: true,
-                },
+                select: creatorSelect,
               },
             },
           },
@@ -457,18 +439,10 @@ export class CollectionService {
       let isUuid = true;
       if (!isValidUUID(id)) {
         isUuid = false;
-        console.log('alo');
       }
-      // const checkExist = await this.prisma.user.findFirst({
-      //   where: { id: id },
-      // });
-      // if (!checkExist) {
-      //   throw new NotFoundException();
-      // }
       const userWithCollection = await this.prisma.userCollection.findMany({
         where: {
           user: {
-            // ...(isUuid ? { id } : (OR:[{ signer: id }])),
             ...(isUuid ? { id } : { OR: [{ signer: id }, { shortLink: id }] }),
           },
         },
@@ -493,6 +467,7 @@ export class CollectionService {
               coverImage: true,
               updatedAt: true,
               projectId: true,
+              nameSlug: true,
               isU2U: true,
               category: {
                 select: {
@@ -538,8 +513,19 @@ export class CollectionService {
         },
       });
 
+      const collections = response.map((i) => i.collection);
+
+      const subgraphCollection = collections.map(async (item) => {
+        const generalInfo = await this.getGeneralCollectionData(
+          item.address,
+          item.type,
+        );
+        return { ...item, ...generalInfo };
+      });
+      const dataArray = await Promise.all(subgraphCollection);
+
       return {
-        data: response.map((i) => i.collection),
+        data: dataArray,
         paging: {
           total: total,
           limit: input.limit,

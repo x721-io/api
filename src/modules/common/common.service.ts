@@ -9,6 +9,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { SearchAllType } from 'src/constants/searchType.enum';
 import { Readable } from 'stream';
 import { concat as uint8ArrayConcat } from 'uint8arrays/concat';
+
 import * as path from 'path';
 
 @Injectable()
@@ -28,8 +29,12 @@ export class CommonService {
         where: {
           OR: [
             {
-              name: {
-                contains: input.text,
+              // name: {
+              //   contains: input.text,
+              //   mode: 'insensitive',
+              // },
+              nameSlug: {
+                contains: OtherCommon.stringToSlugSearch(input.text),
                 mode: 'insensitive',
               },
             },
@@ -92,8 +97,13 @@ export class CommonService {
         where: {
           OR: [
             {
-              name: {
-                contains: input.text,
+              // name: {
+              //   contains: input.text,
+              //   mode: 'insensitive',
+              //   // search: OtherCommon.combineWords(input.text),
+              // },
+              nameSlug: {
+                contains: OtherCommon.stringToSlugSearch(input.text),
                 mode: 'insensitive',
               },
             },

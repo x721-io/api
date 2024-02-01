@@ -4,7 +4,7 @@ enum TypeValidator {
   shortLink = 'shortLink',
   collectionName = 'collectionName',
   collectionShortUrl = 'collectionShortUrl',
-  collectionSymbol = 'collectionSymbol',
+  // collectionSymbol = 'collectionSymbol',
   nftName = 'nftName',
 }
 

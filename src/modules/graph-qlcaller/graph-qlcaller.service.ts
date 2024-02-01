@@ -152,7 +152,7 @@ export class GraphQlcallerService {
     limit?: number,
   ) {
     const { or, and } = conditions;
-
+    console.log('and: ', conditions);
     const processCondition = (condition: any): string => {
       return Object.entries(condition)
         .filter(([key, value]) => !!value) // Filter out null values
@@ -198,7 +198,6 @@ export class GraphQlcallerService {
     const whereClause =
       whereParts.length > 0 ? `where: {${whereParts.join(', ')}}` : '';
 
-    console.log(whereClause);
     const query = gql`
       query GetNFTSellInfo($page: Int, $limit: Int) {
         marketEvent1155S(
@@ -251,9 +250,10 @@ export class GraphQlcallerService {
         }
       }
     `;
+
     const pageCalculation = (page - 1) * limit;
     return this.graphqlClient.request(query, {
-      pageCalculation,
+      page: pageCalculation,
       limit,
     }) as unknown as GetOneNftSellInfoQuery;
   }
