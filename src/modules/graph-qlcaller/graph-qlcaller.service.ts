@@ -12,6 +12,7 @@ import {
   GetNfTwithAccountIdQueryVariables,
   GetCollectionTokensQueryVariables,
   Query,
+  OrderDirection,
 } from '../../generated/graphql';
 import { GraphQLClient, gql } from 'graphql-request';
 @Injectable()
@@ -405,10 +406,13 @@ export class GraphQlcallerService {
     return response;
   }
 
-  async getNFTFromOwner(owner: string) {
+  async getNFTFromOwner(owner: string, orderDirection: OrderDirection) {
     const client = this.getGraphqlClient();
     const sdk = getSdk(client);
-    const variables: GetNfTwithAccountIdQueryVariables = { id: owner };
+    const variables: GetNfTwithAccountIdQueryVariables = {
+      id: owner,
+      orderDirection: orderDirection,
+    };
     const response = sdk.getNFTwithAccountID(variables);
     return response;
   }
@@ -479,6 +483,19 @@ export class GraphQlcallerService {
         address,
       })) as unknown as Query;
       return royaltiesRegistries;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+  async getNFTOnSales(address: string) {
+    try {
+      const client = this.getGraphqlClient();
+      const sdk = getSdk(client);
+      const { account } = (await sdk.getNFTOnSales({
+        id: address,
+      })) as unknown as Query;
+      return account;
     } catch (error) {
       console.log(error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);

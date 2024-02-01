@@ -1,7 +1,12 @@
-query getNFTwithAccountID($id: ID!) {
+query getNFTwithAccountID($id: ID!, $limit: Int = 1000, $orderDirection: OrderDirection) {
   account(id: $id) {
     id
-    ERC721tokens (first: 1000) {
+    ERC721tokens(
+      first: $limit, 
+      # orderBy: createAt, 
+      # orderDirection: $orderDirection
+      ) 
+    {
       uri
       txCreation
       id
@@ -10,10 +15,10 @@ query getNFTwithAccountID($id: ID!) {
         id
       }
     }
-    ERC1155balances (
-      first: 1000
-      where: {value_gt: 0}
-      ) {
+    ERC1155balances(
+      first: $limit
+      where: { value_gt: 0 }
+    ) {
       valueExact
       value
       id
@@ -21,8 +26,10 @@ query getNFTwithAccountID($id: ID!) {
         id
         tokenId
         txCreation
+        # createAt
         contract {
           id
+          holderCount
         }
       }
     }
