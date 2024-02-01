@@ -149,8 +149,8 @@ export class CollectionService {
           : BigInt(0);
       return {
         volumn: sum.toString(),
-        totalOwner: statusCollection.erc721Contract.holderCount,
-        totalNft: statusCollection.erc721Contract.count,
+        totalOwner: statusCollection.erc721Contract?.holderCount || 0,
+        totalNft: statusCollection.erc721Contract?.count || 0,
         floorPrice: floorPrice.toString(),
       };
     } else {
