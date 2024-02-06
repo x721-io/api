@@ -23,6 +23,7 @@ import { GetAllNftDto } from './dto/get-all-nft.dto';
 import { MarketplaceService } from './nft-marketplace.service';
 import { GetEventBase } from './dto/event-base.dto';
 import { GetActivityBase } from './dto/activity-nft.dto';
+import { GetGeneralInforDto } from './dto/get-general-infor.dto';
 
 @Controller('nft')
 export class NftController {
@@ -97,5 +98,9 @@ export class NftController {
   @Post('/activity')
   findActivityNFT(@Body() input: GetActivityBase) {
     return this.nftService.findActivityNFT(input);
+  }
+  @Post('/general-count')
+  getGeneralInfor(@Body() query: GetGeneralInforDto) {
+    return this.nftService.getGeneralInfor(query);
   }
 }
