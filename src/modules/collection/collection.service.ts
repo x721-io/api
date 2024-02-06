@@ -23,6 +23,7 @@ import { getSdk } from '../../generated/graphql';
 import { oneWeekInMilliseconds } from '../../constants/Timestamp.constant';
 import OtherCommon from 'src/commons/Other.common';
 import { creatorSelect } from '../../commons/definitions/Constraint.Object';
+import PaginationCommon from 'src/commons/HasNext.common';
 interface CollectionGeneral {
   totalOwner: number;
   volumn: string;
@@ -186,7 +187,7 @@ export class CollectionService {
 
   async findAll(
     input: GetAllCollectionDto,
-  ): Promise<PagingResponse<CollectionEntity>> {
+  ): Promise<PageBasedPagination<CollectionEntity>> {
     // TODO: get all collection from subgraph first, got the id and map it back to local collection
     const creators = await this.prisma.user.findMany({
       where: {
@@ -219,7 +220,7 @@ export class CollectionService {
         return {
           data: [],
           paging: {
-            total: 0,
+            hasNext: false,
             page: input.page,
             limit: input.limit,
           },
@@ -255,15 +256,21 @@ export class CollectionService {
         );
         return { ...item, ...generalInfo };
       });
-      const dataArray = Promise.all(subgraphCollection);
+      const dataArray = await Promise.all(subgraphCollection);
+      // const total = await this.prisma.collection.count({
+      //   where: whereCondition,
+      // });
 
-      const total = await this.prisma.collection.count({
-        where: whereCondition,
-      });
+      const hasNext = await PaginationCommon.hasNextPage(
+        input.page,
+        input.limit,
+        'collection',
+        whereCondition,
+      );
       return {
-        data: await dataArray,
+        data: dataArray,
         paging: {
-          total,
+          hasNext,
           page: input.page,
           limit: input.limit,
         },
@@ -273,6 +280,9 @@ export class CollectionService {
         where: whereCondition,
         skip: (input.page - 1) * input.limit,
         take: input.limit,
+        orderBy: {
+          createdAt: input.order,
+        },
         include: {
           creators: {
             select: {
@@ -284,9 +294,9 @@ export class CollectionService {
           },
         },
       });
-      const total = await this.prisma.collection.count({
-        where: whereCondition,
-      });
+      // const total = await this.prisma.collection.count({
+      //   where: whereCondition,
+      // });
       const subgraphCollection = collections.map(async (item) => {
         const generalInfo = await this.getGeneralCollectionData(
           item.address,
@@ -295,10 +305,16 @@ export class CollectionService {
         return { ...item, ...generalInfo };
       });
       const dataArray = Promise.all(subgraphCollection);
+      const hasNext = await PaginationCommon.hasNextPage(
+        input.page,
+        input.limit,
+        'collection',
+        whereCondition,
+      );
       return {
         data: await dataArray,
         paging: {
-          total,
+          hasNext,
           limit: input.limit,
           page: input.page,
         },
@@ -524,7 +540,6 @@ export class CollectionService {
         return { ...item, ...generalInfo };
       });
       const dataArray = await Promise.all(subgraphCollection);
-
       return {
         data: dataArray,
         paging: {

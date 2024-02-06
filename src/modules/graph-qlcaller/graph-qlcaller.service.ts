@@ -153,7 +153,7 @@ export class GraphQlcallerService {
     limit?: number,
   ) {
     const { or, and } = conditions;
-    console.log('and: ', conditions);
+    // console.log('and: ', conditions);
     const processCondition = (condition: any): string => {
       return Object.entries(condition)
         .filter(([key, value]) => !!value) // Filter out null values
@@ -253,10 +253,21 @@ export class GraphQlcallerService {
     `;
 
     const pageCalculation = (page - 1) * limit;
-    return this.graphqlClient.request(query, {
+    const response = (await this.graphqlClient.request(query, {
       page: pageCalculation,
       limit,
-    }) as unknown as GetOneNftSellInfoQuery;
+    })) as unknown as GetOneNftSellInfoQuery;
+
+    const responseHasNext = (await this.graphqlClient.request(query, {
+      page: pageCalculation,
+      limit: limit * 2,
+    })) as unknown as GetOneNftSellInfoQuery;
+    const hasNextPage1155 = responseHasNext.marketEvent1155S.length > limit;
+    const hasNextPage721 = responseHasNext.marketEvent721S.length > limit;
+    return {
+      ...response,
+      hasNextSubGraph: hasNextPage1155 || hasNextPage721,
+    };
   }
 
   async getNFTSellStatus(
