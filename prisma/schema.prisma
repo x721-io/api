@@ -111,6 +111,7 @@ model Collection {
   avatar         String?
   projectId      String?          @unique @db.Uuid
   project        Project?         @relation(fields: [projectId], references: [id])
+  isVerified     Boolean?          @default(false)
 
   @@index([address], type: Hash)
 }
