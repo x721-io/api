@@ -24,7 +24,6 @@ import { MarketplaceService } from './nft-marketplace.service';
 import { GetEventBase } from './dto/event-base.dto';
 import { GetActivityBase } from './dto/activity-nft.dto';
 import { GetGeneralInforDto } from './dto/get-general-infor.dto';
-
 @Controller('nft')
 export class NftController {
   constructor(

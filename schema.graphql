@@ -440,6 +440,7 @@ type DirectAcceptBid @entity {
   id: ID!
   blockNumber: BigInt
 }
+
 enum OrderDirection {
   asc
   desc
