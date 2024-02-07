@@ -257,7 +257,6 @@ export class GraphQlcallerService {
       page: pageCalculation,
       limit,
     })) as unknown as GetOneNftSellInfoQuery;
-
     const responseHasNext = (await this.graphqlClient.request(query, {
       page: pageCalculation,
       limit: limit * 2,
@@ -417,12 +416,19 @@ export class GraphQlcallerService {
     return response;
   }
 
-  async getNFTFromOwner(owner: string, orderDirection: OrderDirection) {
+  async getNFTFromOwner(
+    owner: string,
+    orderDirection: OrderDirection,
+    page?: number,
+    limit?: number,
+  ) {
     const client = this.getGraphqlClient();
     const sdk = getSdk(client);
     const variables: GetNfTwithAccountIdQueryVariables = {
       id: owner,
       orderDirection: orderDirection,
+      limit,
+      page: (page - 1) * limit,
     };
     const response = sdk.getNFTwithAccountID(variables);
     return response;
