@@ -884,31 +884,13 @@ export class NftService {
   async getGeneralInfor(filter: GetGeneralInforDto) {
     try {
       switch (filter.mode) {
+        // Get Owner NFT
         case GeneralInfor.OWNER:
+          const responseOwner = await this.GraphqlService.getNFTOnSalesAndOwner(
+            filter.owner.toLowerCase(),
+          );
+          return (responseOwner && responseOwner.holdingCount) || 0;
         case GeneralInfor.CREATOR:
-          let nftIdFromOwner = [];
-          let nftCollectionFromOwner = [];
-          if (filter.owner) {
-            const { account } = await this.GraphqlService.getNFTFromOwner(
-              filter.owner.toLocaleLowerCase(),
-              filter.order as OrderDirection,
-            );
-            if (account) {
-              const erc1155BalancesSort = this.sortERC1155balances(
-                account.ERC1155balances,
-                filter.order,
-              );
-              nftIdFromOwner = account.ERC721tokens.map(
-                (item) => item.tokenId,
-              ).concat(erc1155BalancesSort.map((item) => item.token.tokenId));
-
-              nftCollectionFromOwner = account.ERC721tokens.map(
-                (item) => item.contract.id,
-              ).concat(
-                erc1155BalancesSort.map((item) => item.token.contract.id),
-              );
-            }
-          }
           const whereCondition: Prisma.NFTWhereInput = {};
           const whereConditionInternal: Prisma.NFTWhereInput = {};
           whereConditionInternal.AND = [];
@@ -932,35 +914,7 @@ export class NftService {
               collection: collectionCondition,
             });
           }
-          if (nftIdFromOwner.length > 0) {
-            const collectionToTokenIds: Record<string, string[]> = {};
-            for (let i = 0; i < nftIdFromOwner.length; i++) {
-              const collection = nftCollectionFromOwner[i];
-              if (!collectionToTokenIds[collection]) {
-                collectionToTokenIds[collection] = [];
-              }
-              collectionToTokenIds[collection].push(nftIdFromOwner[i]);
-            }
-            for (const [collection, tokenIds] of Object.entries(
-              collectionToTokenIds,
-            )) {
-              const tokenIdConditions = tokenIds.map((tokenId) => ({
-                OR: [{ u2uId: tokenId }, { id: tokenId }],
-              }));
-
-              whereCondition.OR.push({
-                AND: [
-                  { OR: tokenIdConditions },
-                  {
-                    collection: {
-                      address: collection,
-                    },
-                  },
-                  ...whereConditionInternal.AND,
-                ],
-              });
-            }
-          } else if (filter.owner) {
+          if (filter.owner) {
           } else {
             whereCondition.AND = whereConditionInternal.AND;
             delete whereCondition.OR;
@@ -970,7 +924,7 @@ export class NftService {
           });
           return totalOwnerCreator;
         case GeneralInfor.ONSALES:
-          const response = await this.GraphqlService.getNFTOnSales(
+          const response = await this.GraphqlService.getNFTOnSalesAndOwner(
             filter.owner.toLowerCase(),
           );
           return (response && response.onSaleCount) || 0;

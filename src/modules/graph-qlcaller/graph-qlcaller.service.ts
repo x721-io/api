@@ -488,11 +488,11 @@ export class GraphQlcallerService {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
-  async getNFTOnSales(address: string) {
+  async getNFTOnSalesAndOwner(address: string) {
     try {
       const client = this.getGraphqlClient();
       const sdk = getSdk(client);
-      const { account } = (await sdk.getNFTOnSales({
+      const { account } = (await sdk.getNFTOnSalesAndOwner({
         id: address,
       })) as unknown as Query;
       return account;
