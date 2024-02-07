@@ -11,4 +11,20 @@ const creatorSelect: Prisma.UserSelect = {
   signer: true,
 };
 
-export { creatorSelect };
+const CollectionSelect: Prisma.CollectionSelect = {
+  id: true,
+  txCreationHash: true,
+  name: true,
+  status: true,
+  type: true,
+  address: true,
+  isVerified: true,
+  category: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+};
+
+export { creatorSelect, CollectionSelect };

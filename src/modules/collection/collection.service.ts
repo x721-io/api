@@ -469,6 +469,7 @@ export class CollectionService {
               projectId: true,
               nameSlug: true,
               isU2U: true,
+              isVerified: true,
               category: {
                 select: {
                   id: true,

@@ -24,7 +24,10 @@ import { ActivityService } from './activity.service';
 import { NftEntity } from './entities/nft.entity';
 import { CollectionPriceService } from '../collection/collectionPrice.service';
 import OtherCommon from 'src/commons/Other.common';
-import { creatorSelect } from '../../commons/definitions/Constraint.Object';
+import {
+  creatorSelect,
+  CollectionSelect,
+} from '../../commons/definitions/Constraint.Object';
 import { GetGeneralInforDto } from './dto/get-general-infor.dto';
 import { GeneralInfor } from 'src/constants/enums/GeneralInfor.enum';
 
@@ -306,20 +309,7 @@ export class NftService {
               select: creatorSelect,
             },
             collection: {
-              select: {
-                id: true,
-                txCreationHash: true,
-                name: true,
-                status: true,
-                type: true,
-                address: true,
-                category: {
-                  select: {
-                    id: true,
-                    name: true,
-                  },
-                },
-              },
+              select: CollectionSelect,
             },
             traits: true,
           },
@@ -439,20 +429,7 @@ export class NftService {
               select: creatorSelect,
             },
             collection: {
-              select: {
-                id: true,
-                txCreationHash: true,
-                name: true,
-                status: true,
-                type: true,
-                address: true,
-                category: {
-                  select: {
-                    id: true,
-                    name: true,
-                  },
-                },
-              },
+              select: CollectionSelect,
             },
             traits: true,
           },
@@ -530,13 +507,7 @@ export class NftService {
       },
       include: {
         creator: {
-          select: {
-            id: true,
-            email: true,
-            avatar: true,
-            username: true,
-            publicKey: true,
-          },
+          select: creatorSelect,
         },
         collection: {
           include: {
@@ -818,19 +789,7 @@ export class NftService {
                     select: creatorSelect,
                   },
                   collection: {
-                    select: {
-                      id: true,
-                      txCreationHash: true,
-                      name: true,
-                      status: true,
-                      type: true,
-                      category: {
-                        select: {
-                          id: true,
-                          name: true,
-                        },
-                      },
-                    },
+                    select: CollectionSelect,
                   },
                 },
               },
