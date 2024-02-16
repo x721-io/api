@@ -637,7 +637,7 @@ export class NftService {
       const totalSupplyFilter = nftInfoWithOwner.erc1155Balances.filter(
         (i) => i.value > 0 && !i.account,
       );
-      totalSupply = totalSupplyFilter[0].value;
+      totalSupply = totalSupplyFilter[0]?.value;
       const ownerAddresses = nftInfoWithOwner.erc1155Balances
         .map((i) => {
           if (i.account && i.account.id !== ZERO_ADDR && i.value > 0)
