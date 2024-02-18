@@ -24,7 +24,11 @@ export class CollectionPriceService {
       marketEvent1155S: filterSelling1155,
       marketEvent721S: filterSelling721,
     } = await this.graphQL.getNFTSellStatus1({
-      and: [{ event: SellStatus.AskNew }],
+      and: [
+        { event: SellStatus.AskNew },
+        { price_gte: min },
+        { price_lte: max },
+      ],
       // or: [{ from: filter.owner }, { to: filter.owner }],
     });
     const collectionsWithFloorPrice = this.getFloorPrices([
