@@ -23,7 +23,7 @@ export class CollectionEntity implements Collection {
   address: string;
   nameSlug: string;
   totalOwner?: number;
-  floorPrice?: string;
+  floorPrice: bigint;
   totalNft?: number;
   volumn?: string;
   coverImage: string;

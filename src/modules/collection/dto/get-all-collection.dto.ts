@@ -4,11 +4,11 @@ import { OffsetPaginationDto } from 'src/commons/definitions/OffsetPagination.in
 
 export class GetAllCollectionDto extends OffsetPaginationDto {
   // id: string;
-  @Type(() => Number)
+  @IsString()
   @IsOptional()
   min: string;
 
-  @Type(() => Number)
+  @IsString()
   @IsOptional()
   max: string;
 
