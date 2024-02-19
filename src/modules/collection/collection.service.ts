@@ -124,21 +124,23 @@ export class CollectionService {
         // floorPrice: BigInt(0),
       };
     }
-    const [statusCollection, sum] = await Promise.all([
+    const [statusCollection] = await Promise.all([
       this.collectionData.getCollectionCount(collectionAddress),
-      this.getVolumeCollection(collectionAddress),
+      // this.getVolumeCollection(collectionAddress),
     ]);
 
     if (type === 'ERC721') {
       return {
-        volumn: sum.toString(),
+        // volumn: sum.toString(),
+        volumn: statusCollection.erc721Contract?.volume || 0,
         totalOwner: statusCollection.erc721Contract?.holderCount || 0,
         totalNft: statusCollection.erc721Contract?.count || 0,
         // floorPrice: BigInt(0),
       };
     } else {
       return {
-        volumn: sum.toString(),
+        // volumn: sum.toString(),
+        volumn: statusCollection.erc721Contract?.volume || 0,
         totalOwner: statusCollection.erc1155Contract?.holderCount || 0,
         totalNft: statusCollection.erc1155Contract?.count || 0,
         // floorPrice: BigInt(0),
@@ -534,44 +536,41 @@ export class CollectionService {
     }
   }
 
-  async getVolumeCollection(address: string) {
-    const { blocks = [] } = await this.sdk.getActivity({ address });
-    const redisData = await this.checkRecord(address);
-    const lastUpdate = `${blocks?.[0]?.timestampt || ''}`;
-    const isTradeOrAcceptBid = (item: any) =>
-      item.event === 'Trade' || item.event === 'AcceptBid';
-    const sum = blocks
-      .filter(isTradeOrAcceptBid)
-      .reduce((acc, obj) => acc + BigInt(obj.price), BigInt(0));
-
-    if (redisData !== null) {
-      const redisTimestamp = parseInt(redisData.timestamp, 10);
-
-      const newBlocks = blocks.filter(
-        (item) => item.timestampt > redisTimestamp,
-      );
-
-      if (newBlocks.length > 0) {
-        const sumNewBlock = newBlocks
-          .filter(isTradeOrAcceptBid)
-          .reduce((acc, obj) => acc + BigInt(obj.price), BigInt(0));
-        const updatedTotal = (BigInt(redisData.total) + sumNewBlock).toString();
-        await this.saveVolumeCollection(address, {
-          timestamp: lastUpdate,
-          total: updatedTotal,
-        });
-        return updatedTotal;
-      }
-
-      return sum;
-    } else {
-      await this.saveVolumeCollection(address, {
-        timestamp: lastUpdate,
-        total: sum.toString(),
-      });
-      return sum;
-    }
-  }
+  // async getVolumeCollection(address: string) {
+  // return '0';
+  // const { blocks = [] } = await this.sdk.getActivity({ address });
+  // const redisData = await this.checkRecord(address);
+  // const lastUpdate = `${blocks?.[0]?.timestampt || ''}`;
+  // const isTradeOrAcceptBid = (item: any) =>
+  //   item.event === 'Trade' || item.event === 'AcceptBid';
+  // const sum = blocks
+  //   .filter(isTradeOrAcceptBid)
+  //   .reduce((acc, obj) => acc + BigInt(obj.price), BigInt(0));
+  // if (redisData !== null) {
+  //   const redisTimestamp = parseInt(redisData.timestamp, 10);
+  //   const newBlocks = blocks.filter(
+  //     (item) => item.timestampt > redisTimestamp,
+  //   );
+  //   if (newBlocks.length > 0) {
+  //     const sumNewBlock = newBlocks
+  //       .filter(isTradeOrAcceptBid)
+  //       .reduce((acc, obj) => acc + BigInt(obj.price), BigInt(0));
+  //     const updatedTotal = (BigInt(redisData.total) + sumNewBlock).toString();
+  //     await this.saveVolumeCollection(address, {
+  //       timestamp: lastUpdate,
+  //       total: updatedTotal,
+  //     });
+  //     return updatedTotal;
+  //   }
+  //   return sum;
+  // } else {
+  //   await this.saveVolumeCollection(address, {
+  //     timestamp: lastUpdate,
+  //     total: sum.toString(),
+  //   });
+  //   return sum;
+  // }
+  // }
 
   async getCountOwnerCollection(address: string) {
     const { ownedTokenCounts = [] } = await this.sdk.GetUniqueOwnersCount({

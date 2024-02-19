@@ -3,11 +3,13 @@ query ErcContract($id: ID!) {
     id
     count
     holderCount
+    volume
   }
   erc721Contract(id: $id) {
     id
     count
     holderCount
+    volume
   }
 }
 
