@@ -27,4 +27,17 @@ const CollectionSelect: Prisma.CollectionSelect = {
   },
 };
 
-export { creatorSelect, CollectionSelect };
+const marketplaceSelect: Prisma.MarketplaceStatusSelect = {
+  price: true,
+  priceWei: true,
+  netPrice: true,
+  netPriceWei: true,
+  quantity: true,
+  quoteToken: true,
+  operationId: true,
+  operation: true,
+  askId: true,
+  event: true,
+};
+
+export { creatorSelect, CollectionSelect, marketplaceSelect };

@@ -324,6 +324,10 @@ class OtherCommon {
     slug = slug.replace(/\@\-|\-\@|\@/gi, '');
     return slug;
   }
+
+  weiToEther(wei) {
+    return wei / 1000000000000000000; // 1 Ether = 10^18 Wei
+  }
 }
 
 export default new OtherCommon();
