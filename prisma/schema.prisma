@@ -60,6 +60,7 @@ model NFT {
   creator        User?              @relation(fields: [creatorId], references: [id])
   collectionId   String             @db.Uuid
   collection     Collection         @relation(fields: [collectionId], references: [id])
+  MarketplaceByTokenId              MarketplaceStatus[] @relation("Marketplace_byId")
 
   @@id([id, collectionId])
   @@index([u2uId, collectionId])
@@ -207,6 +208,15 @@ enum CONTRACT_TYPE {
   ERC721
 }
 
+enum SELL_STATUS {
+  AskNew
+  AskCancel
+  Trade
+  AcceptBid
+  Bid
+  CancelBid
+}
+
 model RoundRangeTime {
   id        String                  @id @default(uuid()) @db.Uuid
   roundId   Int
@@ -225,4 +235,30 @@ model UserFollow {
   follower   User                   @relation(fields: [followerId], references: [id], name: "Follower")
 
   @@id([userId, followerId])
+}
+
+model MarketplaceStatus {
+  id                                      Int @id @default(autoincrement())
+  tokenId                                 String  @db.VarChar(255)
+  collectionId                            String  @db.Uuid
+  quoteToken                              String?  @db.VarChar(255)
+  timestamp                               Int  
+  price                                   Float
+  priceWei                                String
+  netPrice                                Float
+  netPriceWei                             String
+  event                                   SELL_STATUS
+  quantity                                Int     @default(1)
+  operationId                             String?
+  txHash                                  String?
+  operation                               String?
+  from                                    String?
+  askId                                   String?
+  nftById                                 NFT     @relation("Marketplace_byId", fields: [tokenId, collectionId], references: [id, collectionId], map: "marketplace_by_id_fk") 
+  @@index([tokenId, collectionId])
+}
+
+model SyncMasterData{
+  timestamp      Int                     @default(0)
+  type           CONTRACT_TYPE           @id
 }
