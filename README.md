@@ -24,12 +24,45 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+<!-- [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository. -->
+The NFT Marketplace API provides methods to combine smart contracts for minting and exchanging tokens, as well as APIs for order creation and discovery. It encompasses standards used in smart contracts to ensure interoperability and seamless interaction within the marketplace ecosystem.
 
 ## Installation
 
 ```bash
 $ yarn install
+```
+
+## Usage
+First, you need to set the below environment variables in the `.env` file or your deployment platforms. You can refer to the env.example file
+
+
+## Running migration database
+
+```bash
+# migration model to database
+$ npx prisma migrate dev
+
+# or 
+$ prisma migrate dev --name name_migration
+
+# If you need to modify a migration before applying it 
+  # You want to introduce a significant refactor
+  # You want to rename a field (by default, Prisma Migrate will drop the existing field)
+  # You want to change the direction of a 1-1 relationship
+  # You want to add features that cannot be represented in Prisma Schema Language - such as a partial index or a stored procedure.
+# The --create-only command allows you to create a migration without applying it
+$ npx prisma migrate dev --create-only
+
+# generate Prisma Client to ensure the code inside `node_modules/.prisma/client` gets updated
+$ npx prisma generate
+```
+
+## Running generate model schema.graphql to graphql.ts
+
+```bash
+# generate model from schema.graphql to graphql.ts
+$ yarn codegen
 ```
 
 ## Running the app
@@ -57,6 +90,20 @@ $ yarn run test:e2e
 # test coverage
 $ yarn run test:cov
 ```
+
+## 📖 Learn More
+- [Nest](https://github.com/nestjs/nest): Nest is a framework for building efficient, scalable <a href="https://nodejs.org" target="_blank">Node.js</a> server-side applications.
+- [Prisma](https://github.com/prisma/prisma): Prisma is a **next-generation ORM** that consists of these tools:
+  - [**Prisma Client**](https://www.prisma.io/docs/concepts/components/prisma-client): Auto-generated and type-safe query builder for Node.js & TypeScript
+  - [**Prisma Migrate**](https://www.prisma.io/docs/concepts/components/prisma-migrate): Declarative data modeling & migration system
+  - [**Prisma Studio**](https://github.com/prisma/studio): GUI to view and edit data in your database
+- [PostgreSQL](https://www.postgresql.org/): PostgreSQL is an advanced object-relational database management system
+that supports an extended subset of the SQL standard, including
+transactions, foreign keys, subqueries, triggers, user-defined types
+and functions.
+- [Typescript](https://www.typescriptlang.org/):Typescript is a language for application-scale JavaScript. TypeScript adds optional types to JavaScript that support tools for large-scale JavaScript applications for any browser, for any host, on any OS.
+- [GraphQL Client](https://github.com/prisma-labs/graphql-request#graphql-request) + [Code Generation](https://www.graphql-code-generator.com/): GraphQL is a data query language developed by Facebook. It provides an alternative to REST and ad-hoc webservice architectures.
+
 
 ## Support
 
