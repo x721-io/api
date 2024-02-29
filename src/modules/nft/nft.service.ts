@@ -1582,10 +1582,20 @@ export class NftService {
       switch (filter.mode) {
         // Get Owner NFT
         case GeneralInfor.OWNER:
-          const responseOwner = await this.GraphqlService.getNFTOnSalesAndOwner(
-            filter.owner.toLowerCase(),
+          const { account } = await this.GraphqlService.getNFTFromOwner(
+            filter.owner.toLocaleLowerCase(),
+            'asc' as OrderDirection,
+            1,
+            1000,
           );
-          return (responseOwner && responseOwner.holdingCount) || 0;
+          const { ERC721tokens = [], ERC1155balances = [] } = account;
+          const countHolding =
+            [...ERC721tokens, ...ERC1155balances].length || 0;
+          return countHolding;
+        // const responseOwner = await this.GraphqlService.getNFTOnSalesAndOwner(
+        //   filter.owner.toLowerCase(),
+        // );
+        // return (responseOwner && responseOwner.holdingCount) || 0;
         case GeneralInfor.CREATOR:
           const whereCondition: Prisma.NFTWhereInput = {};
           const whereConditionInternal: Prisma.NFTWhereInput = {};
