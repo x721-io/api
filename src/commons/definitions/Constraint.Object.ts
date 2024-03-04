@@ -19,6 +19,13 @@ const CollectionSelect: Prisma.CollectionSelect = {
   type: true,
   address: true,
   isVerified: true,
+  metadata: true,
+  shortUrl: true,
+  symbol: true,
+  description: true,
+  categoryId: true,
+  createdAt: true,
+  avatar: true,
   category: {
     select: {
       id: true,
