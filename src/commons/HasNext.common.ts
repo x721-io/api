@@ -25,7 +25,8 @@ class PaginationCommon {
     whereCondition:
       | Prisma.UserWhereInput
       | Prisma.NFTWhereInput
-      | Prisma.CollectionWhereInput,
+      | Prisma.CollectionWhereInput
+      | Prisma.MarketplaceStatusWhereInput,
   ): Promise<boolean> {
     const skip = (page - 1) * limit;
     const take = limit * 2;

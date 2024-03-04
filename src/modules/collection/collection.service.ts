@@ -222,13 +222,19 @@ export class CollectionService {
         },
       };
     }
+    const orderByProperties: Prisma.CollectionOrderByWithRelationAndSearchRelevanceInput =
+      {};
+    if (input.orderBy == 'time') {
+      orderByProperties.createdAt = input.order;
+    } else {
+      orderByProperties.floorPrice = input.order;
+    }
+
     const collections = await this.prisma.collection.findMany({
       where: whereCondition,
       skip: (input.page - 1) * input.limit,
       take: input.limit,
-      orderBy: {
-        createdAt: input.order,
-      },
+      orderBy: orderByProperties,
       include: {
         creators: {
           select: {
@@ -240,14 +246,24 @@ export class CollectionService {
         },
       },
     });
-    const subgraphCollection = collections.map(async (item) => {
-      const generalInfo = await this.getGeneralCollectionData(
-        item.address,
-        item.type,
-      );
-      return { ...item, ...generalInfo };
-    });
-    const dataArray = Promise.all(subgraphCollection);
+    // const subgraphCollection = collections.map(async (item) => {
+    //   const generalInfo = await this.getGeneralCollectionData(
+    //     item.address,
+    //     item.type,
+    //   );
+    //   return { ...item, ...generalInfo };
+    // });
+    // const dataArray = Promise.all(subgraphCollection);
+
+    const dataArray = await Promise.all(
+      collections.map(async (item) => {
+        const generalInfo = await this.getGeneralCollectionData(
+          item.address,
+          item.type,
+        );
+        return { ...item, ...generalInfo };
+      }),
+    );
     const hasNext = await PaginationCommon.hasNextPage(
       input.page,
       input.limit,
