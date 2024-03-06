@@ -104,12 +104,8 @@ export class UserController {
   }
 
   @Post('/verify-email')
-  @UseGuards(AuthenticationGuard)
-  async verifyEmail(
-    @GetCurrentUser() user: User,
-    @Body() verifyEmailDto: VerifyEmailDto,
-  ) {
-    return await this.userService.checkVerifyEmail(verifyEmailDto, user);
+  async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
+    return await this.userService.checkVerifyEmail(verifyEmailDto);
   }
 
   @Post('/list-verify')

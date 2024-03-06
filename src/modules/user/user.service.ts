@@ -657,12 +657,17 @@ export class UserService {
     }
   }
 
-  async checkVerifyEmail(input: VerifyEmailDto, user: User) {
+  async checkVerifyEmail(input: VerifyEmailDto) {
     try {
       const validatie = this.verifyTokenConfirm(input.token);
       if (!validatie) {
         throw Error('Token is invalid');
       }
+      const user = await this.prisma.user.findFirst({
+        where: {
+          id: validatie?.id,
+        },
+      });
       if (user.id != validatie?.id) {
         throw new Error('This email cannot be confirmed');
       }
