@@ -1,4 +1,4 @@
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString, IsIn } from 'class-validator';
 import { QueryTraitDto } from './query-trait.dto';
 import { sellStatus } from 'src/constants/enums/SellStatus.enum';
 import { OffsetPaginationDto } from 'src/commons/definitions/OffsetPagination.input';
@@ -45,4 +45,8 @@ export class GetAllNftDto extends OffsetPaginationDto {
   @IsOptional()
   @IsEnum(CONTRACT_TYPE)
   type: CONTRACT_TYPE;
+
+  @IsOptional()
+  @IsIn(['time', 'price'])
+  orderBy?: 'time' | 'price' = 'time';
 }

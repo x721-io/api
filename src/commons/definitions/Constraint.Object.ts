@@ -47,4 +47,28 @@ const marketplaceSelect: Prisma.MarketplaceStatusSelect = {
   event: true,
 };
 
-export { creatorSelect, CollectionSelect, marketplaceSelect };
+const nftSelect: Prisma.NFTSelect = {
+  id: true,
+  u2uId: true,
+  description: true,
+  name: true,
+  nameSlug: true,
+  image: true,
+  animationUrl: true,
+  createdAt: true,
+  updatedAt: true,
+  status: true,
+  tokenUri: true,
+  txCreationHash: true,
+  collectionId: true,
+  creatorId: true,
+  creator: {
+    select: creatorSelect,
+  },
+  collection: {
+    select: CollectionSelect,
+  },
+  traits: true,
+};
+
+export { creatorSelect, CollectionSelect, marketplaceSelect, nftSelect };
