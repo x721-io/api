@@ -31,6 +31,11 @@ export class CollectionController {
     return this.collectionService.create(createCollectionDto, user);
   }
 
+  @Post('/floor-price')
+  updateFloorPrice(@Body() address: string) {
+    return this.collectionService.updateFloorPrice(address);
+  }
+
   @Get()
   findAll(@Query() input: GetAllCollectionDto) {
     return this.collectionService.findAll(input);

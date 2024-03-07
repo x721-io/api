@@ -11,4 +11,64 @@ const creatorSelect: Prisma.UserSelect = {
   signer: true,
 };
 
-export { creatorSelect };
+const CollectionSelect: Prisma.CollectionSelect = {
+  id: true,
+  txCreationHash: true,
+  name: true,
+  status: true,
+  type: true,
+  address: true,
+  isVerified: true,
+  metadata: true,
+  shortUrl: true,
+  symbol: true,
+  description: true,
+  categoryId: true,
+  createdAt: true,
+  avatar: true,
+  category: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+};
+
+const marketplaceSelect: Prisma.MarketplaceStatusSelect = {
+  price: true,
+  priceWei: true,
+  netPrice: true,
+  netPriceWei: true,
+  quantity: true,
+  quoteToken: true,
+  operationId: true,
+  operation: true,
+  askId: true,
+  event: true,
+};
+
+const nftSelect: Prisma.NFTSelect = {
+  id: true,
+  u2uId: true,
+  description: true,
+  name: true,
+  nameSlug: true,
+  image: true,
+  animationUrl: true,
+  createdAt: true,
+  updatedAt: true,
+  status: true,
+  tokenUri: true,
+  txCreationHash: true,
+  collectionId: true,
+  creatorId: true,
+  creator: {
+    select: creatorSelect,
+  },
+  collection: {
+    select: CollectionSelect,
+  },
+  traits: true,
+};
+
+export { creatorSelect, CollectionSelect, marketplaceSelect, nftSelect };

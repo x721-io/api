@@ -12,22 +12,23 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CONTRACT_TYPE, Prisma, TX_STATUS, User } from '@prisma/client';
 import { validate as isValidUUID } from 'uuid';
 import { Redis } from 'src/database';
-import { TraitGeneralInfo, TraitService } from '../nft/trait.service';
+import { TraitService } from '../nft/trait.service';
 import { GetAllCollectionDto } from './dto/get-all-collection.dto';
 import { GetCollectionMarketData } from '../graph-qlcaller/getCollectionMarketData.service';
 import { CollectionPriceService } from './collectionPrice.service';
 import { GetCollectionByUserDto } from './dto/get-collection-by-user.dto';
 import SecureUtil from '../../commons/Secure.common';
-import { GraphQLClient, gql } from 'graphql-request';
+import { GraphQLClient } from 'graphql-request';
 import { getSdk } from '../../generated/graphql';
 import { oneWeekInMilliseconds } from '../../constants/Timestamp.constant';
 import OtherCommon from 'src/commons/Other.common';
 import { creatorSelect } from '../../commons/definitions/Constraint.Object';
+import PaginationCommon from 'src/commons/HasNext.common';
 interface CollectionGeneral {
   totalOwner: number;
   volumn: string;
   totalNft: number;
-  floorPrice: string;
+  // floorPrice: bigint;
 }
 
 interface CollectionVolumeInterface {
@@ -120,73 +121,36 @@ export class CollectionService {
         volumn: '0',
         totalOwner: Number(0),
         totalNft: Number(0),
-        floorPrice: '0',
+        // floorPrice: BigInt(0),
       };
     }
-    const [response, statusCollection, sum] = await Promise.all([
-      this.collectionData.getCollectionSumData(collectionAddress),
+    const [statusCollection] = await Promise.all([
       this.collectionData.getCollectionCount(collectionAddress),
-      this.getVolumeCollection(collectionAddress),
+      // this.getVolumeCollection(collectionAddress),
     ]);
 
     if (type === 'ERC721') {
-      // const uniqueOwnerIdsCount = new Set(
-      //   count.erc721Tokens.map((obj) => obj.owner.id),
-      // ).size;
-
-      const filterSelling = response.marketEvent721S.filter(
-        (obj) => obj.event === 'AskNew',
-      );
-      const floorPrice =
-        filterSelling.length > 0
-          ? filterSelling.reduce(
-              (min, obj) =>
-                BigInt(obj.price) < BigInt(min)
-                  ? BigInt(obj.price)
-                  : BigInt(min),
-              BigInt(filterSelling[0].price),
-            )
-          : BigInt(0);
       return {
-        volumn: sum.toString(),
+        // volumn: sum.toString(),
+        volumn: statusCollection.erc721Contract?.volume || 0,
         totalOwner: statusCollection.erc721Contract?.holderCount || 0,
         totalNft: statusCollection.erc721Contract?.count || 0,
-        floorPrice: floorPrice.toString(),
+        // floorPrice: BigInt(0),
       };
     } else {
-      // const owners =
-      //   await this.collectionData.getCollectionHolder(collectionAddress);
-      // const uniqueOwnerIdsCount = owners.erc1155Balances.filter(
-      //   (obj) => BigInt(obj.value) > BigInt(0) && !!obj.account,
-      // ).length;
-
-      // filter floor price
-      const filterSelling = response.marketEvent1155S.filter(
-        (obj) => obj.event === 'AskNew',
-      );
-      const floorPrice =
-        filterSelling.length > 0
-          ? filterSelling.reduce(
-              (min, obj) =>
-                BigInt(obj.price) < BigInt(min)
-                  ? BigInt(obj.price)
-                  : BigInt(min),
-              BigInt(filterSelling[0].price),
-            )
-          : BigInt(0);
-      // filter name
       return {
-        volumn: sum.toString(),
+        // volumn: sum.toString(),
+        volumn: statusCollection.erc721Contract?.volume || 0,
         totalOwner: statusCollection.erc1155Contract?.holderCount || 0,
         totalNft: statusCollection.erc1155Contract?.count || 0,
-        floorPrice: floorPrice.toString(),
+        // floorPrice: BigInt(0),
       };
     }
   }
 
   async findAll(
     input: GetAllCollectionDto,
-  ): Promise<PagingResponse<CollectionEntity>> {
+  ): Promise<PagingResponseHasNext<CollectionEntity>> {
     // TODO: get all collection from subgraph first, got the id and map it back to local collection
     const creators = await this.prisma.user.findMany({
       where: {
@@ -196,8 +160,14 @@ export class CollectionService {
         },
       },
     });
+    const minBigInt = input.min
+      ? BigInt(input.min) / BigInt(10) ** 18n
+      : undefined;
+    const maxBigInt = input.max
+      ? BigInt(input.max) / BigInt(10) ** 18n
+      : undefined;
     const addresses = creators.map((item) => item.id);
-    const whereCondition: Prisma.CollectionWhereInput = {
+    let whereCondition: Prisma.CollectionWhereInput = {
       ...(input.name && {
         nameSlug: {
           contains: OtherCommon.stringToSlugSearch(input.name),
@@ -213,97 +183,102 @@ export class CollectionService {
       },
       status: TX_STATUS.SUCCESS,
     };
-
-    if (input.max || input.min) {
-      if (input.max && input.min && Number(input.min) > Number(input.max)) {
-        return {
-          data: [],
-          paging: {
-            total: 0,
-            page: input.page,
-            limit: input.limit,
-          },
-        };
-      }
-      const filteredContractId =
-        await this.collectionPriceService.filterFloorPriceFromSubgraph(
-          input.min,
-          input.max,
-        );
-      whereCondition.address = {
-        in: filteredContractId,
-      };
-      const filterPriceCollection = await this.prisma.collection.findMany({
-        where: whereCondition,
-        skip: (input.page - 1) * input.limit,
-        take: input.limit,
-        include: {
-          creators: {
-            select: {
-              userId: true,
-              user: {
-                select: creatorSelect,
-              },
-            },
-          },
-        },
-      });
-      const subgraphCollection = filterPriceCollection.map(async (item) => {
-        const generalInfo = await this.getGeneralCollectionData(
-          item.address,
-          item.type,
-        );
-        return { ...item, ...generalInfo };
-      });
-      const dataArray = Promise.all(subgraphCollection);
-
-      const total = await this.prisma.collection.count({
-        where: whereCondition,
-      });
-      return {
-        data: await dataArray,
-        paging: {
-          total,
-          page: input.page,
-          limit: input.limit,
-        },
-      };
-    } else {
-      const collections = await this.prisma.collection.findMany({
-        where: whereCondition,
-        skip: (input.page - 1) * input.limit,
-        take: input.limit,
-        include: {
-          creators: {
-            select: {
-              userId: true,
-              user: {
-                select: creatorSelect,
-              },
-            },
-          },
-        },
-      });
-      const total = await this.prisma.collection.count({
-        where: whereCondition,
-      });
-      const subgraphCollection = collections.map(async (item) => {
-        const generalInfo = await this.getGeneralCollectionData(
-          item.address,
-          item.type,
-        );
-        return { ...item, ...generalInfo };
-      });
-      const dataArray = Promise.all(subgraphCollection);
-      return {
-        data: await dataArray,
-        paging: {
-          total,
-          limit: input.limit,
-          page: input.page,
+    if (input.min) {
+      whereCondition = {
+        ...whereCondition,
+        floorPrice: {
+          gte: minBigInt,
         },
       };
     }
+
+    if (input.max) {
+      whereCondition = {
+        ...whereCondition,
+        floorPrice: {
+          lte: maxBigInt,
+        },
+      };
+    }
+
+    if (input.min && input.max) {
+      whereCondition = {
+        ...whereCondition,
+        floorPrice: {
+          gte: minBigInt,
+          lte: maxBigInt,
+        },
+      };
+    }
+    console.log(whereCondition);
+
+    if (input.max && input.min && BigInt(input.min) > BigInt(input.max)) {
+      return {
+        data: [],
+        paging: {
+          hasNext: false,
+          page: input.page,
+          limit: input.limit,
+        },
+      };
+    }
+    const orderByProperties: Prisma.CollectionOrderByWithRelationAndSearchRelevanceInput =
+      {};
+    if (input.orderBy == 'time') {
+      orderByProperties.createdAt = input.order;
+    } else {
+      orderByProperties.floorPrice = input.order;
+    }
+
+    const collections = await this.prisma.collection.findMany({
+      where: whereCondition,
+      skip: (input.page - 1) * input.limit,
+      take: input.limit,
+      orderBy: orderByProperties,
+      include: {
+        creators: {
+          select: {
+            userId: true,
+            user: {
+              select: creatorSelect,
+            },
+          },
+        },
+      },
+    });
+    // const subgraphCollection = collections.map(async (item) => {
+    //   const generalInfo = await this.getGeneralCollectionData(
+    //     item.address,
+    //     item.type,
+    //   );
+    //   return { ...item, ...generalInfo };
+    // });
+    // const dataArray = Promise.all(subgraphCollection);
+
+    const dataArray = await Promise.all(
+      collections.map(async (item) => {
+        const generalInfo = await this.getGeneralCollectionData(
+          item.address,
+          item.type,
+        );
+        return { ...item, ...generalInfo };
+      }),
+    );
+    const hasNext = await PaginationCommon.hasNextPage(
+      input.page,
+      input.limit,
+      'collection',
+      whereCondition,
+    );
+    return {
+      data: await dataArray,
+      paging: {
+        hasNext,
+        limit: input.limit,
+        page: input.page,
+      },
+    };
+    // }
   }
 
   async findOne(id: string): Promise<CollectionDetailDto> {
@@ -469,6 +444,8 @@ export class CollectionService {
               projectId: true,
               nameSlug: true,
               isU2U: true,
+              isVerified: true,
+              floorPrice: true,
               category: {
                 select: {
                   id: true,
@@ -523,7 +500,6 @@ export class CollectionService {
         return { ...item, ...generalInfo };
       });
       const dataArray = await Promise.all(subgraphCollection);
-
       return {
         data: dataArray,
         paging: {
@@ -576,44 +552,41 @@ export class CollectionService {
     }
   }
 
-  async getVolumeCollection(address: string) {
-    const { blocks = [] } = await this.sdk.getActivity({ address });
-    const redisData = await this.checkRecord(address);
-    const lastUpdate = `${blocks?.[0]?.timestampt || ''}`;
-    const isTradeOrAcceptBid = (item: any) =>
-      item.event === 'Trade' || item.event === 'AcceptBid';
-    const sum = blocks
-      .filter(isTradeOrAcceptBid)
-      .reduce((acc, obj) => acc + BigInt(obj.price), BigInt(0));
-
-    if (redisData !== null) {
-      const redisTimestamp = parseInt(redisData.timestamp, 10);
-
-      const newBlocks = blocks.filter(
-        (item) => item.timestampt > redisTimestamp,
-      );
-
-      if (newBlocks.length > 0) {
-        const sumNewBlock = newBlocks
-          .filter(isTradeOrAcceptBid)
-          .reduce((acc, obj) => acc + BigInt(obj.price), BigInt(0));
-        const updatedTotal = (BigInt(redisData.total) + sumNewBlock).toString();
-        await this.saveVolumeCollection(address, {
-          timestamp: lastUpdate,
-          total: updatedTotal,
-        });
-        return updatedTotal;
-      }
-
-      return sum;
-    } else {
-      await this.saveVolumeCollection(address, {
-        timestamp: lastUpdate,
-        total: sum.toString(),
-      });
-      return sum;
-    }
-  }
+  // async getVolumeCollection(address: string) {
+  // return '0';
+  // const { blocks = [] } = await this.sdk.getActivity({ address });
+  // const redisData = await this.checkRecord(address);
+  // const lastUpdate = `${blocks?.[0]?.timestampt || ''}`;
+  // const isTradeOrAcceptBid = (item: any) =>
+  //   item.event === 'Trade' || item.event === 'AcceptBid';
+  // const sum = blocks
+  //   .filter(isTradeOrAcceptBid)
+  //   .reduce((acc, obj) => acc + BigInt(obj.price), BigInt(0));
+  // if (redisData !== null) {
+  //   const redisTimestamp = parseInt(redisData.timestamp, 10);
+  //   const newBlocks = blocks.filter(
+  //     (item) => item.timestampt > redisTimestamp,
+  //   );
+  //   if (newBlocks.length > 0) {
+  //     const sumNewBlock = newBlocks
+  //       .filter(isTradeOrAcceptBid)
+  //       .reduce((acc, obj) => acc + BigInt(obj.price), BigInt(0));
+  //     const updatedTotal = (BigInt(redisData.total) + sumNewBlock).toString();
+  //     await this.saveVolumeCollection(address, {
+  //       timestamp: lastUpdate,
+  //       total: updatedTotal,
+  //     });
+  //     return updatedTotal;
+  //   }
+  //   return sum;
+  // } else {
+  //   await this.saveVolumeCollection(address, {
+  //     timestamp: lastUpdate,
+  //     total: sum.toString(),
+  //   });
+  //   return sum;
+  // }
+  // }
 
   async getCountOwnerCollection(address: string) {
     const { ownedTokenCounts = [] } = await this.sdk.GetUniqueOwnersCount({
@@ -657,5 +630,13 @@ export class CollectionService {
       });
       return totalOwnerNullable;
     }
+  }
+
+  async updateFloorPrice(collection: string) {
+    await Redis.publish('collectionUtils-channel', {
+      data: collection,
+      process: 'update-floor-price',
+    });
+    return true;
   }
 }

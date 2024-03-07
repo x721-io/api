@@ -26,6 +26,7 @@ import {
   GetTransferNftQueryVariables,
 } from '../../generated/graphql';
 import SecureUtil from '../../commons/Secure.common';
+import PaginationCommon from 'src/commons/HasNext.common';
 interface UserRedisinterface {
   timestamp: string;
   email: string;
@@ -105,7 +106,7 @@ export class UserService {
   async findAll(
     filter: GetAllUser,
     currentUser: User,
-  ): Promise<PagingResponse<any>> {
+  ): Promise<PagingResponseHasNext<any>> {
     const currentUserId = currentUser?.id;
     // const limit = (filter.limit || 12) as number;
     // const cursor = filter.cursor;
@@ -195,9 +196,9 @@ export class UserService {
       },
     });
 
-    const total = await this.prisma.user.count({
-      where: whereCondition,
-    });
+    // const total = await this.prisma.user.count({
+    //   where: whereCondition,
+    // });
     const usersWithFollowStatusAndPaging = usersWithFollowStatus.map(
       ({ user, ...rest }) => ({
         ...rest,
@@ -210,11 +211,16 @@ export class UserService {
     //   nextCursor = nextUser.id;
     // }
     // return { users, nextCursor };
-
+    const hasNext = await PaginationCommon.hasNextPage(
+      filter.page,
+      filter.limit,
+      'user',
+      whereCondition,
+    );
     return {
       data: usersWithFollowStatusAndPaging,
       paging: {
-        total,
+        hasNext,
         page: filter.page,
         limit: filter.limit,
       },
@@ -651,12 +657,17 @@ export class UserService {
     }
   }
 
-  async checkVerifyEmail(input: VerifyEmailDto, user: User) {
+  async checkVerifyEmail(input: VerifyEmailDto) {
     try {
       const validatie = this.verifyTokenConfirm(input.token);
       if (!validatie) {
         throw Error('Token is invalid');
       }
+      const user = await this.prisma.user.findFirst({
+        where: {
+          id: validatie?.id,
+        },
+      });
       if (user.id != validatie?.id) {
         throw new Error('This email cannot be confirmed');
       }
