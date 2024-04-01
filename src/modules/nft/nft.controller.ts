@@ -12,7 +12,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { GetCurrentUser } from 'src/decorators/get-current-user.decorator';
-import { User } from '@prisma/client';
+import { User, Account } from '@prisma/client';
 import { CreateNftDto } from './dto/create-nft.dto';
 import { UpdateNftDto } from './dto/update-nft.dto';
 import { NftService } from './nft.service';

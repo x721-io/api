@@ -26,7 +26,12 @@ class PaginationCommon {
       | Prisma.UserWhereInput
       | Prisma.NFTWhereInput
       | Prisma.CollectionWhereInput
-      | Prisma.MarketplaceStatusWhereInput,
+      | Prisma.MarketplaceStatusWhereInput
+      | Prisma.AccountWhereInput
+      | Prisma.RoundInfoWhereInput
+      | Prisma.ProjectWhereInput
+      | Prisma.TopicWhereInput
+      | Prisma.BlogWhereInput,
   ): Promise<boolean> {
     const skip = (page - 1) * limit;
     const take = limit * 2;

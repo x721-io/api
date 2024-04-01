@@ -115,9 +115,9 @@ export class LaunchpadService {
   }
 
   async findOne(id: string): Promise<ProjectEntity> {
-    const project = await this.prisma.project.findUnique({
+    const project = await this.prisma.project.findFirst({
       where: {
-        id,
+        AND: [{ id }, { isActivated: true }, { isDelete: false }],
       },
       include: {
         collection: true,
@@ -137,7 +137,7 @@ export class LaunchpadService {
     });
 
     if (!project) {
-      throw new NotFoundException('Project not found');
+      throw new NotFoundException();
     }
 
     const returnProject = {
