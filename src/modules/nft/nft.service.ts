@@ -350,32 +350,7 @@ export class NftService {
               traits: true,
             },
           });
-          const Nftformat = nfts.map((item) => {
-            if (
-              item?.MarketplaceByTokenId &&
-              item?.MarketplaceByTokenId.length > 0
-            ) {
-              const { priceWei, event, quantity, askId, quoteToken } =
-                item.MarketplaceByTokenId.reduce(
-                  (minItem, currentItem) =>
-                    currentItem.price < minItem.price ? currentItem : minItem,
-                  item.MarketplaceByTokenId[0],
-                );
-              delete item.MarketplaceByTokenId;
-              return {
-                ...item,
-                price: priceWei,
-                sellStatus: event,
-                quantity,
-                askId,
-                quoteToken,
-              };
-            } else {
-              delete item.MarketplaceByTokenId;
-              return item;
-            }
-          });
-
+          const Nftformat = await this.handleFormatNFTResponse(nfts);
           const hasNext =
             (await PaginationCommon.hasNextPage(
               filter.page,
@@ -477,23 +452,7 @@ export class NftService {
               traits: true,
             },
           });
-          const Nftformat = nfts.map((item) => {
-            const { priceWei, event, quantity, askId, quoteToken } =
-              item.MarketplaceByTokenId.reduce(
-                (minItem, currentItem) =>
-                  currentItem.price < minItem.price ? currentItem : minItem,
-                item.MarketplaceByTokenId[0],
-              );
-            delete item.MarketplaceByTokenId;
-            return {
-              ...item,
-              price: priceWei,
-              sellStatus: event,
-              quantity,
-              askId,
-              quoteToken,
-            };
-          });
+          const Nftformat = await this.handleFormatNFTResponse(nfts);
           const hasNext = await PaginationCommon.hasNextPage(
             filter.page,
             filter.limit,
@@ -1065,5 +1024,57 @@ export class NftService {
       whereMarketPlaceStatus,
     );
     return { result, hasNext };
+  }
+
+  async getQuoteTokens(address: string) {
+    try {
+      if (!address) {
+        return;
+      }
+      const quoteTokens = await this.prisma.quoteTokens.findUnique({
+        where: {
+          address: address,
+        },
+      });
+      if (!quoteTokens) {
+        return;
+      }
+      return quoteTokens;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async handleFormatNFTResponse(nfts: any[]) {
+    return Promise.all(
+      nfts.map(async (item) => {
+        if (
+          item?.MarketplaceByTokenId &&
+          item?.MarketplaceByTokenId.length > 0
+        ) {
+          const { priceWei, event, quantity, askId, quoteToken } =
+            item.MarketplaceByTokenId.reduce(
+              (minItem, currentItem) =>
+                currentItem.price < minItem.price ? currentItem : minItem,
+              item.MarketplaceByTokenId[0],
+            );
+          const quoteTokenData = await this.getQuoteTokens(quoteToken);
+          delete item.MarketplaceByTokenId;
+          return {
+            ...item,
+            price: priceWei,
+            sellStatus: event,
+            quantity,
+            askId,
+            quoteToken,
+            derivedETH: quoteTokenData?.derivedETH || 0,
+            derivedUSD: quoteTokenData?.derivedUSD || 0,
+          };
+        } else {
+          delete item.MarketplaceByTokenId;
+          return item;
+        }
+      }),
+    );
   }
 }
