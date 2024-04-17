@@ -245,23 +245,23 @@ model UserFollow {
 }
 
 model MarketplaceStatus {
-  id                                Int @id @default(autoincrement())
-  tokenId                           String  @db.VarChar(255)
-  collectionId                      String  @db.Uuid
-  quoteToken                        String?  @db.VarChar(255)
-  timestamp                         Int  
-  price                             Float
-  priceWei                          String
-  netPrice                          Float
-  netPriceWei                       String
-  event                             SELL_STATUS
-  quantity                          Int     @default(1)
-  operationId                       String?
-  txHash                            String?
-  operation                         String?
-  from                              String?
-  askId                             String?
-  nftById                           NFT     @relation("Marketplace_byId", fields: [tokenId, collectionId], references: [id, collectionId], map: "marketplace_by_id_fk") 
+  id           Int                  @id @default(autoincrement())
+  tokenId      String               @db.VarChar(255) 
+  collectionId String               @db.Uuid
+  quoteToken   String?              @db.VarChar(255)
+  timestamp    Int
+  price        Float
+  priceWei     String
+  netPrice     Float
+  netPriceWei  String
+  event        SELL_STATUS
+  quantity     Int                  @default(1)
+  operationId  String?
+  txHash       String?
+  operation    String?
+  from         String?
+  askId        String?
+  nftById      NFT                  @relation("Marketplace_byId", fields: [tokenId, collectionId], references: [id, collectionId], map: "marketplace_by_id_fk") 
   @@index([tokenId, collectionId])
 }
 
@@ -339,4 +339,11 @@ model BlogTopic{
   blogId            String          @db.Uuid
   topic             Topic           @relation(fields: [topicId], references: [id])
   blog              Blog            @relation(fields: [blogId], references: [id])   
+}
+model QuoteTokens {
+  address        String             @id @unique
+  symbol         String
+  name           String
+  derivedETH     Float
+  derivedUSD     Float
 }

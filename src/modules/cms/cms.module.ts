@@ -32,6 +32,7 @@ import { LaunchPadController } from './controller/launchpad-cms.controller';
 import { TopicController } from './controller/topic-cms.controller';
 import { BlogController } from './controller/blog-cms.controller';
 import { AccountController } from './controller/account-cms.controller';
+import { NFTHepler } from '../nft/helper/nft-helper.service';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { AccountController } from './controller/account-cms.controller';
     CMSOptionService,
     TopicService,
     BlogService,
+    NFTHepler,
   ],
 })
 export class CMSModule {}

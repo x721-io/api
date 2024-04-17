@@ -19,6 +19,7 @@ import { NftDto } from '../../nft/dto/nft.dto';
 import { GetAllNftDto } from '../../nft/dto/get-all-nft.dto';
 import { OrderDirection } from 'src/generated/graphql';
 import { NftService } from '../../nft/nft.service';
+import { NFTHepler } from '../../nft/helper/nft-helper.service';
 
 interface CollectionGeneral {
   totalOwner: number;
@@ -35,6 +36,7 @@ export class MarketplaceCMSService {
     private readonly collectionData: GetCollectionMarketData,
     private readonly GraphqlService: GraphQlcallerService,
     private readonly nftService: NftService,
+    private nftHepler: NFTHepler,
   ) {}
 
   async findAllCollection(
@@ -342,7 +344,7 @@ export class MarketplaceCMSService {
           hasNextNftOwnerTemp.ERC1155balances.length > 0;
         // console.log(account);
         if (account) {
-          const erc1155BalancesSort = this.nftService.sortERC1155balances(
+          const erc1155BalancesSort = this.nftHepler.sortERC1155balances(
             account.ERC1155balances,
             filter.order,
           );
@@ -449,7 +451,7 @@ export class MarketplaceCMSService {
             filter.quoteToken;
         }
         const whereMarketPlaceStatus: Prisma.MarketplaceStatusWhereInput =
-          this.nftService.generateWhereMarketPlaceStatus(filter);
+          this.nftHepler.generateWhereMarketPlaceStatus(filter);
 
         if (filter.orderBy === 'time') {
           const nfts = await this.prisma.nFT.findMany({
@@ -521,7 +523,7 @@ export class MarketplaceCMSService {
         } else {
           whereMarketPlaceStatus.nftById = whereCondition;
           const { result, hasNext } =
-            await this.nftService.getListNFTWithMarketplaceStatus(
+            await this.nftHepler.getListNFTWithMarketplaceStatus(
               filter,
               whereMarketPlaceStatus,
             );
