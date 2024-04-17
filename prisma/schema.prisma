@@ -265,8 +265,7 @@ model SyncMasterData{
 }
 
 model QuoteTokens {
-  id             String             @id @default(uuid()) @db.Uuid
-  address        String             @unique
+  address        String             @id @unique
   symbol         String
   name           String
   derivedETH     Float

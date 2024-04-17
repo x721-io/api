@@ -1,5 +1,5 @@
 import { CreateNftDto } from './dto/create-nft.dto';
-import { Prisma, TX_STATUS, User, MarketplaceStatus } from '@prisma/client';
+import { Prisma, TX_STATUS, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { NftDto } from './dto/nft.dto';
 import {
@@ -33,11 +33,8 @@ import {
 import { GetGeneralInforDto } from './dto/get-general-infor.dto';
 import { GeneralInfor } from 'src/constants/enums/GeneralInfor.enum';
 import PaginationCommon from 'src/commons/HasNext.common';
+import { NFTHepler } from './helper/nft-helper.service';
 
-interface NFTMarketplaceResponse {
-  result: NftDto[];
-  hasNext: boolean;
-}
 @Injectable()
 export class NftService {
   constructor(
@@ -47,6 +44,7 @@ export class NftService {
     private validatorService: ValidatorService,
     private activityService: ActivityService,
     private collectionPriceService: CollectionPriceService,
+    private nftHepler: NFTHepler,
   ) {}
 
   private readonly endpoint = process.env.SUBGRAPH_URL;
@@ -213,7 +211,7 @@ export class NftService {
           hasNextNftOwnerTemp.ERC1155balances.length > 0;
         // console.log(account);
         if (account) {
-          const erc1155BalancesSort = this.sortERC1155balances(
+          const erc1155BalancesSort = this.nftHepler.sortERC1155balances(
             account.ERC1155balances,
             filter.order,
           );
@@ -322,7 +320,7 @@ export class NftService {
             filter.quoteToken;
         }
         const whereMarketPlaceStatus: Prisma.MarketplaceStatusWhereInput =
-          this.generateWhereMarketPlaceStatus(filter);
+          this.nftHepler.generateWhereMarketPlaceStatus(filter);
 
         if (filter.orderBy === 'time') {
           const nfts = await this.prisma.nFT.findMany({
@@ -350,7 +348,7 @@ export class NftService {
               traits: true,
             },
           });
-          const Nftformat = await this.handleFormatNFTResponse(nfts);
+          const Nftformat = await this.nftHepler.handleFormatNFTResponse(nfts);
           const hasNext =
             (await PaginationCommon.hasNextPage(
               filter.page,
@@ -369,7 +367,7 @@ export class NftService {
         } else {
           whereMarketPlaceStatus.nftById = whereCondition;
           const { result, hasNext } =
-            await this.getListNFTWithMarketplaceStatus(
+            await this.nftHepler.getListNFTWithMarketplaceStatus(
               filter,
               whereMarketPlaceStatus,
             );
@@ -395,7 +393,7 @@ export class NftService {
           };
         }
         const whereMarketPlaceStatus: Prisma.MarketplaceStatusWhereInput =
-          this.generateWhereMarketPlaceStatus(filter);
+          this.nftHepler.generateWhereMarketPlaceStatus(filter);
         const whereCondition1: Prisma.NFTWhereInput = {
           AND: [whereCondition],
         };
@@ -452,7 +450,7 @@ export class NftService {
               traits: true,
             },
           });
-          const Nftformat = await this.handleFormatNFTResponse(nfts);
+          const Nftformat = await this.nftHepler.handleFormatNFTResponse(nfts);
           const hasNext = await PaginationCommon.hasNextPage(
             filter.page,
             filter.limit,
@@ -470,7 +468,7 @@ export class NftService {
         } else {
           whereMarketPlaceStatus.nftById = whereCondition1;
           const { result, hasNext } =
-            await this.getListNFTWithMarketplaceStatus(
+            await this.nftHepler.getListNFTWithMarketplaceStatus(
               filter,
               whereMarketPlaceStatus,
             );
@@ -847,17 +845,6 @@ export class NftService {
     }
   };
 
-  sortERC1155balances(dataArray, inputOrder = 'asc') {
-    const compareTimestamps = (a, b) => a.createAt - b.createAt;
-
-    const sortedArray = dataArray.sort(compareTimestamps);
-    if (inputOrder === 'desc') {
-      sortedArray.reverse();
-    }
-
-    return sortedArray;
-  }
-
   async getGeneralInfor(filter: GetGeneralInforDto) {
     try {
       switch (filter.mode) {
@@ -940,141 +927,5 @@ export class NftService {
       console.log(error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
-  }
-
-  generateWhereMarketPlaceStatus(
-    filter: GetAllNftDto,
-  ): Prisma.MarketplaceStatusWhereInput {
-    const priceFilter: Prisma.FloatFilter = {};
-    const whereMarketPlaceStatus: Prisma.MarketplaceStatusWhereInput = {};
-    whereMarketPlaceStatus.AND = [];
-
-    whereMarketPlaceStatus.AND.push({
-      quoteToken: filter.quoteToken ?? process.env.QUOTE_TOKEN_U2U,
-    });
-
-    if (filter.priceMin !== undefined || filter.priceMax !== undefined) {
-      if (filter.priceMin !== undefined) {
-        priceFilter.gte = OtherCommon.weiToEther(filter.priceMin);
-      }
-      if (filter.priceMax !== undefined) {
-        priceFilter.lte = OtherCommon.weiToEther(filter.priceMax);
-      }
-      whereMarketPlaceStatus.AND.push({ price: priceFilter });
-    }
-
-    return whereMarketPlaceStatus;
-  }
-
-  getSmallestPrices(arr: MarketplaceStatus[]): NftDto[] {
-    const uniqueCombinationMap = {};
-    arr.forEach((item) => {
-      const { tokenId, collectionId, quoteToken, price } = item;
-      const key = `${tokenId}-${collectionId}-${quoteToken}`;
-      if (key in uniqueCombinationMap) {
-        if (price < uniqueCombinationMap[key].price) {
-          uniqueCombinationMap[key] = { price, item };
-        }
-      } else {
-        uniqueCombinationMap[key] = { price, item };
-      }
-    });
-    const uniqueItems = Object.values(uniqueCombinationMap).map(
-      ({ item }) => item,
-    );
-    return this.formatDataNFTForSort(uniqueItems);
-  }
-
-  formatDataNFTForSort(arr: any[]): NftDto[] {
-    return arr.map((item) => {
-      const { nftById } = item;
-      return {
-        ...nftById,
-        price: item?.priceWei,
-        sellStatus: item?.event,
-        quantity: item?.quantity,
-        askId: item?.askId,
-        quoteToken: item?.quoteToken,
-      };
-    });
-  }
-
-  async getListNFTWithMarketplaceStatus(
-    filter: GetAllNftDto,
-    whereMarketPlaceStatus: Prisma.MarketplaceStatusWhereInput,
-  ): Promise<NFTMarketplaceResponse> {
-    const marketplace = await this.prisma.marketplaceStatus.findMany({
-      where: whereMarketPlaceStatus,
-      skip: (filter.page - 1) * filter.limit,
-      take: filter.limit,
-      orderBy: {
-        price: filter.order,
-      },
-      include: {
-        nftById: {
-          select: nftSelect,
-        },
-      },
-    });
-    const result = this.getSmallestPrices(marketplace);
-    const hasNext = await PaginationCommon.hasNextPage(
-      filter.page,
-      filter.limit,
-      'marketplaceStatus',
-      whereMarketPlaceStatus,
-    );
-    return { result, hasNext };
-  }
-
-  async getQuoteTokens(address: string) {
-    try {
-      if (!address) {
-        return;
-      }
-      const quoteTokens = await this.prisma.quoteTokens.findUnique({
-        where: {
-          address: address,
-        },
-      });
-      if (!quoteTokens) {
-        return;
-      }
-      return quoteTokens;
-    } catch (error) {
-      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
-    }
-  }
-
-  async handleFormatNFTResponse(nfts: any[]) {
-    return Promise.all(
-      nfts.map(async (item) => {
-        if (
-          item?.MarketplaceByTokenId &&
-          item?.MarketplaceByTokenId.length > 0
-        ) {
-          const { priceWei, event, quantity, askId, quoteToken } =
-            item.MarketplaceByTokenId.reduce(
-              (minItem, currentItem) =>
-                currentItem.price < minItem.price ? currentItem : minItem,
-              item.MarketplaceByTokenId[0],
-            );
-          const quoteTokenData = await this.getQuoteTokens(quoteToken);
-          delete item.MarketplaceByTokenId;
-          return {
-            ...item,
-            price: priceWei,
-            sellStatus: event,
-            quantity,
-            askId,
-            quoteToken,
-            derivedETH: quoteTokenData?.derivedETH || 0,
-            derivedUSD: quoteTokenData?.derivedUSD || 0,
-          };
-        } else {
-          delete item.MarketplaceByTokenId;
-          return item;
-        }
-      }),
-    );
   }
 }
