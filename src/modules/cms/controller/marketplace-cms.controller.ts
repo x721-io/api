@@ -7,7 +7,7 @@ import { RoleGuard } from '../../auth/guards/role.guard';
 import { AuthCMSService } from '../service/auth-cms.service';
 import { GetAllAccountDto } from '../dto/get-all-account.dto';
 import { GetAllNftDto } from '../../nft/dto/get-all-nft.dto';
-import { GetAllCollectionDto } from '../../Collection/dto/get-all-collection.dto';
+import { GetAllCollectionDto } from '../../collection/dto/get-all-collection.dto';
 import { GetAllUser } from '../../user/dto/get-all-user.dto';
 import { MarketplaceCMSService } from '../service/marketplace-cms.service';
 @Controller('cms/manage')

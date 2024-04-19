@@ -6,8 +6,8 @@ import OtherCommon from 'src/commons/Other.common';
 import { GetCollectionMarketData } from '../../graph-qlcaller/getCollectionMarketData.service';
 import { Prisma, TX_STATUS, CONTRACT_TYPE } from '@prisma/client';
 import PaginationCommon from 'src/commons/HasNext.common';
-import { CollectionEntity } from '../../Collection/entities/collection.entity';
-import { GetAllCollectionDto } from '../../Collection/dto/get-all-collection.dto';
+import { CollectionEntity } from '../../collection/entities/collection.entity';
+import { GetAllCollectionDto } from '../../collection/dto/get-all-collection.dto';
 import {
   creatorSelect,
   CollectionSelect,
