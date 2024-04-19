@@ -16,4 +16,5 @@ export class NftDto {
   sellInfo?: unknown;
   bidInfo?: unknown;
   collection?: unknown;
+  quoteToken?: string;
 }
