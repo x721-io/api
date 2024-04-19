@@ -1,10 +1,29 @@
 import RedisCommon from '../database/Redis.db';
 import logger from './Logger.common';
 import { UserEntity } from 'src/modules/user/entities/user.entity';
+import { Account } from '@prisma/client';
 
 class SecureUtil {
   public async storeSession(
     userInfo: UserEntity,
+    refreshToken: string,
+  ): Promise<number> {
+    const expire = Math.floor(Date.now() + 604800000);
+    try {
+      await RedisCommon.client.setAsync(
+        `session:${refreshToken}`,
+        userInfo.id,
+        'EX',
+        604800,
+      );
+    } catch (err) {
+      throw new Error(err);
+    }
+    return expire;
+  }
+
+  public async storeSessionAccount(
+    userInfo: Account,
     refreshToken: string,
   ): Promise<number> {
     const expire = Math.floor(Date.now() + 604800000);

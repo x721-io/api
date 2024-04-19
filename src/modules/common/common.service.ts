@@ -1,8 +1,8 @@
-import { Injectable, Res } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Res } from '@nestjs/common';
 import { UpdateCommonDto } from './dto/update-common.dto';
 import { create } from 'ipfs-http-client';
 import OtherCommon from 'src/commons/Other.common';
-import { Response } from 'express';
+import { response, Response } from 'express';
 import * as fileType from 'file-type';
 import { SearchAllDto } from './dto/search-all.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -15,17 +15,26 @@ import {
   creatorSelect,
   CollectionSelect,
 } from '../../commons/definitions/Constraint.Object';
-
 import * as path from 'path';
+import { AWSError, S3 } from 'aws-sdk';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class CommonService {
   private ipfs;
+  private readonly s3: S3;
+  private AWS_S3_BUCKET = process.env.AWS_S3_BUCKET_NAME;
+  private AWS_REGION = process.env.AWS_REGION;
   constructor(private readonly prisma: PrismaService) {
     this.ipfs = create({
       host: process.env.IPFS_URL,
       port: parseInt(process.env.IPFS_PORT),
       protocol: process.env.IPFS_PROTOCOL,
+    });
+    this.s3 = new S3({
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      region: this.AWS_REGION,
     });
   }
 
@@ -382,6 +391,45 @@ export class CommonService {
       const filePath = pathParts.slice(1).join('/');
 
       return { cid, filePath };
+    }
+  }
+
+  async uploadFile(files: Express.Multer.File[]) {
+    try {
+      return await Promise.all(
+        files.map(async (file) => {
+          const filename = uuidv4() + '-' + file.originalname;
+          const responseS3 = await this.s3_upload(
+            file.buffer,
+            filename,
+            file.mimetype,
+          );
+          return responseS3.Location;
+        }),
+      );
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async s3_upload(buffer: Buffer, name: string, mimetype: string) {
+    try {
+      const params = {
+        Bucket: this.AWS_S3_BUCKET,
+        Key: String(name),
+        Body: buffer,
+        ACL: 'public-read',
+        ContentType: mimetype,
+        ContentDisposition: 'inline',
+        CreateBucketConfiguration: {
+          LocationConstraint: this.AWS_REGION,
+        },
+      };
+      const s3Response = await this.s3.upload(params).promise();
+      return s3Response;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
 }

@@ -39,6 +39,7 @@ model User {
   follower         UserFollow[]     @relation(name: "Follower")
   accountStatus    Boolean          @default(false)
   verifyEmail      Boolean          @default(false)
+  isActive         Boolean          @default(true)
 }
 
 model NFT {
@@ -56,6 +57,7 @@ model NFT {
   tokenUri       String
   txCreationHash String
   owners         UserNFT[]
+  isActive       Boolean            @default(true)
   creatorId      String?            @db.Uuid
   creator        User?              @relation(fields: [creatorId], references: [id])
   collectionId   String             @db.Uuid
@@ -63,7 +65,7 @@ model NFT {
   MarketplaceByTokenId              MarketplaceStatus[] @relation("Marketplace_byId")
 
   @@id([id, collectionId])
-  @@index([u2uId, collectionId])
+  @@index([u2uId, collectionId, isActive])
 }
 
 model Trait {
@@ -114,7 +116,7 @@ model Collection {
   project        Project?           @relation(fields: [projectId], references: [id])
   isVerified     Boolean            @default(false)
   floorPrice     BigInt             @default(0)
-
+  isActive       Boolean            @default(true)
   @@index([address], type: Hash)
 }
 
@@ -149,11 +151,13 @@ model Project {
   twitter      String?
   shortLink    String?
   logo         String?
-  isActivated  Boolean              @default(false)
+  isActivated  Boolean              @default(true)
+  isDelete     Boolean              @default(false)
   rounds       ProjectRound[]
   collection   Collection?
   subscriber   UserProject[]
   rangeTime    RoundRangeTime[]
+  @@index([id, isActivated, isDelete])
 }
 
 model ProjectRound {
@@ -193,8 +197,11 @@ model RoundInfo {
   name        String?
   description String?
   type        String?
+  isActive    Boolean               @default(true)
+  isDelete    Boolean               @default(false)
   projects    ProjectRound[]
   rangeTime   RoundRangeTime[]
+  @@index([id, isActive, isDelete])
 }
 
 enum TX_STATUS {
@@ -264,6 +271,75 @@ model SyncMasterData{
   syncDataStatus Boolean            @default(true)
 }
 
+model Account {
+  id               String           @id @default(uuid()) @db.Uuid
+  avatar           String?
+  fullName         String?
+  password         String
+  email            String?
+  username         String           @unique
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime?        @updatedAt
+  twitterLink      String?
+  telegramLink     String?
+  phone            String?
+  roles            String[]         @default(["VIEWER"])
+  isActive         Boolean          @default(true)
+  isDelete         Boolean          @default(false)
+  logActions       LogAction[]
+  topic            Topic[]
+  blog             Blog[]
+  @@index([id, isActive, isDelete])
+}
+
+model Role {
+  id               BigInt           @id @default(autoincrement())
+  name             String             
+  keyRole          String             
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime?        @updatedAt  
+}
+
+model LogAction {
+  id               BigInt           @id @default(autoincrement())
+  detail           String
+  time             DateTime         @default(now())
+  accountId        String           @db.Uuid  
+  account          Account          @relation(fields: [accountId], references: [id])   
+}
+
+model Topic {
+  id               BigInt           @id @default(autoincrement())
+  nameTopic        String
+  createdAt        DateTime         @default(now())
+  createdBy        String           @db.Uuid 
+  isActive         Boolean          @default(true)
+  isDelete         Boolean          @default(false)
+  account          Account          @relation(fields: [createdBy], references: [id])   
+  blogs        BlogTopic[]              
+}
+
+model Blog {
+  id               String           @id @default(uuid()) @db.Uuid
+  title            String
+  createdAt        DateTime         @default(now())
+  createdBy        String           @db.Uuid 
+  description      String?
+  content          String?          @db.VarChar(35000)
+  isActive         Boolean          @default(true)
+  isDelete         Boolean          @default(false)         
+  account          Account          @relation(fields: [createdBy], references: [id])   
+  topics           BlogTopic[] 
+  @@index([id, isActive, isDelete])
+}
+
+model BlogTopic{
+  id                BigInt          @id @default(autoincrement())
+  topicId           BigInt
+  blogId            String          @db.Uuid
+  topic             Topic           @relation(fields: [topicId], references: [id])
+  blog              Blog            @relation(fields: [blogId], references: [id])   
+}
 model QuoteTokens {
   address        String             @id @unique
   symbol         String

@@ -22,7 +22,10 @@ import { GraphQLClient } from 'graphql-request';
 import { getSdk } from '../../generated/graphql';
 import { oneWeekInMilliseconds } from '../../constants/Timestamp.constant';
 import OtherCommon from 'src/commons/Other.common';
-import { creatorSelect } from '../../commons/definitions/Constraint.Object';
+import {
+  creatorSelect,
+  collectionSelect,
+} from '../../commons/definitions/Constraint.Object';
 import PaginationCommon from 'src/commons/HasNext.common';
 interface CollectionGeneral {
   totalOwner: number;
@@ -210,6 +213,10 @@ export class CollectionService {
         },
       };
     }
+    whereCondition = {
+      ...whereCondition,
+      isActive: true,
+    };
     console.log(whereCondition);
 
     if (input.max && input.min && BigInt(input.min) > BigInt(input.max)) {
@@ -425,34 +432,7 @@ export class CollectionService {
         take: input.limit,
         include: {
           collection: {
-            select: {
-              id: true,
-              txCreationHash: true,
-              name: true,
-              address: true,
-              metadata: true,
-              shortUrl: true,
-              symbol: true,
-              description: true,
-              status: true,
-              type: true,
-              categoryId: true,
-              createdAt: true,
-              avatar: true,
-              coverImage: true,
-              updatedAt: true,
-              projectId: true,
-              nameSlug: true,
-              isU2U: true,
-              isVerified: true,
-              floorPrice: true,
-              category: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
+            select: collectionSelect,
           },
         },
       });
