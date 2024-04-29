@@ -19,19 +19,8 @@ function matchRegexArray(arr: string[], str: string): boolean {
   return false;
 }
 
-const whitelist = [
-  'http://localhost:3000',
-  'nebulas.u2nft.io',
-  'nebulas.u2nft.io/',
-  'u2nft.io',
-  'u2nft.io/',
-  'https://nft-launchpad.uniultra.xyz/',
-  'https://nft-launchpad.uniultra.xyz',
-  'https://marketplace-dev.uniultra.xyz/',
-  'https://marketplace-dev.uniultra.xyz',
-];
-
 async function bootstrap() {
+  const whitelist = process.env.ALLOWED_DOMAIN.split(',');
   const app = await NestFactory.create(AppModule);
 
   app.use(cookieParser());
