@@ -315,11 +315,8 @@ export class NftService {
         delete whereCondition.OR;
       }
       //----------
-      console.log(whereCondition);
       if (
-        !filter.priceMin &&
-        !filter.priceMax &&
-        !filter.sellStatus &&
+        (!filter.priceMin && !filter.priceMax && !filter.sellStatus) ||
         filter.name
       ) {
         if (filter.quoteToken !== undefined) {
