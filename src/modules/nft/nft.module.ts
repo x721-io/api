@@ -9,6 +9,8 @@ import { ValidatorService } from '../validator/validator.service';
 import { ActivityService } from './activity.service';
 import { CollectionPriceService } from '../collection/collectionPrice.service';
 import { GetCollectionMarketData } from '../graph-qlcaller/getCollectionMarketData.service';
+import { NFTHepler } from './helper/nft-helper.service';
+
 @Module({
   providers: [
     NftService,
@@ -20,6 +22,7 @@ import { GetCollectionMarketData } from '../graph-qlcaller/getCollectionMarketDa
     ActivityService,
     CollectionPriceService,
     GetCollectionMarketData,
+    NFTHepler,
   ],
   controllers: [NftController],
 })

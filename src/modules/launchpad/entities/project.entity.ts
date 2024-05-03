@@ -19,6 +19,7 @@ export class ProjectEntity implements Project {
   instagram: string;
   discord: string;
   shortLink: string;
+  isDelete: boolean;
   rounds: RoundEntity[];
   collection: CollectionEntity;
 }

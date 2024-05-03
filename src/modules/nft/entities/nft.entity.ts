@@ -25,6 +25,7 @@ export class NftEntity implements NFT {
   image: string;
   totalSupply?: number;
   nameSlug: string;
+  isActive: boolean;
 }
 
 export enum TXSTATUS {

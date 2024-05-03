@@ -1,6 +1,5 @@
-import { Prisma, User } from '@prisma/client';
-
-const creatorSelect: Prisma.UserSelect = {
+import { Prisma, User, Collection } from '@prisma/client';
+export const creatorSelect: Prisma.UserSelect = {
   id: true,
   email: true,
   avatar: true,
@@ -11,7 +10,7 @@ const creatorSelect: Prisma.UserSelect = {
   signer: true,
 };
 
-const CollectionSelect: Prisma.CollectionSelect = {
+export const CollectionSelect: Prisma.CollectionSelect = {
   id: true,
   txCreationHash: true,
   name: true,
@@ -26,6 +25,8 @@ const CollectionSelect: Prisma.CollectionSelect = {
   categoryId: true,
   createdAt: true,
   avatar: true,
+  isActive: true,
+  isU2U: true,
   category: {
     select: {
       id: true,
@@ -34,7 +35,7 @@ const CollectionSelect: Prisma.CollectionSelect = {
   },
 };
 
-const marketplaceSelect: Prisma.MarketplaceStatusSelect = {
+export const marketplaceSelect: Prisma.MarketplaceStatusSelect = {
   price: true,
   priceWei: true,
   netPrice: true,
@@ -47,7 +48,7 @@ const marketplaceSelect: Prisma.MarketplaceStatusSelect = {
   event: true,
 };
 
-const nftSelect: Prisma.NFTSelect = {
+export const nftSelect: Prisma.NFTSelect = {
   id: true,
   u2uId: true,
   description: true,
@@ -62,6 +63,7 @@ const nftSelect: Prisma.NFTSelect = {
   txCreationHash: true,
   collectionId: true,
   creatorId: true,
+  isActive: true,
   creator: {
     select: creatorSelect,
   },
@@ -71,4 +73,145 @@ const nftSelect: Prisma.NFTSelect = {
   traits: true,
 };
 
-export { creatorSelect, CollectionSelect, marketplaceSelect, nftSelect };
+export const nftSelectOwner: Prisma.NFTSelect = {
+  id: true,
+  name: true,
+  traits: true,
+  createdAt: true,
+  updatedAt: true,
+  status: true,
+  tokenUri: true,
+  txCreationHash: true,
+  creator: {
+    select: creatorSelect,
+  },
+  collection: {
+    select: CollectionSelect,
+  },
+};
+
+export const nftOwnerShip: Prisma.UserNFTSelect = {
+  quantity: true,
+  nft: {
+    select: nftSelectOwner,
+  },
+};
+
+export const userSelect: Prisma.UserSelect = {
+  id: true,
+  email: true,
+  avatar: true,
+  username: true,
+  publicKey: true,
+  accountStatus: true,
+  verifyEmail: true,
+  signer: true,
+};
+
+export const userSelectFull = (currentUserId: string): Prisma.UserSelect => {
+  return {
+    id: true,
+    email: true,
+    avatar: true,
+    username: true,
+    signature: true,
+    signedMessage: true,
+    signDate: true,
+    signer: true,
+    publicKey: true,
+    acceptedTerms: true,
+    createdAt: true,
+    updatedAt: true,
+    bio: true,
+    facebookLink: true,
+    twitterLink: true,
+    telegramLink: true,
+    shortLink: true,
+    discordLink: true,
+    webURL: true,
+    coverImage: true,
+    followers: true,
+    following: true,
+    accountStatus: true,
+    verifyEmail: true,
+    isActive: true,
+    ...(currentUserId
+      ? {
+          user: {
+            select: {
+              isFollow: true,
+            },
+            where: {
+              followerId: currentUserId,
+            },
+          },
+        }
+      : {}),
+  };
+};
+
+export const projectSelect: Prisma.ProjectSelect = {
+  id: true,
+  idOnchain: true,
+  name: true,
+  banner: true,
+  website: true,
+  telegram: true,
+  facebook: true,
+  instagram: true,
+  discord: true,
+  shortLink: true,
+  organization: true,
+  description: true,
+  isActivated: true,
+  collection: true,
+  details: true,
+  twitter: true,
+  logo: true,
+};
+
+export const collectionSelect: Prisma.CollectionSelect = {
+  id: true,
+  txCreationHash: true,
+  name: true,
+  address: true,
+  metadata: true,
+  shortUrl: true,
+  symbol: true,
+  description: true,
+  status: true,
+  type: true,
+  categoryId: true,
+  createdAt: true,
+  avatar: true,
+  coverImage: true,
+  updatedAt: true,
+  projectId: true,
+  nameSlug: true,
+  isU2U: true,
+  isVerified: true,
+  floorPrice: true,
+  isActive: true,
+  category: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+};
+
+export const accountListSelect: Prisma.AccountSelect = {
+  id: true,
+  avatar: true,
+  fullName: true,
+  email: true,
+  username: true,
+  createdAt: true,
+  updatedAt: true,
+  twitterLink: true,
+  telegramLink: true,
+  phone: true,
+  roles: true,
+  isActive: true,
+  isDelete: true,
+};
