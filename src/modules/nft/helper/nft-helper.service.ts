@@ -160,7 +160,9 @@ export class NFTHepler {
 
     whereMarketPlaceStatus.AND.push({
       quoteToken:
-        filter.quoteToken.toLowerCase() ?? process.env.QUOTE_TOKEN_U2U,
+        (filter.quoteToken
+          ? filter.quoteToken.toLowerCase()
+          : process.env.QUOTE_TOKEN_U2U) ?? process.env.QUOTE_TOKEN_U2U,
     });
 
     if (filter.priceMin !== undefined || filter.priceMax !== undefined) {

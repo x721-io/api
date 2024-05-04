@@ -429,7 +429,9 @@ export class NftService {
         }
 
         whereCondition1.MarketplaceByTokenId.some.quoteToken =
-          filter.quoteToken.toLowerCase() ?? process.env.QUOTE_TOKEN_U2U;
+          (filter.quoteToken
+            ? filter.quoteToken.toLowerCase()
+            : process.env.QUOTE_TOKEN_U2U) ?? process.env.QUOTE_TOKEN_U2U;
 
         if (filter.orderBy === 'time') {
           const nfts = await this.prisma.nFT.findMany({
