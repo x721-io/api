@@ -322,7 +322,7 @@ export class NftService {
         if (filter.quoteToken !== undefined) {
           whereCondition.MarketplaceByTokenId = { some: {} };
           whereCondition.MarketplaceByTokenId.some.quoteToken =
-            filter.quoteToken;
+            filter.quoteToken.toLowerCase();
         }
         const whereMarketPlaceStatus: Prisma.MarketplaceStatusWhereInput =
           this.nftHepler.generateWhereMarketPlaceStatus(filter);
@@ -429,7 +429,7 @@ export class NftService {
         }
 
         whereCondition1.MarketplaceByTokenId.some.quoteToken =
-          filter.quoteToken ?? process.env.QUOTE_TOKEN_U2U;
+          filter.quoteToken.toLowerCase() ?? process.env.QUOTE_TOKEN_U2U;
 
         if (filter.orderBy === 'time') {
           const nfts = await this.prisma.nFT.findMany({
