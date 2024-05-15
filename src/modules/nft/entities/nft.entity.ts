@@ -3,6 +3,12 @@ import { CollectionEntity } from 'src/modules/collection/entities/collection.ent
 import { UserEntity } from 'src/modules/user/entities/user.entity';
 import { TraitEntity } from './trait.entity';
 
+type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
+interface JsonObject {
+  [key: string]: JsonValue;
+}
+type JsonArray = Array<JsonValue>;
+
 export class NftEntity implements NFT {
   id: string;
   name: string;
@@ -26,6 +32,9 @@ export class NftEntity implements NFT {
   totalSupply?: number;
   nameSlug: string;
   isActive: boolean;
+  // Add metricPoint and metricDetail properties
+  metricPoint: bigint;
+  metricDetail: JsonValue;
 }
 
 export enum TXSTATUS {

@@ -153,6 +153,7 @@ export class NftService {
         data: {
           txCreation: nft.txCreationHash,
           type: nft.collection.type,
+          collectionId: collection.id,
         },
         process: 'nft-create',
       });
@@ -327,18 +328,37 @@ export class NftService {
         const whereMarketPlaceStatus: Prisma.MarketplaceStatusWhereInput =
           this.nftHepler.generateWhereMarketPlaceStatus(filter);
 
-        if (filter.orderBy === 'time') {
+        if (filter.orderBy === 'price') {
+          whereMarketPlaceStatus.nftById = whereCondition;
+          const { result, hasNext } =
+            await this.nftHepler.getListNFTWithMarketplaceStatus(
+              filter,
+              whereMarketPlaceStatus,
+            );
+          return {
+            data: result,
+            paging: {
+              hasNext: hasNext,
+              limit: filter.limit,
+              page: filter.page,
+            },
+          };
+        } else {
+          const orderByProperties: Prisma.NFTOrderByWithRelationAndSearchRelevanceInput =
+            {};
+
+          if (filter.orderBy == 'time') {
+            orderByProperties.createdAt = filter.order;
+          } else {
+            orderByProperties.metricPoint = 'desc';
+          }
           const nfts = await this.prisma.nFT.findMany({
             ...(!filter.owner && {
               skip: (filter.page - 1) * filter.limit,
               take: filter.limit,
             }),
-            // take: filter.limit,
-            // where: whereCondition.OR.length > 0 || whereConditionInternal.AND.length > 0 ? whereCondition : { AND: [] },
             where: whereCondition,
-            orderBy: {
-              createdAt: filter.order,
-            },
+            orderBy: orderByProperties,
             include: {
               creator: {
                 select: creatorSelect,
@@ -363,21 +383,6 @@ export class NftService {
             )) || hasNextNftOwner;
           return {
             data: Nftformat,
-            paging: {
-              hasNext: hasNext,
-              limit: filter.limit,
-              page: filter.page,
-            },
-          };
-        } else {
-          whereMarketPlaceStatus.nftById = whereCondition;
-          const { result, hasNext } =
-            await this.nftHepler.getListNFTWithMarketplaceStatus(
-              filter,
-              whereMarketPlaceStatus,
-            );
-          return {
-            data: result,
             paging: {
               hasNext: hasNext,
               limit: filter.limit,
@@ -433,16 +438,38 @@ export class NftService {
             ? filter.quoteToken.toLowerCase()
             : process.env.QUOTE_TOKEN_U2U) ?? process.env.QUOTE_TOKEN_U2U;
 
-        if (filter.orderBy === 'time') {
+        if (filter.orderBy === 'price') {
+          whereMarketPlaceStatus.nftById = whereCondition1;
+          const { result, hasNext } =
+            await this.nftHepler.getListNFTWithMarketplaceStatus(
+              filter,
+              whereMarketPlaceStatus,
+            );
+          return {
+            data: result,
+            paging: {
+              hasNext: hasNext,
+              limit: filter.limit,
+              page: filter.page,
+            },
+          };
+        } else {
+          const orderByProperties: Prisma.NFTOrderByWithRelationAndSearchRelevanceInput =
+            {};
+
+          if (filter.orderBy == 'time') {
+            orderByProperties.createdAt = filter.order;
+          } else {
+            orderByProperties.metricPoint = 'desc';
+          }
+
           const nfts = await this.prisma.nFT.findMany({
             ...(!filter.owner && {
               skip: (filter.page - 1) * filter.limit,
               take: filter.limit,
             }),
             where: whereCondition1,
-            orderBy: {
-              createdAt: filter.order,
-            },
+            orderBy: orderByProperties,
             include: {
               creator: {
                 select: creatorSelect,
@@ -466,21 +493,6 @@ export class NftService {
           );
           return {
             data: Nftformat,
-            paging: {
-              hasNext: hasNext,
-              limit: filter.limit,
-              page: filter.page,
-            },
-          };
-        } else {
-          whereMarketPlaceStatus.nftById = whereCondition1;
-          const { result, hasNext } =
-            await this.nftHepler.getListNFTWithMarketplaceStatus(
-              filter,
-              whereMarketPlaceStatus,
-            );
-          return {
-            data: result,
             paging: {
               hasNext: hasNext,
               limit: filter.limit,

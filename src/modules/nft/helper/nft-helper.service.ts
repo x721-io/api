@@ -101,9 +101,14 @@ export class NFTHepler {
       where: whereMarketPlaceStatus,
       skip: (filter.page - 1) * filter.limit,
       take: filter.limit,
-      orderBy: {
-        price: filter.order,
-      },
+      orderBy: [
+        {
+          metricPoint: 'desc',
+        },
+        {
+          price: filter.order,
+        },
+      ],
       include: {
         nftById: {
           select: nftSelect,
