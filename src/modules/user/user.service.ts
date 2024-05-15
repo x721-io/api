@@ -27,10 +27,12 @@ import {
 } from '../../generated/graphql';
 import SecureUtil from '../../commons/Secure.common';
 import PaginationCommon from 'src/commons/HasNext.common';
+import MetricCommon from 'src/commons/Metric.common';
 import {
   userSelectFull,
   projectSelect,
 } from '../../commons/definitions/Constraint.Object';
+import { MetricCategory, TypeCategory } from 'src/constants/enums/Metric.enum';
 interface UserRedisinterface {
   timestamp: string;
   email: string;
@@ -484,7 +486,6 @@ export class UserService {
           followerId: follower.id,
         },
       });
-
       const existingFollow = await this.prisma.userFollow.upsert({
         where: {
           userId_followerId: {
@@ -499,7 +500,6 @@ export class UserService {
           isFollow: true,
         },
       });
-
       const increment = !existingFollow.isFollow ? -1 : 1;
       // Followers
       await this.prisma.user.update({
@@ -523,7 +523,11 @@ export class UserService {
           },
         },
       });
-
+      await MetricCommon.handleMetric(
+        TypeCategory.User,
+        MetricCategory.Followers,
+        user.id,
+      );
       return { isFollowed: existingFollow.isFollow };
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
@@ -652,6 +656,11 @@ export class UserService {
         },
       });
 
+      await MetricCommon.handleMetric(
+        TypeCategory.User,
+        MetricCategory.Verified,
+        user.id,
+      );
       // return resultGetVerify;
       return { listVerify: {}, accountStatus: resultGetVerify?.accountStatus };
     } catch (error) {

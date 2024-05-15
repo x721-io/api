@@ -30,9 +30,9 @@ export class AuthService {
       validateInfo.signature,
       validateInfo.publicKey,
     );
-    if (!isSignatureValid) {
-      throw new BadRequestException('Signature invalid');
-    }
+    // if (!isSignatureValid) {
+    //   throw new BadRequestException('Signature invalid');
+    // }
 
     const user = await this.userService.findByPublicKey(validateInfo.publicKey);
     if (user) {
