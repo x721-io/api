@@ -47,6 +47,6 @@ export class GetAllNftDto extends OffsetPaginationDto {
   type: CONTRACT_TYPE;
 
   @IsOptional()
-  @IsIn(['time', 'price'])
-  orderBy?: 'time' | 'price' = 'time';
+  @IsIn(['time', 'price', 'all'])
+  orderBy?: 'time' | 'price' | 'all' = 'all';
 }

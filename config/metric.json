@@ -1,0 +1,44 @@
+{
+    "Collection": {
+        "Verified" : {
+            "point": 5
+        },
+        "Volume": [
+            {"key": "volume_lv1", "value": "1000000000000000000000", "point": 1},
+            {"key": "volume_lv2", "value": "5000000000000000000000", "point": 2},
+            {"key": "volume_lv3", "value": "10000000000000000000000", "point": 3}
+        ],
+        "TotalUniqueOwner": [
+            {"key": "owner_lv1" , "value": 10, "point": 1},
+            {"key": "owner_lv2" , "value": 50, "point": 2},
+            {"key": "owner_lv3" , "value": 100, "point": 3}
+        ],
+        "TotalItems": [
+            {"key": "item_lv1", "value": 10, "point": 1},
+            {"key": "item_lv2", "value": 50, "point": 2},
+            {"key": "item_lv3", "value": 100, "point": 3}
+        ],
+        "Followers": [
+            {"key": "follower_lv1", "value": 10, "point": 1},
+            {"key": "follower_lv2", "value": 50, "point": 2},
+            {"key": "follower_lv3", "value": 100, "point": 3}
+        ]
+    },
+    "User": {
+        "Verified": {
+            "point": 5
+        },
+        "Followers": [
+            {"key": "follower_lv1", "value": 10, "point": 1},
+            {"key": "follower_lv2", "value": 50, "point": 2},
+            {"key": "follower_lv3", "value": 100, "point": 3}
+        ]
+    },
+    "NFT": {
+        "VolumeIndividual": [
+            {"key": "VolumeIndividual_lv1", "value": "1000000000000000000000", "point": 1},
+            {"key": "VolumeIndividual_lv2", "value": "5000000000000000000000", "point": 2},
+            {"key": "VolumeIndividual_lv3", "value": "10000000000000000000000", "point": 3}
+        ]
+    }
+}
