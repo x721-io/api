@@ -13,12 +13,14 @@ import {
   ValidationArguments,
 } from 'class-validator';
 import { Role } from 'src/constants/enums/role.enum';
+import { CONTRACT_TYPE } from '@prisma/client';
+import { gql, GraphQLClient } from 'graphql-request';
 type RecursivePartial<T> = {
   [P in keyof T]?: T[P] extends (infer U)[]
     ? RecursivePartial<U>[]
     : T[P] extends object
-    ? RecursivePartial<T[P]>
-    : T[P];
+      ? RecursivePartial<T[P]>
+      : T[P];
 };
 
 type PrismaSelect<T> = {
