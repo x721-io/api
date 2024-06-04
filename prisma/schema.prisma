@@ -121,6 +121,10 @@ model Collection {
   isVerified     Boolean            @default(false)
   floorPrice     BigInt             @default(0)
   isActive       Boolean            @default(true)
+  flagExtend     Boolean?           @default(false)
+  isSync         Boolean?           @default(true)
+  subgraphUrl    String?            
+  lastTimeSync   Int?               @default(0)
   metricPoint    BigInt?            @default(0)
   metricDetail   Json?              @default("{\"Verified\":0,\"Volume\":{\"key\":\"volume_lv0\",\"value\":\"0\",\"point\":0,\"total\":0},\"TotalUniqueOwner\":{\"key\":\"owner_lv0\",\"value\":\"0\",\"point\":0,\"total\":0},\"TotalItems\":{\"key\":\"item_lv0\",\"value\":0,\"point\":0,\"total\":0},\"Followers\":{\"key\":\"follower_lv0\",\"value\":0,\"point\":0,\"total\":0}}")
   @@index([address], type: Hash)

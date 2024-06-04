@@ -1,0 +1,17 @@
+query getBalances1155($tokenId: ID!) {
+    userBalances(where: { token_: { id: $tokenId } }) {
+    lastUpdated
+    id
+    balance
+    burnQuantity
+    owner {
+        id
+    }
+    token {
+        id
+        tokenID
+        tokenURI
+        balance
+      }
+  }
+}

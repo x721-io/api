@@ -1,5 +1,5 @@
 import { CreateNftDto } from './dto/create-nft.dto';
-import { Prisma, TX_STATUS, User } from '@prisma/client';
+import { Prisma, TX_STATUS, User, CONTRACT_TYPE } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { NftDto } from './dto/nft.dto';
 import {
@@ -24,6 +24,7 @@ import { ActivityService } from './activity.service';
 import { NftEntity } from './entities/nft.entity';
 import { CollectionPriceService } from '../collection/collectionPrice.service';
 import OtherCommon from 'src/commons/Other.common';
+import subgraphServiceCommon from './helper/subgraph-helper.service';
 import {
   creatorSelect,
   CollectionSelect,
@@ -545,7 +546,15 @@ export class NftService {
         traits: true,
       },
     });
-    const { owners, totalSupply } = await this.getCurrentOwners(nft);
+    let owners: any, totalSupply: any;
+    if (collection.flagExtend == true) {
+      ({ owners, totalSupply } = await this.getCurrentOwnersExtend(
+        collection.subgraphUrl,
+        nft,
+      ));
+    } else {
+      ({ owners, totalSupply } = await this.getCurrentOwnersInternal(nft));
+    }
     const sellInfo = await this.eventService.findEvents({
       contractAddress: nft.collection.address,
       nftId: nft.u2uId ? nft.u2uId : nft.id,
@@ -603,7 +612,85 @@ export class NftService {
     };
   }
 
-  async getCurrentOwners(
+  async getCurrentOwnersExtend(
+    subgraphUri: string,
+    nft: NftEntity,
+  ): Promise<{ owners: OwnerOutputDto[]; totalSupply: number }> {
+    let owners: OwnerOutputDto[] = [];
+    let nftInfoWithOwner;
+    let totalSupply = 0;
+    if (nft.collection.type === 'ERC1155') {
+      nftInfoWithOwner = await subgraphServiceCommon.subgraphQuery(
+        subgraphUri,
+        CONTRACT_TYPE.ERC1155,
+        nft.id,
+      );
+      const totalSupplyFilter = nftInfoWithOwner?.userBalances?.filter(
+        (i) => i.balance > 0 && i?.token?.balance > 0,
+      );
+
+      totalSupply =
+        totalSupplyFilter?.length > 0 &&
+        totalSupplyFilter?.[0] &&
+        totalSupplyFilter[0]?.token?.balance;
+      const ownerAddresses = nftInfoWithOwner?.userBalances
+        ?.map((i) => {
+          if (i.owner && i.owner.id !== ZERO_ADDR && i?.token?.balance > 0) {
+            return i.owner.id;
+          }
+        })
+        .filter((i) => !!i);
+      const ownersFromLocal = await this.prisma.user.findMany({
+        where: {
+          signer: { in: ownerAddresses },
+        },
+        select: creatorSelect,
+      });
+      owners = ownersFromLocal.map((item2) => {
+        const item1 = nftInfoWithOwner.userBalances.find(
+          (i1) => i1.owner && i1.owner.id === item2.signer,
+        );
+        if (item1) {
+          return {
+            ...item2,
+            publicKey: item2?.publicKey ?? item2?.signer,
+            username: item2?.username ?? item2?.signer,
+            quantity: item1?.balance,
+          };
+        }
+        return item2;
+      });
+    } else {
+      nftInfoWithOwner = await subgraphServiceCommon.subgraphQuery(
+        subgraphUri,
+        CONTRACT_TYPE.ERC721,
+        nft.id,
+      );
+      totalSupply = 1;
+      const ownerId = nftInfoWithOwner?.items?.[0]?.owner?.id;
+      owners = await this.prisma.user.findMany({
+        where: {
+          signer: ownerId,
+        },
+        select: creatorSelect,
+      });
+    }
+    if (owners.length === 0) {
+      return {
+        // @ts-ignore
+        owners: [
+          {
+            signer: nftInfoWithOwner?.items?.[0]?.owner?.id,
+          },
+        ],
+        totalSupply,
+      };
+    } else {
+      return { owners, totalSupply };
+    }
+  }
+
+  async getCurrentOwnersInternal(
     nft: NftEntity,
   ): Promise<{ owners: OwnerOutputDto[]; totalSupply: number }> {
     let owners: OwnerOutputDto[] = [];
