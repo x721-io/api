@@ -352,9 +352,25 @@ model BlogTopic{
   blog              Blog            @relation(fields: [blogId], references: [id])   
 }
 model QuoteTokens {
-  address        String             @id @unique
-  symbol         String
-  name           String
-  derivedETH     Float
-  derivedUSD     Float
+  address           String          @id @unique
+  symbol            String
+  name              String
+  derivedETH        Float
+  derivedUSD        Float
+}
+
+model owner {
+  id                String           @id @default(uuid()) @db.Uuid
+  ownerId           String
+  collectionId      String
+  tokenId           String           
+  quantity          Int              @default(0)
+  timestamp          Int             @default(0)
+}
+
+model subgraphOwnerExtend {
+  id                String           @id @default(uuid()) @db.Uuid
+  isSync            Boolean          @default(true)
+  lastTimeSync      Int              @default(0)
+  subgraphUrl       String            
 }
