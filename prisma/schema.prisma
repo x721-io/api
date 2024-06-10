@@ -359,18 +359,19 @@ model QuoteTokens {
   derivedUSD        Float
 }
 
-model owner {
-  id                String           @id @default(uuid()) @db.Uuid
+model Owner {
+  id                String           @id
   ownerId           String
-  collectionId      String
   tokenId           String           
   quantity          Int              @default(0)
-  timestamp          Int             @default(0)
+  timestamp         Int              @default(0)
 }
 
-model subgraphOwnerExtend {
+model SubgraphOwnerExtend {
   id                String           @id @default(uuid()) @db.Uuid
   isSync            Boolean          @default(true)
+  type              CONTRACT_TYPE
   lastTimeSync      Int              @default(0)
-  subgraphUrl       String            
+  subgraphUrl       String
+  address           String             
 }
