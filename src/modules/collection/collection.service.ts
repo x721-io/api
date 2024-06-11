@@ -118,6 +118,7 @@ export class CollectionService {
   async getGeneralCollectionData(
     collectionAddress: string,
     type: CONTRACT_TYPE,
+    flagExtend = false,
   ): Promise<CollectionGeneral> {
     if (!collectionAddress) {
       return {
@@ -127,6 +128,16 @@ export class CollectionService {
         // floorPrice: BigInt(0),
       };
     }
+    let totalNftExternal = 0;
+    let totalOwnerExternal = 0;
+
+    if (!!flagExtend) {
+      const resultExternal =
+        await this.collectionData.getAllCollectionExternal(collectionAddress);
+      totalNftExternal = resultExternal.totalNftExternal;
+      totalOwnerExternal = resultExternal.totalOwnerExternal;
+    }
+
     const [statusCollection] = await Promise.all([
       this.collectionData.getCollectionCount(collectionAddress),
       // this.getVolumeCollection(collectionAddress),
@@ -136,16 +147,24 @@ export class CollectionService {
       return {
         // volumn: sum.toString(),
         volumn: statusCollection.erc721Contract?.volume || 0,
-        totalOwner: statusCollection.erc721Contract?.holderCount || 0,
-        totalNft: statusCollection.erc721Contract?.count || 0,
+        totalOwner: !!flagExtend
+          ? totalOwnerExternal
+          : statusCollection.erc721Contract?.holderCount || 0,
+        totalNft: !!flagExtend
+          ? totalNftExternal
+          : statusCollection.erc721Contract?.count || 0,
         // floorPrice: BigInt(0),
       };
     } else {
       return {
         // volumn: sum.toString(),
         volumn: statusCollection.erc721Contract?.volume || 0,
-        totalOwner: statusCollection.erc1155Contract?.holderCount || 0,
-        totalNft: statusCollection.erc1155Contract?.count || 0,
+        totalOwner: !!flagExtend
+          ? totalOwnerExternal
+          : statusCollection.erc721Contract?.holderCount || 0,
+        totalNft: !!flagExtend
+          ? totalNftExternal
+          : statusCollection.erc721Contract?.count || 0,
         // floorPrice: BigInt(0),
       };
     }
@@ -269,6 +288,7 @@ export class CollectionService {
         const generalInfo = await this.getGeneralCollectionData(
           item.address,
           item.type,
+          item.flagExtend,
         );
         return { ...item, ...generalInfo };
       }),
@@ -327,7 +347,7 @@ export class CollectionService {
       // Parallelize async operations
       const [traitsAvailable, generalInfo, royalties] = await Promise.all([
         this.traitService.findUniqueTraitsInCollection(collectionId),
-        this.getGeneralCollectionData(address, type),
+        this.getGeneralCollectionData(address, type, collection.flagExtend),
         this.collectionPriceService.FetchRoyaltiesFromGraph(address),
       ]);
       const totalRoyalties = royalties.reduce(
@@ -478,6 +498,7 @@ export class CollectionService {
         const generalInfo = await this.getGeneralCollectionData(
           item.address,
           item.type,
+          item?.flagExtend,
         );
         return { ...item, ...generalInfo };
       });

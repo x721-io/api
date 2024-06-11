@@ -192,6 +192,7 @@ export const collectionSelect: Prisma.CollectionSelect = {
   isVerified: true,
   floorPrice: true,
   isActive: true,
+  flagExtend: true,
   category: {
     select: {
       id: true,

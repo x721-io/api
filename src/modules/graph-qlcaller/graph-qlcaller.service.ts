@@ -14,7 +14,11 @@ import {
   Query,
   OrderDirection,
 } from '../../generated/graphql';
+
+import { getSdk as getSdkExternal } from '../../generated/SubgraphExternal/graphql';
+
 import { GraphQLClient, gql } from 'graphql-request';
+import { GetCheckOwnerExternalQueryVariables } from 'src/generated/SubgraphExternal/graphql';
 @Injectable()
 export class GraphQlcallerService {
   private readonly endpoint = process.env.SUBGRAPH_URL;
@@ -428,7 +432,7 @@ export class GraphQlcallerService {
     const variables: GetNfTwithAccountIdQueryVariables = {
       id: owner,
       orderDirection: orderDirection,
-      limit,
+      limit: limit > 0 ? limit : 1,
       page: (page - 1) * limit,
     };
     const response = sdk.getNFTwithAccountID(variables);
@@ -518,5 +522,25 @@ export class GraphQlcallerService {
       console.log(error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
+  }
+
+  async getNFTExternalFromOwner(
+    owner: string,
+    orderDirection: OrderDirection,
+    page?: number,
+    limit?: number,
+  ) {
+    const client = new GraphQLClient(
+      process.env.SUBGRAPH_EXTERNAL_URL as string,
+    );
+    const sdk = getSdkExternal(client);
+    const variables: GetCheckOwnerExternalQueryVariables = {
+      owner: owner,
+      orderDirection: orderDirection,
+      limit: limit > 0 ? limit : 1,
+      page: (page - 1) * limit,
+    };
+    const response = sdk.getCheckOwnerExternal(variables);
+    return response;
   }
 }

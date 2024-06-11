@@ -14,6 +14,8 @@ import { NftDto } from '../dto/nft.dto';
 import { GetAllNftDto } from '../dto/get-all-nft.dto';
 import { nftSelect } from 'src/commons/definitions/Constraint.Object';
 import PaginationCommon from 'src/commons/HasNext.common';
+import { GraphQlcallerService } from 'src/modules/graph-qlcaller/graph-qlcaller.service';
+import { OrderDirection } from 'src/generated/graphql';
 
 interface NFTMarketplaceResponse {
   result: NftDto[];
@@ -22,7 +24,10 @@ interface NFTMarketplaceResponse {
 
 @Injectable()
 export class NFTHepler {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly GraphqlService: GraphQlcallerService,
+  ) {}
   weiToEther(wei) {
     return wei / 1000000000000000000; // 1 Ether = 10^18 Wei
   }
