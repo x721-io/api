@@ -155,14 +155,16 @@ export class CollectionService {
     input: GetAllCollectionDto,
   ): Promise<PagingResponseHasNext<CollectionEntity>> {
     // TODO: get all collection from subgraph first, got the id and map it back to local collection
-    const creators = await this.prisma.user.findMany({
-      where: {
-        publicKey: {
-          in: input.creatorAddresses,
-          mode: 'insensitive',
-        },
-      },
-    });
+    const creators = input.creatorAddresses
+      ? await this.prisma.user.findMany({
+          where: {
+            publicKey: {
+              in: input.creatorAddresses,
+              mode: 'insensitive',
+            },
+          },
+        })
+      : [];
     const minBigInt = input.min
       ? BigInt(input.min) / BigInt(10) ** 18n
       : undefined;
@@ -177,13 +179,22 @@ export class CollectionService {
           mode: 'insensitive',
         },
       }),
-      creators: {
-        some: {
-          userId: {
-            in: addresses,
+      // creators: {
+      //   some: {
+      //     userId: {
+      //       in: addresses,
+      //     },
+      //   },
+      // },
+      ...(addresses.length > 0 && {
+        creators: {
+          some: {
+            userId: {
+              in: addresses,
+            },
           },
         },
-      },
+      }),
       status: TX_STATUS.SUCCESS,
     };
     if (input.min) {
