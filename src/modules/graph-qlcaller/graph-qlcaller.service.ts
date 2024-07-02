@@ -298,8 +298,8 @@ export class GraphQlcallerService {
       contract !== undefined &&
       contract !== null
     ) {
-      whereConditions.push('nftId_: {tokenId: $nftId, contract: $contract}');
-      // whereConditions.push('tokenId: $nftId, address: $contract');
+      // whereConditions.push('nftId_: {tokenId: $nftId, contract: $contract}');
+      whereConditions.push('tokenId: $nftId, address: $contract');
       variables['nftId'] = nftId;
       variables['contract'] = contract;
     }
