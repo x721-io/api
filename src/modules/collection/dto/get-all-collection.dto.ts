@@ -21,6 +21,6 @@ export class GetAllCollectionDto extends OffsetPaginationDto {
   creatorAddresses: string;
 
   @IsOptional()
-  @IsIn(['time', 'price'])
-  orderBy?: 'time' | 'price' = 'time';
+  @IsIn(['time', 'price', 'all'])
+  orderBy?: 'time' | 'price' | 'all' = 'all';
 }

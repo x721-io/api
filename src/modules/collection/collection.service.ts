@@ -233,8 +233,10 @@ export class CollectionService {
       {};
     if (input.orderBy == 'time') {
       orderByProperties.createdAt = input.order;
-    } else {
+    } else if (input.orderBy == 'price') {
       orderByProperties.floorPrice = input.order;
+    } else {
+      orderByProperties.metricPoint = input.order;
     }
 
     const collections = await this.prisma.collection.findMany({

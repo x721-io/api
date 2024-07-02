@@ -40,6 +40,8 @@ model User {
   accountStatus    Boolean          @default(false)
   verifyEmail      Boolean          @default(false)
   isActive         Boolean          @default(true)
+  metricPoint      BigInt?          @default(0)
+  metricDetail     Json?            @default("{\"Verified\":0,\"Followers\":{\"key\":\"follower_lv0\",\"value\":0,\"point\":0,\"total\":0},\"CollectionMetric\":0,\"VolumeIndividual\":0}")
 }
 
 model NFT {
@@ -63,6 +65,8 @@ model NFT {
   collectionId   String             @db.Uuid
   collection     Collection         @relation(fields: [collectionId], references: [id])
   MarketplaceByTokenId              MarketplaceStatus[] @relation("Marketplace_byId")
+  metricPoint    BigInt?            @default(0)
+  metricDetail   Json?              @default("{\"VolumeIndividual\":0,\"UserMetric\":0}")
 
   @@id([id, collectionId])
   @@index([u2uId, collectionId, isActive])
@@ -117,6 +121,12 @@ model Collection {
   isVerified     Boolean            @default(false)
   floorPrice     BigInt             @default(0)
   isActive       Boolean            @default(true)
+  flagExtend     Boolean?           @default(false)
+  isSync         Boolean?           @default(true)
+  subgraphUrl    String?            
+  lastTimeSync   Int?               @default(0)
+  metricPoint    BigInt?            @default(0)
+  metricDetail   Json?              @default("{\"Verified\":0,\"Volume\":{\"key\":\"volume_lv0\",\"value\":\"0\",\"point\":0,\"total\":0},\"TotalUniqueOwner\":{\"key\":\"owner_lv0\",\"value\":\"0\",\"point\":0,\"total\":0},\"TotalItems\":{\"key\":\"item_lv0\",\"value\":0,\"point\":0,\"total\":0},\"Followers\":{\"key\":\"follower_lv0\",\"value\":0,\"point\":0,\"total\":0}}")
   @@index([address], type: Hash)
 }
 
@@ -261,6 +271,7 @@ model MarketplaceStatus {
   operation    String?
   from         String?
   askId        String?
+  metricPoint  BigInt?              @default(0)
   nftById      NFT                  @relation("Marketplace_byId", fields: [tokenId, collectionId], references: [id, collectionId], map: "marketplace_by_id_fk") 
   @@index([tokenId, collectionId])
 }
@@ -316,7 +327,7 @@ model Topic {
   isActive         Boolean          @default(true)
   isDelete         Boolean          @default(false)
   account          Account          @relation(fields: [createdBy], references: [id])   
-  blogs        BlogTopic[]              
+  blogs            BlogTopic[]              
 }
 
 model Blog {

@@ -27,6 +27,8 @@ import { GetCollectionMarketData } from '../../graph-qlcaller/getCollectionMarke
 import { Account, Prisma } from '@prisma/client';
 import PaginationCommon from 'src/commons/HasNext.common';
 import { accountListSelect } from '../../../commons/definitions/Constraint.Object';
+import MetricCommon from 'src/commons/Metric.common';
+import { MetricCategory, TypeCategory } from 'src/constants/enums/Metric.enum';
 @Injectable()
 export class CMSService {
   constructor(
@@ -401,7 +403,8 @@ export class CMSService {
         account.id,
         ` Account: ${account.id} set NFT: ${verifyCollectionDto.id} - Verified: ${verifyCollectionDto.isVerified}`,
       );
-      return await this.prisma.collection.update({
+
+      const result = await this.prisma.collection.update({
         data: {
           isVerified: verifyCollectionDto.isVerified,
         },
@@ -409,6 +412,13 @@ export class CMSService {
           id: verifyCollectionDto.id,
         },
       });
+
+      await MetricCommon.handleMetric(
+        TypeCategory.Collection,
+        MetricCategory.Verified,
+        result.id,
+      );
+      return result;
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }

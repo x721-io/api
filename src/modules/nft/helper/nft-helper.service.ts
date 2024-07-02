@@ -101,9 +101,14 @@ export class NFTHepler {
       where: whereMarketPlaceStatus,
       skip: (filter.page - 1) * filter.limit,
       take: filter.limit,
-      orderBy: {
-        price: filter.order,
-      },
+      orderBy: [
+        {
+          metricPoint: 'desc',
+        },
+        {
+          price: filter.order,
+        },
+      ],
       include: {
         nftById: {
           select: nftSelect,
@@ -159,7 +164,10 @@ export class NFTHepler {
     whereMarketPlaceStatus.AND = [];
 
     whereMarketPlaceStatus.AND.push({
-      quoteToken: filter.quoteToken ?? process.env.QUOTE_TOKEN_U2U,
+      quoteToken:
+        (filter.quoteToken
+          ? filter.quoteToken.toLowerCase()
+          : process.env.QUOTE_TOKEN_U2U) ?? process.env.QUOTE_TOKEN_U2U,
     });
 
     if (filter.priceMin !== undefined || filter.priceMax !== undefined) {
