@@ -228,8 +228,8 @@ export class NftService {
           );
 
           const nftIdFromOwnerExternal = resultOwnerExternal.erc721Tokens
-            .map((item) => item.id)
-            .concat(erc1155BalancesSort.map((item) => item.token.id));
+            .map((item) => item.tokenID)
+            .concat(erc1155BalancesSort.map((item) => item.token.tokenID));
           const nftCollectionFromOwnerExternal =
             resultOwnerExternal.erc721Tokens
               .map((item) => item.contract)
