@@ -24,6 +24,11 @@ const config: CodegenConfig = {
       documents: 'src/graph-query-template-721/*.graphql',
       plugins: ["typescript", "typescript-resolvers", "typescript-graphql-request", "typescript-operations"]
     },
+    "src/generated/SubgraphExternal/graphql.ts": {
+      schema: process.env.SUBGRAPH_EXTERNAL_URL as string,
+      documents: 'src/graph-query-external/*.graphql',
+      plugins: ["typescript", "typescript-resolvers", "typescript-graphql-request", "typescript-operations"]
+    },
   }
 };
 

@@ -1,0 +1,54 @@
+query getCheckOwnerExternal($owner: String, $limit: Int = 1000, $page: Int = 0, $orderDirection: OrderDirection) {
+  erc721Tokens(first: $limit, skip: $page, where: {owner: $owner}) {
+    updatedAt
+    tokenURI
+    owner
+    tokenID
+    id
+    createdAt
+    contract
+  }
+  erc1155Balances(
+    first: $limit
+    skip: $page
+    where: {owner: $owner, balance_gt: 0}
+  ) {
+    stakedAmount
+    owner
+    lastUpdated
+    id
+    burnQuantity
+    balance
+    token {
+      tokenURI
+      tokenID
+      id
+      createdAt
+      contract
+      balance
+    }
+  }
+}
+
+query ErcContractExternal($contract:String, $limit: Int = 1000, $page: Int = 0) {
+  erc721Tokens( first: $limit, skip: $page,where: { contract: $contract}) {
+    updatedAt
+    tokenID
+    tokenURI
+    owner
+    id
+    createdAt
+    contract
+  }
+  erc1155Tokens(first: $limit, skip: $page,where: {contract: $contract}) {
+    tokenURI
+    tokenID
+    id
+    createdAt
+    contract
+    balance
+    owner {
+      owner
+    }
+  }
+}

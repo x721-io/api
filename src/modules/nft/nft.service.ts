@@ -1,3 +1,4 @@
+import { Erc1155Balance } from './../../generated/graphql';
 import { CreateNftDto } from './dto/create-nft.dto';
 import { Prisma, TX_STATUS, User, CONTRACT_TYPE } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -197,40 +198,89 @@ export class NftService {
       let nftCollectionFromOwner = [];
       let hasNextNftOwner = false;
       if (filter.owner) {
-        const { account } = await this.GraphqlService.getNFTFromOwner(
-          filter.owner.toLocaleLowerCase(),
-          filter.order as OrderDirection,
-          filter.page,
-          Math.floor(filter.limit / 2),
-        );
-        const { account: hasNextNftOwnerTemp } =
-          await this.GraphqlService.getNFTFromOwner(
+        // External
+        const resultOwnerExternal =
+          await this.GraphqlService.getNFTExternalFromOwner(
+            filter.owner.toLocaleLowerCase(),
+            filter.order as OrderDirection,
+            filter.page,
+            Math.floor(filter.limit / 2),
+          );
+
+        const hasNextNftOwnerExternalTemp =
+          await this.GraphqlService.getNFTExternalFromOwner(
             filter.owner.toLocaleLowerCase(),
             filter.order as OrderDirection,
             filter.page + 1,
             Math.floor(filter.limit / 2),
           );
+
         hasNextNftOwner =
-          (hasNextNftOwnerTemp &&
-            hasNextNftOwnerTemp.ERC721tokens.length > 0) ||
-          (hasNextNftOwnerTemp &&
-            hasNextNftOwnerTemp.ERC1155balances.length > 0);
-        // console.log(account);
-        if (account) {
+          (hasNextNftOwnerExternalTemp &&
+            hasNextNftOwnerExternalTemp.erc721Tokens.length > 0) ||
+          (hasNextNftOwnerExternalTemp &&
+            hasNextNftOwnerExternalTemp.erc1155Balances.length > 0);
+
+        if (resultOwnerExternal) {
           const erc1155BalancesSort = this.nftHepler.sortERC1155balances(
-            account.ERC1155balances,
+            resultOwnerExternal.erc1155Balances,
             filter.order,
           );
-          nftIdFromOwner = account.ERC721tokens.map(
-            (item) => item.tokenId,
-          ).concat(erc1155BalancesSort.map((item) => item.token.tokenId));
 
-          nftCollectionFromOwner = account.ERC721tokens.map(
-            (item) => item.contract.id,
-          ).concat(erc1155BalancesSort.map((item) => item.token.contract.id));
+          const nftIdFromOwnerExternal = resultOwnerExternal.erc721Tokens
+            .map((item) => item.tokenID)
+            .concat(erc1155BalancesSort.map((item) => item.token.tokenID));
+          const nftCollectionFromOwnerExternal =
+            resultOwnerExternal.erc721Tokens
+              .map((item) => item.contract)
+              .concat(erc1155BalancesSort.map((item) => item.token.contract));
+
+          nftIdFromOwner = [...nftIdFromOwnerExternal];
+          nftCollectionFromOwner = [...nftCollectionFromOwnerExternal];
+        }
+        // Check if the number of external items is less than the limit
+        if (nftIdFromOwner?.length < filter.limit) {
+          // Internal
+          const limitRemaining = filter.limit - (nftIdFromOwner?.length || 0);
+
+          const { account } = await this.GraphqlService.getNFTFromOwner(
+            filter.owner.toLocaleLowerCase(),
+            filter.order as OrderDirection,
+            filter.page,
+            Math.floor(limitRemaining / 2),
+          );
+          const { account: hasNextNftOwnerTemp } =
+            await this.GraphqlService.getNFTFromOwner(
+              filter.owner.toLocaleLowerCase(),
+              filter.order as OrderDirection,
+              filter.page + 1,
+              Math.floor(limitRemaining / 2),
+            );
+          hasNextNftOwner =
+            hasNextNftOwner ||
+            (hasNextNftOwnerTemp &&
+              hasNextNftOwnerTemp.ERC721tokens.length > 0) ||
+            (hasNextNftOwnerTemp &&
+              hasNextNftOwnerTemp.ERC1155balances.length > 0);
+          if (account) {
+            const erc1155BalancesSort = this.nftHepler.sortERC1155balances(
+              account.ERC1155balances,
+              filter.order,
+            );
+            const nftIdFromOwnerInternal = account.ERC721tokens.map(
+              (item) => item.tokenId,
+            ).concat(erc1155BalancesSort.map((item) => item.token.tokenId));
+            const nftCollectionFromOwnerInternal = account.ERC721tokens.map(
+              (item) => item.contract.id,
+            ).concat(erc1155BalancesSort.map((item) => item.token.contract.id));
+            nftIdFromOwner = [...nftIdFromOwner, ...nftIdFromOwnerInternal];
+            nftCollectionFromOwner = [
+              ...nftCollectionFromOwner,
+              ...nftCollectionFromOwnerInternal,
+            ];
+          }
         }
       }
-
       const whereCondition: Prisma.NFTWhereInput = {};
       const whereConditionInternal: Prisma.NFTWhereInput = {};
       whereConditionInternal.AND = [];
@@ -916,15 +966,30 @@ export class NftService {
       switch (filter.mode) {
         // Get Owner NFT
         case GeneralInfor.OWNER:
+          // internal
           const { account } = await this.GraphqlService.getNFTFromOwner(
             filter.owner.toLocaleLowerCase(),
             'asc' as OrderDirection,
             1,
             1000,
           );
+          // external
+          const resultOwnerExternal =
+            await this.GraphqlService.getNFTExternalFromOwner(
+              filter.owner.toLocaleLowerCase(),
+              'asc' as OrderDirection,
+              1,
+              1000,
+            );
+          // internal
           const { ERC721tokens = [], ERC1155balances = [] } = account || {};
-          const countHolding =
-            [...ERC721tokens, ...ERC1155balances].length || 0;
+          // external
+          const { erc721Tokens = [], erc1155Balances = [] } =
+            resultOwnerExternal || {};
+
+          let countHolding = [...ERC721tokens, ...ERC1155balances].length || 0;
+          countHolding += [...erc721Tokens, ...erc1155Balances].length || 0;
+
           return countHolding;
         // const responseOwner = await this.GraphqlService.getNFTOnSalesAndOwner(
         //   filter.owner.toLowerCase(),
