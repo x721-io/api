@@ -108,10 +108,10 @@ export class NFTHepler {
       take: filter.limit,
       orderBy: [
         {
-          metricPoint: 'desc',
+          price: filter.order,
         },
         {
-          price: filter.order,
+          metricPoint: 'desc',
         },
       ],
       include: {
