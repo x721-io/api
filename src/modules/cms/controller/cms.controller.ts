@@ -17,6 +17,7 @@ import {
 } from '../dto/marketplace.dto';
 import { CMSOptionService } from '../service/option-cms.service';
 import { GetSummaryDto } from '../dto/cms.dto';
+import { CreateCollectionExternalDto } from '../dto/create-collection-external.dto';
 
 @Controller('cms')
 export class CMSController {
@@ -91,5 +92,12 @@ export class CMSController {
     @GetCurrentUser() account: Account,
   ) {
     return this.cmsService.getSummary(input);
+  }
+
+  @Post('/create-collection')
+  @Roles(Role.ADMINISTRATOR, Role.ADMIN_NFT, Role.ADMIN_MARKETPLACE)
+  @UseGuards(AuthRoleGuard, RoleGuard)
+  createCollection(@Body() body: CreateCollectionExternalDto) {
+    return this.cmsService.createCollectionExternal(body);
   }
 }
