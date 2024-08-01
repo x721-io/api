@@ -1,10 +1,15 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import OtherCommon from 'src/commons/Other.common';
 import { GetCollectionMarketData } from '../../graph-qlcaller/getCollectionMarketData.service';
-import { Prisma, TX_STATUS, CONTRACT_TYPE } from '@prisma/client';
+import { Prisma, TX_STATUS, CONTRACT_TYPE, User } from '@prisma/client';
 import PaginationCommon from 'src/commons/HasNext.common';
 import { CollectionEntity } from '../../collection/entities/collection.entity';
 import { GetAllCollectionDto } from '../../collection/dto/get-all-collection.dto';
@@ -20,6 +25,8 @@ import { GetAllNftDto } from '../../nft/dto/get-all-nft.dto';
 import { OrderDirection } from 'src/generated/graphql';
 import { NftService } from '../../nft/nft.service';
 import { NFTHepler } from '../../nft/helper/nft-helper.service';
+import { CreateCollectionExternalDto } from '../dto/create-collection-external.dto';
+import { validate as isValidUUID } from 'uuid';
 
 interface CollectionGeneral {
   totalOwner: number;
@@ -539,6 +546,66 @@ export class MarketplaceCMSService {
       }
     } catch (error) {
       console.error(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+  async createCollectionExternal(
+    input: CreateCollectionExternalDto,
+  ): Promise<any> {
+    try {
+      const checkExist = await this.prisma.collection.findFirst({
+        where: {
+          OR: [
+            { txCreationHash: input.txCreationHash },
+            { name: input.name },
+            { shortUrl: input.shortUrl },
+          ],
+        },
+      });
+      if (checkExist) {
+        throw new Error(
+          'Transaction hash or name or Short URL are already exists',
+        );
+      }
+      if (!isValidUUID(input.userId)) {
+        throw new Error('Invalid owner. Please try again !');
+      }
+
+      const checkUser = await this.prisma.user.findUnique({
+        where: {
+          id: input.userId,
+        },
+      });
+
+      if (!checkUser) {
+        throw new NotFoundException();
+      }
+      const collection = await this.prisma.collection.create({
+        data: {
+          txCreationHash: input.txCreationHash,
+          name: input.name,
+          symbol: input.symbol,
+          description: input.description,
+          status: TX_STATUS.SUCCESS,
+          type: input.type,
+          ...(input.shortUrl && { shortUrl: input.shortUrl }),
+          coverImage: input.coverImage,
+          metadata: input.metadata,
+          avatar: input.avatar,
+          flagExtend: input.flagExternal,
+          subgraphUrl: input.subgraphUrl,
+          ...(input.categoryId && { categoryId: Number(input.categoryId) }),
+        },
+      });
+
+      await this.prisma.userCollection.create({
+        data: {
+          userId: input.userId,
+          collectionId: collection.id,
+        },
+      });
+      return collection;
+    } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }

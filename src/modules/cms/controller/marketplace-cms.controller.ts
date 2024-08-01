@@ -10,6 +10,7 @@ import { GetAllNftDto } from '../../nft/dto/get-all-nft.dto';
 import { GetAllCollectionDto } from '../../collection/dto/get-all-collection.dto';
 import { GetAllUser } from '../../user/dto/get-all-user.dto';
 import { MarketplaceCMSService } from '../service/marketplace-cms.service';
+import { CreateCollectionExternalDto } from '../dto/create-collection-external.dto';
 @Controller('cms/manage')
 export class MarketplaceController {
   constructor(
@@ -29,6 +30,13 @@ export class MarketplaceController {
   @UseGuards(AuthRoleGuard, RoleGuard)
   findAllCollection(@Query() input: GetAllCollectionDto) {
     return this.marketplaceCMSService.findAllCollection(input);
+  }
+
+  @Post('/create-collection')
+  @Roles(Role.ADMINISTRATOR, Role.ADMIN_NFT, Role.ADMIN_MARKETPLACE)
+  @UseGuards(AuthRoleGuard, RoleGuard)
+  createCollection(@Body() body: CreateCollectionExternalDto) {
+    return this.marketplaceCMSService.createCollectionExternal(body);
   }
 
   @Get('/search-user')
