@@ -33,8 +33,6 @@ import { MetricCategory, TypeCategory } from 'src/constants/enums/Metric.enum';
 import { GetSummaryDto } from '../dto/cms.dto';
 import { GraphQlcallerService } from 'src/modules/graph-qlcaller/graph-qlcaller.service';
 import { EventType } from 'src/generated/graphql';
-import { Cache } from 'cache-manager';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { ethers } from 'ethers';
 import SecureUtil from '../../../commons/Secure.common';
 interface CountTransactionDto {
