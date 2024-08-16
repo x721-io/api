@@ -202,7 +202,7 @@ export class MarketplaceCMSService {
     } else {
       return {
         // volumn: sum.toString(),
-        volumn: statusCollection.erc721Contract?.volume || 0,
+        volumn: statusCollection.erc1155Contract?.volume || 0,
         totalOwner: statusCollection.erc1155Contract?.holderCount || 0,
         totalNft: statusCollection.erc1155Contract?.count || 0,
         // floorPrice: BigInt(0),

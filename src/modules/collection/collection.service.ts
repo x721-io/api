@@ -158,13 +158,13 @@ export class CollectionService {
     } else {
       return {
         // volumn: sum.toString(),
-        volumn: statusCollection.erc721Contract?.volume || 0,
+        volumn: statusCollection.erc1155Contract?.volume || 0,
         totalOwner: !!flagExtend
           ? totalOwnerExternal
-          : statusCollection.erc721Contract?.holderCount || 0,
+          : statusCollection.erc1155Contract?.holderCount || 0,
         totalNft: !!flagExtend
           ? totalNftExternal
-          : statusCollection.erc721Contract?.count || 0,
+          : statusCollection.erc1155Contract?.count || 0,
         // floorPrice: BigInt(0),
       };
     }
