@@ -16,6 +16,7 @@ import {
   OptionDto,
 } from '../dto/marketplace.dto';
 import { CMSOptionService } from '../service/option-cms.service';
+import { GetSummaryDto } from '../dto/cms.dto';
 
 @Controller('cms')
 export class CMSController {
@@ -82,5 +83,13 @@ export class CMSController {
   @Get('/option/round')
   async getRoundOption(@Query() input: OptionDto) {
     return this.cmsOptionService.getRoundOption(input);
+  }
+
+  @Post('/summary')
+  async getSummary(
+    @Body() input: GetSummaryDto,
+    @GetCurrentUser() account: Account,
+  ) {
+    return this.cmsService.getSummary(input);
   }
 }

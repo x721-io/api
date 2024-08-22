@@ -13,6 +13,8 @@ import {
   GetCollectionTokensQueryVariables,
   Query,
   OrderDirection,
+  CmsSummaryTransactionQueryVariables,
+  EventType,
 } from '../../generated/graphql';
 
 import { getSdk as getSdkExternal } from '../../generated/SubgraphExternal/graphql';
@@ -541,6 +543,33 @@ export class GraphQlcallerService {
       page: (page - 1) * limit,
     };
     const response = sdk.getCheckOwnerExternal(variables);
+    return response;
+  }
+
+  async getSummaryTransaction(
+    event?: EventType,
+    skip?: number,
+    first?: number,
+    start?: number,
+    end?: number,
+  ) {
+    const client = this.getGraphqlClient();
+    const sdk = getSdk(client);
+    const variables: CmsSummaryTransactionQueryVariables = {
+      event: event,
+      start: start,
+      end: end,
+      first,
+      skip,
+    };
+    const response = sdk.CMSSummaryTransaction(variables);
+    return response;
+  }
+
+  async getSummaryVolume(address: string) {
+    const client = this.getGraphqlClient();
+    const sdk = getSdk(client);
+    const response = await sdk.CMSSummaryVolume({ address: address });
     return response;
   }
 }

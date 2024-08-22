@@ -3,6 +3,7 @@ import {
   HttpException,
   HttpStatus,
   NotFoundException,
+  Inject,
 } from '@nestjs/common';
 import {
   UpdateAccountDto,
@@ -29,6 +30,28 @@ import PaginationCommon from 'src/commons/HasNext.common';
 import { accountListSelect } from '../../../commons/definitions/Constraint.Object';
 import MetricCommon from 'src/commons/Metric.common';
 import { MetricCategory, TypeCategory } from 'src/constants/enums/Metric.enum';
+import { GetSummaryDto } from '../dto/cms.dto';
+import { GraphQlcallerService } from 'src/modules/graph-qlcaller/graph-qlcaller.service';
+import { EventType } from 'src/generated/graphql';
+import { ethers } from 'ethers';
+import SecureUtil from '../../../commons/Secure.common';
+interface CountTransactionDto {
+  start: number;
+  end: number;
+  event: EventType;
+}
+
+interface SummmaryAllResponse {
+  countCollection: number;
+  countNFT: number;
+  countUser: number;
+  countTrade: number;
+  countAcceptBid: number;
+  countBid: number;
+  countVolume721: number;
+  countVolume1155: number;
+}
+
 @Injectable()
 export class CMSService {
   constructor(
@@ -36,6 +59,7 @@ export class CMSService {
     private readonly prisma: PrismaService,
     private jwtService: JwtService,
     private readonly collectionData: GetCollectionMarketData, // private readonly collectionPriceService: CollectionPriceService,
+    private readonly GraphqlService: GraphQlcallerService,
   ) {}
 
   async findAll(filter: GetAllAccountDto): Promise<PagingResponseHasNext<any>> {
@@ -458,6 +482,243 @@ export class CMSService {
           id: id,
         },
       });
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getSummary(input: GetSummaryDto) {
+    try {
+      const now = new Date();
+      const end = input?.end
+        ? input?.end
+        : this.getLastDay(now.getFullYear(), now.getMonth());
+      const start = input?.start
+        ? input?.start
+        : this.getFirstDay(now.getFullYear(), now.getMonth());
+
+      const cacheKey = `summary_${this.toTimestamp(start)}_${this.toTimestamp(
+        end,
+      )}`;
+      const cachedSummary = await SecureUtil.getSessionInfo(cacheKey);
+      if (cachedSummary) {
+        return JSON.parse(cachedSummary);
+      }
+
+      const collectionWhere: Prisma.CollectionWhereInput = {
+        AND: [
+          {
+            createdAt: {
+              gte: start,
+              lte: end,
+            },
+          },
+          {
+            status: 'SUCCESS',
+          },
+        ],
+      };
+
+      const nftWhere: Prisma.NFTWhereInput = {
+        AND: [
+          {
+            createdAt: {
+              gte: start,
+              lte: end,
+            },
+          },
+          {
+            status: 'SUCCESS',
+          },
+        ],
+      };
+
+      const userWhere: Prisma.UserWhereInput = {
+        createdAt: {
+          gte: start,
+          lte: end,
+        },
+      };
+      const [
+        countCollection,
+        countNFT,
+        countUser,
+        countTrade,
+        countBid,
+        countAcceptBid,
+        volume721vs1155,
+        summaryAll,
+      ] = await Promise.all([
+        this.prisma.collection.count({ where: collectionWhere }),
+        this.prisma.nFT.count({ where: nftWhere }),
+        this.prisma.user.count({ where: userWhere }),
+        this.getCountTransaction({
+          start: this.toTimestamp(start),
+          end: this.toTimestamp(end),
+          event: EventType.Trade,
+        }),
+        this.getCountTransaction({
+          start: this.toTimestamp(start),
+          end: this.toTimestamp(end),
+          event: EventType.Bid,
+        }),
+        this.getCountTransaction({
+          start: this.toTimestamp(start),
+          end: this.toTimestamp(end),
+          event: EventType.AcceptBid,
+        }),
+        this.getCountVolume(),
+        this.getSummaryAll(),
+      ]);
+
+      const responseResult = {
+        summary: {
+          countCollection,
+          countNFT,
+          countUser,
+          countTrade,
+          countAcceptBid,
+          countBid,
+          ...volume721vs1155,
+        },
+        summaryAll: summaryAll,
+      };
+
+      // Store the result in cache
+      await SecureUtil.storeObjectSession(cacheKey, responseResult, 600);
+
+      return responseResult;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  getLastDay(year, month) {
+    const date = new Date(Date.UTC(year, month + 1, 0));
+    date.setHours(23, 59, 59);
+    return date;
+  }
+
+  getFirstDay(year, month) {
+    const date = new Date(Date.UTC(year, month, 1));
+    return date;
+  }
+
+  toTimestamp(strDate) {
+    const datum = Date.parse(strDate);
+    return datum / 1000;
+  }
+
+  // async getCountTransaction(input: CountTransactionDto) {
+  //   try {
+  //     let hasMore = true;
+  //     const batchSize = 1000;
+  //     let offset = 0;
+  //     let count = 0;
+  //     while (hasMore) {
+  //       const result = await this.GraphqlService.getSummaryTransaction(
+  //         input.event,
+  //         offset,
+  //         batchSize,
+  //         input.start,
+  //         input.end,
+  //       );
+  //       if (result && result?.blocks && result?.blocks?.length > 0) {
+  //         count += result?.blocks?.length;
+  //         offset += batchSize;
+  //       } else {
+  //         hasMore = false;
+  //       }
+  //     }
+  //     return count;
+  //   } catch (error) {
+  //     throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+  //   }
+  // }
+  async getCountTransaction(input: CountTransactionDto) {
+    try {
+      let hasMore = true;
+      const batchSize = 1000;
+      let offset = 0;
+      let count = 0;
+      const maxConcurrentRequests = 20; // Number of concurrent requests
+      const promises = [];
+
+      while (hasMore) {
+        const fetchBatch = async (currentOffset: number) => {
+          const result = await this.GraphqlService.getSummaryTransaction(
+            input.event,
+            currentOffset,
+            batchSize,
+            input.start,
+            input.end,
+          );
+          return result;
+        };
+
+        for (let i = 0; i < maxConcurrentRequests && hasMore; i++) {
+          promises.push(fetchBatch(offset + i * batchSize));
+        }
+
+        const results = await Promise.all(promises);
+
+        results.forEach((result) => {
+          if (result && result.blocks && result.blocks.length > 0) {
+            count += result.blocks.length;
+          } else {
+            hasMore = false;
+          }
+        });
+
+        offset += batchSize * maxConcurrentRequests;
+        promises.length = 0; // Clear the promises array for the next batch
+      }
+
+      return count;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getCountVolume() {
+    try {
+      const volume721 = await this.GraphqlService.getSummaryVolume(
+        process.env.ADDRESS_ERC721_MARKET_CONTRACT.toLowerCase(),
+      );
+      const volume1155 = await this.GraphqlService.getSummaryVolume(
+        process.env.ADDRESS_ERC1155_MARKET_CONTRACT.toLowerCase(),
+      );
+      if (
+        (volume721 && !volume721?.marketVolume) ||
+        (volume1155 && !volume721?.marketVolume)
+      ) {
+        return {
+          countVolume721: 0,
+          countVolume1155: 0,
+        };
+      }
+      const countVolume721 = parseFloat(
+        ethers.formatEther(volume721?.marketVolume?.totalVolume || 0),
+      );
+      const countVolume1155 = parseFloat(
+        ethers.formatEther(volume1155?.marketVolume?.totalVolume || 0),
+      );
+
+      return {
+        countVolume721: isNaN(countVolume721) ? 0 : countVolume721,
+        countVolume1155: isNaN(countVolume1155) ? 0 : countVolume1155,
+      };
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getSummaryAll() {
+    try {
+      const resultSummary = await SecureUtil.getSessionInfo(`summary-cms`);
+      const result: SummmaryAllResponse = JSON.parse(resultSummary);
+      return result;
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }

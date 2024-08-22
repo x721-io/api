@@ -17,7 +17,7 @@ import { GetAllUser } from '../../user/dto/get-all-user.dto';
 import { GraphQlcallerService } from '../../graph-qlcaller/graph-qlcaller.service';
 import { NftDto } from '../../nft/dto/nft.dto';
 import { GetAllNftDto } from '../../nft/dto/get-all-nft.dto';
-import { OrderDirection } from 'src/generated/graphql';
+import { OrderDirection, SellStatus } from 'src/generated/graphql';
 import { NftService } from '../../nft/nft.service';
 import { NFTHepler } from '../../nft/helper/nft-helper.service';
 
@@ -43,14 +43,16 @@ export class MarketplaceCMSService {
     input: GetAllCollectionDto,
   ): Promise<PagingResponseHasNext<CollectionEntity>> {
     // TODO: get all collection from subgraph first, got the id and map it back to local collection
-    const creators = await this.prisma.user.findMany({
-      where: {
-        publicKey: {
-          in: input.creatorAddresses,
-          mode: 'insensitive',
-        },
-      },
-    });
+    const creators = input.creatorAddresses
+      ? await this.prisma.user.findMany({
+          where: {
+            publicKey: {
+              in: input.creatorAddresses,
+              mode: 'insensitive',
+            },
+          },
+        })
+      : [];
     const minBigInt = input.min
       ? BigInt(input.min) / BigInt(10) ** 18n
       : undefined;
@@ -65,13 +67,15 @@ export class MarketplaceCMSService {
           mode: 'insensitive',
         },
       }),
-      creators: {
-        some: {
-          userId: {
-            in: addresses,
+      ...(addresses.length > 0 && {
+        creators: {
+          some: {
+            userId: {
+              in: addresses,
+            },
           },
         },
-      },
+      }),
       status: TX_STATUS.SUCCESS,
     };
     if (input.min) {
@@ -198,7 +202,7 @@ export class MarketplaceCMSService {
     } else {
       return {
         // volumn: sum.toString(),
-        volumn: statusCollection.erc721Contract?.volume || 0,
+        volumn: statusCollection.erc1155Contract?.volume || 0,
         totalOwner: statusCollection.erc1155Contract?.holderCount || 0,
         totalNft: statusCollection.erc1155Contract?.count || 0,
         // floorPrice: BigInt(0),
@@ -326,38 +330,89 @@ export class MarketplaceCMSService {
       let nftCollectionFromOwner = [];
       let hasNextNftOwner = false;
       if (filter.owner) {
-        const { account } = await this.GraphqlService.getNFTFromOwner(
-          filter.owner.toLocaleLowerCase(),
-          filter.order as OrderDirection,
-          filter.page,
-          Math.floor(filter.limit / 2),
-        );
-        const { account: hasNextNftOwnerTemp } =
-          await this.GraphqlService.getNFTFromOwner(
+        // External
+        const resultOwnerExternal =
+          await this.GraphqlService.getNFTExternalFromOwner(
+            filter.owner.toLocaleLowerCase(),
+            filter.order as OrderDirection,
+            filter.page,
+            Math.floor(filter.limit / 2),
+          );
+
+        const hasNextNftOwnerExternalTemp =
+          await this.GraphqlService.getNFTExternalFromOwner(
             filter.owner.toLocaleLowerCase(),
             filter.order as OrderDirection,
             filter.page + 1,
             Math.floor(filter.limit / 2),
           );
+
         hasNextNftOwner =
-          hasNextNftOwnerTemp.ERC721tokens.length > 0 ||
-          hasNextNftOwnerTemp.ERC1155balances.length > 0;
-        // console.log(account);
-        if (account) {
+          (hasNextNftOwnerExternalTemp &&
+            hasNextNftOwnerExternalTemp.erc721Tokens.length > 0) ||
+          (hasNextNftOwnerExternalTemp &&
+            hasNextNftOwnerExternalTemp.erc1155Balances.length > 0);
+
+        if (resultOwnerExternal) {
           const erc1155BalancesSort = this.nftHepler.sortERC1155balances(
-            account.ERC1155balances,
+            resultOwnerExternal.erc1155Balances,
             filter.order,
           );
-          nftIdFromOwner = account.ERC721tokens.map(
-            (item) => item.tokenId,
-          ).concat(erc1155BalancesSort.map((item) => item.token.tokenId));
 
-          nftCollectionFromOwner = account.ERC721tokens.map(
-            (item) => item.contract.id,
-          ).concat(erc1155BalancesSort.map((item) => item.token.contract.id));
+          const nftIdFromOwnerExternal = resultOwnerExternal.erc721Tokens
+            .map((item) => item.tokenID)
+            .concat(erc1155BalancesSort.map((item) => item.token.tokenID));
+          const nftCollectionFromOwnerExternal =
+            resultOwnerExternal.erc721Tokens
+              .map((item) => item.contract)
+              .concat(erc1155BalancesSort.map((item) => item.token.contract));
+
+          nftIdFromOwner = [...nftIdFromOwnerExternal];
+          nftCollectionFromOwner = [...nftCollectionFromOwnerExternal];
+        }
+        // Check if the number of external items is less than the limit
+        if (nftIdFromOwner?.length < filter.limit) {
+          // Internal
+          const limitRemaining = filter.limit - (nftIdFromOwner?.length || 0);
+
+          const { account } = await this.GraphqlService.getNFTFromOwner(
+            filter.owner.toLocaleLowerCase(),
+            filter.order as OrderDirection,
+            filter.page,
+            Math.floor(limitRemaining / 2),
+          );
+          const { account: hasNextNftOwnerTemp } =
+            await this.GraphqlService.getNFTFromOwner(
+              filter.owner.toLocaleLowerCase(),
+              filter.order as OrderDirection,
+              filter.page + 1,
+              Math.floor(limitRemaining / 2),
+            );
+          hasNextNftOwner =
+            hasNextNftOwner ||
+            (hasNextNftOwnerTemp &&
+              hasNextNftOwnerTemp.ERC721tokens.length > 0) ||
+            (hasNextNftOwnerTemp &&
+              hasNextNftOwnerTemp.ERC1155balances.length > 0);
+          if (account) {
+            const erc1155BalancesSort = this.nftHepler.sortERC1155balances(
+              account.ERC1155balances,
+              filter.order,
+            );
+            const nftIdFromOwnerInternal = account.ERC721tokens.map(
+              (item) => item.tokenId,
+            ).concat(erc1155BalancesSort.map((item) => item.token.tokenId));
+            const nftCollectionFromOwnerInternal = account.ERC721tokens.map(
+              (item) => item.contract.id,
+            ).concat(erc1155BalancesSort.map((item) => item.token.contract.id));
+            nftIdFromOwner = [...nftIdFromOwner, ...nftIdFromOwnerInternal];
+            nftCollectionFromOwner = [
+              ...nftCollectionFromOwner,
+              ...nftCollectionFromOwnerInternal,
+            ];
+          }
         }
       }
-
       const whereCondition: Prisma.NFTWhereInput = {};
       const whereConditionInternal: Prisma.NFTWhereInput = {};
       whereConditionInternal.AND = [];
@@ -372,6 +427,9 @@ export class MarketplaceCMSService {
         status: TX_STATUS.SUCCESS,
       });
 
+      whereConditionInternal.AND.push({
+        isActive: true,
+      });
       if (filter.creatorAddress) {
         whereConditionInternal.AND.push({
           creator: {
@@ -440,7 +498,7 @@ export class MarketplaceCMSService {
         whereCondition.AND = whereConditionInternal.AND;
         delete whereCondition.OR;
       }
-
+      //----------
       if (
         (!filter.priceMin && !filter.priceMax && !filter.sellStatus) ||
         filter.name
@@ -448,23 +506,42 @@ export class MarketplaceCMSService {
         if (filter.quoteToken !== undefined) {
           whereCondition.MarketplaceByTokenId = { some: {} };
           whereCondition.MarketplaceByTokenId.some.quoteToken =
-            filter.quoteToken;
+            filter.quoteToken.toLowerCase();
         }
         const whereMarketPlaceStatus: Prisma.MarketplaceStatusWhereInput =
           this.nftHepler.generateWhereMarketPlaceStatus(filter);
 
-        if (filter.orderBy === 'time') {
+        if (filter.orderBy === 'price') {
+          whereMarketPlaceStatus.nftById = whereCondition;
+          const { result, hasNext } =
+            await this.nftHepler.getListNFTWithMarketplaceStatus(
+              filter,
+              whereMarketPlaceStatus,
+            );
+          return {
+            data: result,
+            paging: {
+              hasNext: hasNext,
+              limit: filter.limit,
+              page: filter.page,
+            },
+          };
+        } else {
+          const orderByProperties: Prisma.NFTOrderByWithRelationAndSearchRelevanceInput =
+            {};
+
+          if (filter.orderBy == 'time') {
+            orderByProperties.createdAt = filter.order;
+          } else {
+            orderByProperties.metricPoint = 'desc';
+          }
           const nfts = await this.prisma.nFT.findMany({
             ...(!filter.owner && {
               skip: (filter.page - 1) * filter.limit,
               take: filter.limit,
             }),
-            // take: filter.limit,
-            // where: whereCondition.OR.length > 0 || whereConditionInternal.AND.length > 0 ? whereCondition : { AND: [] },
             where: whereCondition,
-            orderBy: {
-              createdAt: filter.order,
-            },
+            orderBy: orderByProperties,
             include: {
               creator: {
                 select: creatorSelect,
@@ -479,32 +556,7 @@ export class MarketplaceCMSService {
               traits: true,
             },
           });
-          const Nftformat = nfts.map((item) => {
-            if (
-              item?.MarketplaceByTokenId &&
-              item?.MarketplaceByTokenId.length > 0
-            ) {
-              const { priceWei, event, quantity, askId, quoteToken } =
-                item.MarketplaceByTokenId.reduce(
-                  (minItem, currentItem) =>
-                    currentItem.price < minItem.price ? currentItem : minItem,
-                  item.MarketplaceByTokenId[0],
-                );
-              delete item.MarketplaceByTokenId;
-              return {
-                ...item,
-                price: priceWei,
-                sellStatus: event,
-                quantity,
-                askId,
-                quoteToken,
-              };
-            } else {
-              delete item.MarketplaceByTokenId;
-              return item;
-            }
-          });
-
+          const Nftformat = await this.nftHepler.handleFormatNFTResponse(nfts);
           const hasNext =
             (await PaginationCommon.hasNextPage(
               filter.page,
@@ -520,8 +572,57 @@ export class MarketplaceCMSService {
               page: filter.page,
             },
           };
-        } else {
-          whereMarketPlaceStatus.nftById = whereCondition;
+        }
+      } else {
+        if (Number(filter.priceMin) > Number(filter.priceMax)) {
+          // If priceMin is higher than priceMax, return an empty array
+          return {
+            data: [],
+            paging: {
+              hasNext: false,
+              limit: filter.limit,
+              page: filter.page,
+            },
+          };
+        }
+        const whereMarketPlaceStatus: Prisma.MarketplaceStatusWhereInput =
+          this.nftHepler.generateWhereMarketPlaceStatus(filter);
+        const whereCondition1: Prisma.NFTWhereInput = {
+          AND: [whereCondition],
+        };
+        // Ensure that MarketplaceByTokenId is initialized
+        if (!whereCondition1.MarketplaceByTokenId) {
+          whereCondition1.MarketplaceByTokenId = { some: {} };
+        }
+
+        if (filter.priceMin !== undefined || filter.priceMax !== undefined) {
+          whereCondition1.MarketplaceByTokenId.some.price = {};
+          if (filter.priceMin !== undefined) {
+            whereCondition1.MarketplaceByTokenId.some.price.gte = Number(
+              OtherCommon.weiToEther(filter.priceMin),
+            );
+          }
+          if (filter.priceMax !== undefined) {
+            whereCondition1.MarketplaceByTokenId.some.price.lte = Number(
+              OtherCommon.weiToEther(filter.priceMax),
+            );
+          }
+        }
+        // Check if filter.from or filter.quoteToken is defined before adding it to the query
+        if (filter.from !== undefined || filter.owner !== undefined) {
+          whereCondition1.MarketplaceByTokenId.some.from =
+            filter.sellStatus === SellStatus.AskNew && filter.owner
+              ? filter.owner.toLowerCase()
+              : filter.from;
+        }
+
+        whereCondition1.MarketplaceByTokenId.some.quoteToken =
+          (filter.quoteToken
+            ? filter.quoteToken.toLowerCase()
+            : process.env.QUOTE_TOKEN_U2U) ?? process.env.QUOTE_TOKEN_U2U;
+
+        if (filter.orderBy === 'price') {
+          whereMarketPlaceStatus.nftById = whereCondition1;
           const { result, hasNext } =
             await this.nftHepler.getListNFTWithMarketplaceStatus(
               filter,
@@ -529,6 +630,52 @@ export class MarketplaceCMSService {
             );
           return {
             data: result,
+            paging: {
+              hasNext: hasNext,
+              limit: filter.limit,
+              page: filter.page,
+            },
+          };
+        } else {
+          const orderByProperties: Prisma.NFTOrderByWithRelationAndSearchRelevanceInput =
+            {};
+
+          if (filter.orderBy == 'time') {
+            orderByProperties.createdAt = filter.order;
+          } else {
+            orderByProperties.metricPoint = 'desc';
+          }
+
+          const nfts = await this.prisma.nFT.findMany({
+            ...(!filter.owner && {
+              skip: (filter.page - 1) * filter.limit,
+              take: filter.limit,
+            }),
+            where: whereCondition1,
+            orderBy: orderByProperties,
+            include: {
+              creator: {
+                select: creatorSelect,
+              },
+              collection: {
+                select: CollectionSelect,
+              },
+              MarketplaceByTokenId: {
+                where: whereMarketPlaceStatus,
+                select: marketplaceSelect,
+              },
+              traits: true,
+            },
+          });
+          const Nftformat = await this.nftHepler.handleFormatNFTResponse(nfts);
+          const hasNext = await PaginationCommon.hasNextPage(
+            filter.page,
+            filter.limit,
+            'nFT',
+            whereCondition1,
+          );
+          return {
+            data: Nftformat,
             paging: {
               hasNext: hasNext,
               limit: filter.limit,
