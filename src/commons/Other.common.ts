@@ -7,6 +7,7 @@ import SecureCommon from './Secure.common';
 import { HttpService } from '@nestjs/axios';
 import logger from './Logger.common';
 import * as bcrypt from 'bcrypt';
+import * as moment from 'moment';
 import {
   registerDecorator,
   ValidationOptions,
@@ -19,8 +20,8 @@ type RecursivePartial<T> = {
   [P in keyof T]?: T[P] extends (infer U)[]
     ? RecursivePartial<U>[]
     : T[P] extends object
-      ? RecursivePartial<T[P]>
-      : T[P];
+    ? RecursivePartial<T[P]>
+    : T[P];
 };
 
 type PrismaSelect<T> = {
@@ -364,6 +365,24 @@ class OtherCommon {
           },
         },
       });
+    };
+  }
+
+  getCurrentDay() {
+    const date = new Date();
+    const momentDate = moment(date);
+    return {
+      start: momentDate.utc().startOf('day').toDate(),
+      end: momentDate.utc().endOf('day').toDate(),
+    };
+  }
+
+  getPastDay(number: number) {
+    const date = new Date();
+    const momentDate = moment(date).subtract(number, 'days');
+    return {
+      start: momentDate.utc().startOf('day').toDate(),
+      end: momentDate.utc().endOf('day').toDate(),
     };
   }
 }
