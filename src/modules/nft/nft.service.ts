@@ -596,6 +596,9 @@ export class NftService {
         traits: true,
       },
     });
+    if (!nft) {
+      throw new NotFoundException();
+    }
     let owners: any, totalSupply: any;
     if (collection.flagExtend == true) {
       ({ owners, totalSupply } = await this.getCurrentOwnersExtend(
@@ -725,16 +728,29 @@ export class NftService {
         select: creatorSelect,
       });
     }
+
     if (owners.length === 0) {
-      return {
-        // @ts-ignore
-        owners: [
-          {
-            signer: nftInfoWithOwner?.items?.[0]?.owner?.id,
-          },
-        ],
-        totalSupply,
-      };
+      if (nft.collection.type === 'ERC1155') {
+        const ownersNon =
+          nftInfoWithOwner?.userBalances?.map((item) => ({
+            signer: item?.owner?.id || '',
+            quantity: item?.balance || 0,
+          })) || [];
+
+        return {
+          owners: ownersNon,
+          totalSupply: totalSupply,
+        };
+      } else {
+        return {
+          owners: [
+            {
+              signer: nftInfoWithOwner?.items?.[0]?.owner?.id || '',
+            },
+          ],
+          totalSupply,
+        };
+      }
     } else {
       return { owners, totalSupply };
     }
