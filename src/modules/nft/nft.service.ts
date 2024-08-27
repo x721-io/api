@@ -38,6 +38,9 @@ import { GetGeneralInforDto } from './dto/get-general-infor.dto';
 import { GeneralInfor } from 'src/constants/enums/GeneralInfor.enum';
 import PaginationCommon from 'src/commons/HasNext.common';
 import { NFTHepler } from './helper/nft-helper.service';
+import { CreationMode } from 'src/constants/enums/creation.enum';
+import { ethers } from 'ethers';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class NftService {
@@ -49,6 +52,7 @@ export class NftService {
     private activityService: ActivityService,
     private collectionPriceService: CollectionPriceService,
     private nftHepler: NFTHepler,
+    private userService: UserService,
   ) {}
 
   private readonly endpoint = process.env.SUBGRAPH_URL;
@@ -88,6 +92,7 @@ export class NftService {
   }
   async create(input: CreateNftDto, user: User): Promise<NftDto> {
     try {
+      let userCreator = user;
       const checkExist = await this.prisma.nFT.findFirst({
         where: {
           txCreationHash: input.txCreationHash,
@@ -107,6 +112,18 @@ export class NftService {
       // if (!isValidUUID(input.creatorId)) {
       //   throw new Error('Invalid Creator ID. Please try again !');
       // }
+
+      if (input.modeCreate == CreationMode.outside) {
+        if (!input.creatorAddress) {
+          throw new Error('Please enter creator address.');
+        }
+        if (!ethers.isAddress(input.creatorAddress)) {
+          throw new Error('Invalid wallet address.');
+        }
+        userCreator = await this.userService.fetchOrCreateUser(
+          input.creatorAddress,
+        );
+      }
 
       if (!collection) throw new NotFoundException('Collection not found');
 
@@ -135,7 +152,7 @@ export class NftService {
           status: TX_STATUS.PENDING,
           tokenUri: input.tokenUri,
           txCreationHash: input.txCreationHash,
-          creatorId: user.id,
+          creatorId: userCreator.id,
           collectionId: collection.id,
           animationUrl: input.animationUrl,
         },
@@ -146,7 +163,7 @@ export class NftService {
       });
       await this.prisma.userNFT.create({
         data: {
-          userId: user.id,
+          userId: userCreator.id,
           nftId: input.id,
           collectionId: collection.id,
         },

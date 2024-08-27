@@ -42,6 +42,9 @@ import {
   AnalysisModeSort,
   AnalysisType,
 } from 'src/constants/enums/Analysis.enum';
+import { CreationMode } from 'src/constants/enums/creation.enum';
+import { ethers } from 'ethers';
+import { UserService } from '../user/user.service';
 interface CollectionGeneral {
   totalOwner: number;
   volumn: string;
@@ -67,6 +70,7 @@ export class CollectionService {
     private traitService: TraitService,
     private readonly collectionData: GetCollectionMarketData,
     private readonly collectionPriceService: CollectionPriceService,
+    private userService: UserService,
   ) {}
 
   private readonly endpoint = process.env.SUBGRAPH_URL;
@@ -78,6 +82,7 @@ export class CollectionService {
   private sdk = getSdk(this.client);
 
   async create(input: CreateCollectionDto, user: User): Promise<any> {
+    let userCreator = user;
     try {
       const checkExist = await this.prisma.collection.findFirst({
         where: {
@@ -93,6 +98,17 @@ export class CollectionService {
           'Transaction hash or name or Short URL are already exists',
         );
       } else {
+        if (input.modeCreate == CreationMode.outside) {
+          if (!input.creatorAddress) {
+            throw new Error('Please enter creator address.');
+          }
+          if (!ethers.isAddress(input.creatorAddress)) {
+            throw new Error('Invalid wallet address.');
+          }
+          userCreator = await this.userService.fetchOrCreateUser(
+            input.creatorAddress,
+          );
+        }
         const collection = await this.prisma.collection.create({
           data: {
             txCreationHash: input.txCreationHash,
@@ -112,7 +128,7 @@ export class CollectionService {
 
         await this.prisma.userCollection.create({
           data: {
-            userId: user.id,
+            userId: userCreator.id,
             collectionId: collection.id,
           },
         });

@@ -1,11 +1,6 @@
-import { createHash } from 'crypto';
 import GCPPCommonCommon from './GCPPCommon.common';
 import { FileUpload } from './types/Fileupload.common';
-import { encode } from 'punycode';
 import { ApiCallerService } from 'src/modules/api-caller/api-caller.service';
-import SecureCommon from './Secure.common';
-import { HttpService } from '@nestjs/axios';
-import logger from './Logger.common';
 import * as bcrypt from 'bcrypt';
 import {
   registerDecorator,
@@ -13,14 +8,12 @@ import {
   ValidationArguments,
 } from 'class-validator';
 import { Role } from 'src/constants/enums/role.enum';
-import { CONTRACT_TYPE } from '@prisma/client';
-import { gql, GraphQLClient } from 'graphql-request';
 type RecursivePartial<T> = {
   [P in keyof T]?: T[P] extends (infer U)[]
     ? RecursivePartial<U>[]
     : T[P] extends object
-      ? RecursivePartial<T[P]>
-      : T[P];
+    ? RecursivePartial<T[P]>
+    : T[P];
 };
 
 type PrismaSelect<T> = {
