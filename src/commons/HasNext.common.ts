@@ -31,11 +31,11 @@ class PaginationCommon {
       | Prisma.RoundInfoWhereInput
       | Prisma.ProjectWhereInput
       | Prisma.TopicWhereInput
-      | Prisma.BlogWhereInput,
+      | Prisma.BlogWhereInput
+      | Prisma.AnalysisCollectionWhereInput,
   ): Promise<boolean> {
     const skip = (page - 1) * limit;
     const take = limit * 2;
-
     // Use keyof to dynamically specify the model name
     const countQueryResult = await (
       this.prisma[tableName as keyof PrismaClientInstance] as any

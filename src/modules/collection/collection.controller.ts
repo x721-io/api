@@ -18,6 +18,7 @@ import { GetCurrentUser } from 'src/decorators/get-current-user.decorator';
 import { User } from '@prisma/client';
 import { GetAllCollectionDto } from './dto/get-all-collection.dto';
 import { GetCollectionByUserDto } from './dto/get-collection-by-user.dto';
+import { GetAnalysisDto } from './dto/get-analysis-collection.dto';
 @Controller('collection')
 export class CollectionController {
   constructor(private readonly collectionService: CollectionService) {}
@@ -39,6 +40,11 @@ export class CollectionController {
   @Get()
   findAll(@Query() input: GetAllCollectionDto) {
     return this.collectionService.findAll(input);
+  }
+
+  @Get('/analysis')
+  getAnalysis(@Query() input: GetAnalysisDto) {
+    return this.collectionService.getAnalysis(input);
   }
 
   @Get(':id')
