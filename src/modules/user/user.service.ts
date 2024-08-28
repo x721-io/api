@@ -723,4 +723,28 @@ export class UserService {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
+  async fetchOrCreateUser(address: string) {
+    try {
+      // Attempt to find the user by their address
+      let user = await this.prisma.user.findUnique({
+        where: {
+          signer: address,
+        },
+      });
+
+      // If the user doesn't exist, create a new one
+      if (!user) {
+        user = await this.prisma.user.create({
+          data: {
+            signer: address.toLowerCase(),
+            publicKey: address.toLowerCase(),
+          },
+        });
+      }
+
+      return user;
+    } catch (error) {
+      console.log(error);
+    }
+  }
 }
