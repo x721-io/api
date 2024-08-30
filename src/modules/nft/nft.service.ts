@@ -38,7 +38,7 @@ import { GetGeneralInforDto } from './dto/get-general-infor.dto';
 import { GeneralInfor } from 'src/constants/enums/GeneralInfor.enum';
 import PaginationCommon from 'src/commons/HasNext.common';
 import { NFTHepler } from './helper/nft-helper.service';
-import { CreationMode } from 'src/constants/enums/creation.enum';
+import { CreationMode } from 'src/constants/enums/Creation.enum';
 import { ethers } from 'ethers';
 import { UserService } from '../user/user.service';
 
