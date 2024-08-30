@@ -701,7 +701,7 @@ export class CollectionService {
           : undefined;
 
       // Construct whereCondition based on min and max values
-      const whereCondition: Prisma.AnalysisCollectionWhereInput = {
+      let whereCondition: Prisma.AnalysisCollectionWhereInput = {
         ...(input.search && {
           collection: {
             OR: [
@@ -725,6 +725,18 @@ export class CollectionService {
           ...(maxValue !== undefined && { lte: maxValue }),
         },
       };
+
+      const { start: startDay, end: endDay } = CollectionHepler.getPastDay(1); // Current => Get back 1 day
+      if (startDay && endDay) {
+        whereCondition = {
+          ...whereCondition,
+          createdAt: {
+            gte: startDay,
+            lte: endDay,
+          },
+        };
+      }
+
       // Determine sorting order based on input mode and order
       const orderBy: Prisma.Enumerable<Prisma.AnalysisCollectionOrderByWithAggregationInput> =
         [
@@ -773,10 +785,10 @@ export class CollectionService {
     try {
       const typeDate =
         type === AnalysisType.ONEWEEK
-          ? 7
+          ? 8
           : type === AnalysisType.ONEMONTH
-          ? 30
-          : 1;
+          ? 31
+          : 2;
       const { start: startPast, end: EndPast } =
         CollectionHepler.getPastDay(typeDate);
 
@@ -799,7 +811,9 @@ export class CollectionService {
       }
 
       const calculateChangeBigInt = (current: bigint, past: bigint) =>
-        past > BigInt(0) ? ((current - past) / past) * BigInt(100) : BigInt(0);
+        past > Number(0)
+          ? ((Number(current) - Number(past)) / Number(past)) * Number(100)
+          : Number(0);
 
       const calculateChange = (current: any, past: any) =>
         past > 0 ? ((current - past) / past) * 100 : 0;
