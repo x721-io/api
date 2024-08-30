@@ -1,7 +1,7 @@
 import { TX_STATUS } from '@prisma/client';
 import { IsNotEmpty, IsString, IsOptional, IsEnum } from 'class-validator';
 import { CreateTraitDto } from './create-traits.dto';
-import { CreationMode } from 'src/constants/enums/creation.enum';
+import { CreationMode } from 'src/constants/enums/Creation.enum';
 
 export class CreateNftDto {
   @IsString({ message: 'ID NFT is invalid' })

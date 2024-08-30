@@ -42,7 +42,7 @@ import {
   AnalysisModeSort,
   AnalysisType,
 } from 'src/constants/enums/Analysis.enum';
-import { CreationMode } from 'src/constants/enums/creation.enum';
+import { CreationMode } from 'src/constants/enums/Creation.enum';
 import { ethers } from 'ethers';
 import { UserService } from '../user/user.service';
 interface CollectionGeneral {
