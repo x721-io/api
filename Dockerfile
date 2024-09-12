@@ -1,5 +1,5 @@
 # Use Node.js as the base image
-FROM node:20.2.0-alpine3.18
+FROM node:20.9.0-alpine3.18
 
 RUN apk update && apk add --no-cache python3 make g++ xdg-utils
 
