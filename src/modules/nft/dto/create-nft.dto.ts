@@ -47,4 +47,8 @@ export class CreateNftDto {
   @IsString()
   @IsOptional()
   creatorAddress: string;
+
+  @IsString()
+  @IsOptional()
+  source: string;
 }

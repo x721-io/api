@@ -2,7 +2,7 @@ import { InputType } from '@nestjs/graphql';
 import { IsNotEmpty, IsString, IsOptional, IsEnum } from 'class-validator';
 import { TX_STATUS, CONTRACT_TYPE } from '@prisma/client';
 import { CreationMode } from 'src/constants/enums/Creation.enum';
-
+import { SourceType } from 'src/constants/enums/Source.enum';
 @InputType()
 export class CreateCollectionDto {
   // id: string;
@@ -58,4 +58,8 @@ export class CreateCollectionDto {
   @IsString()
   @IsOptional()
   creatorAddress: string;
+
+  @IsOptional()
+  @IsEnum(SourceType)
+  source: string;
 }

@@ -155,6 +155,7 @@ export class NftService {
           creatorId: userCreator.id,
           collectionId: collection.id,
           animationUrl: input.animationUrl,
+          source: input.source,
         },
         include: {
           traits: true,
@@ -320,6 +321,11 @@ export class NftService {
           creator: {
             publicKey: filter.creatorAddress,
           },
+        });
+      }
+      if (filter.source) {
+        whereConditionInternal.AND.push({
+          source: filter.source,
         });
       }
 
