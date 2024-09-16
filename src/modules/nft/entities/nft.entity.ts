@@ -35,6 +35,7 @@ export class NftEntity implements NFT {
   // Add metricPoint and metricDetail properties
   metricPoint: bigint;
   metricDetail: JsonValue;
+  source: string;
 }
 
 export enum TXSTATUS {

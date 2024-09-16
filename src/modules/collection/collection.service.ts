@@ -123,6 +123,7 @@ export class CollectionService {
             avatar: input.avatar,
             // categoryId: ...(input.categoryId  Number(input.categoryId),
             ...(input.categoryId && { categoryId: Number(input.categoryId) }),
+            source: input.source,
           },
         });
 
@@ -229,13 +230,9 @@ export class CollectionService {
           mode: 'insensitive',
         },
       }),
-      // creators: {
-      //   some: {
-      //     userId: {
-      //       in: addresses,
-      //     },
-      //   },
-      // },
+      ...(input.source && {
+        source: input.source,
+      }),
       ...(addresses.length > 0 && {
         creators: {
           some: {
@@ -278,7 +275,6 @@ export class CollectionService {
       ...whereCondition,
       isActive: true,
     };
-    console.log(whereCondition);
 
     if (input.max && input.min && BigInt(input.min) > BigInt(input.max)) {
       return {
