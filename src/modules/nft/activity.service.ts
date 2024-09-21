@@ -24,6 +24,7 @@ import { GetEventMarketplace } from './dto/event-marketplace.dto';
 import { GetEventBase } from './dto/event-base.dto';
 import { GetActivityBase } from './dto/activity-nft.dto';
 import { creatorSelect } from '../../commons/definitions/Constraint.Object';
+import { GetListBid } from '../user/dto/activity-user.dto';
 
 interface NullableUser {
   id: string | null;
@@ -277,5 +278,32 @@ export class ActivityService {
       }),
     );
     return result;
+  }
+
+  async getActivityWithEvent(user: User, input: GetListBid) {
+    try {
+      const { event, page, limit } = input;
+      const { blocks = [] } = await this.GraphqlService.getListActivity(
+        event,
+        user.signer.toLowerCase(),
+        page,
+        limit,
+      );
+
+      const { blocks: blocksNext } = await this.GraphqlService.getListActivity(
+        event,
+        user.signer.toLowerCase(),
+        page + 1,
+        Math.floor(limit / 2),
+      );
+      const hasNext = blocksNext.length > 0 ? true : false;
+
+      const result = await this.processActivityUserData(blocks);
+
+      return { result, hasNext };
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
   }
 }

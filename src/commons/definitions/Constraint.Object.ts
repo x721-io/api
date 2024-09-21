@@ -216,3 +216,15 @@ export const accountListSelect: Prisma.AccountSelect = {
   isActive: true,
   isDelete: true,
 };
+
+export const userFollow: Prisma.UserSelect = {
+  id: true,
+  email: true,
+  avatar: true,
+  username: true,
+  publicKey: true,
+  accountStatus: true,
+  verifyEmail: true,
+  signer: true,
+  shortLink: true,
+};
