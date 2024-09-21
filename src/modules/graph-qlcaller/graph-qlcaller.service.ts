@@ -15,6 +15,7 @@ import {
   OrderDirection,
   CmsSummaryTransactionQueryVariables,
   EventType,
+  GetActivityWithEventQueryVariables,
 } from '../../generated/graphql';
 
 import { getSdk as getSdkExternal } from '../../generated/SubgraphExternal/graphql';
@@ -570,6 +571,24 @@ export class GraphQlcallerService {
     const client = this.getGraphqlClient();
     const sdk = getSdk(client);
     const response = await sdk.CMSSummaryVolume({ address: address });
+    return response;
+  }
+
+  async getListActivity(
+    event?: EventType,
+    address?: string,
+    skip?: number,
+    first?: number,
+  ) {
+    const client = this.getGraphqlClient();
+    const sdk = getSdk(client);
+    const variables: GetActivityWithEventQueryVariables = {
+      address,
+      event: event,
+      first,
+      skip,
+    };
+    const response = await sdk.getActivityWithEvent(variables);
     return response;
   }
 }
