@@ -761,6 +761,9 @@ export class UserService {
       whereCondition.AND.push({
         followerId: user.id,
       });
+      whereCondition.AND.push({
+        isFollow: true,
+      });
 
       if (input.search) {
         const userWhereCondition: Prisma.UserWhereInput = {};
