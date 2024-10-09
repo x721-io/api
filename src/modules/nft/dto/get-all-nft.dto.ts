@@ -4,6 +4,7 @@ import { sellStatus } from 'src/constants/enums/SellStatus.enum';
 import { OffsetPaginationDto } from 'src/commons/definitions/OffsetPagination.input';
 import { SellStatus } from 'src/generated/graphql';
 import { CONTRACT_TYPE } from '@prisma/client';
+import { SourceType } from 'src/constants/enums/Source.enum';
 
 export class GetAllNftDto extends OffsetPaginationDto {
   @IsOptional()
@@ -49,4 +50,8 @@ export class GetAllNftDto extends OffsetPaginationDto {
   @IsOptional()
   @IsIn(['time', 'price', 'all'])
   orderBy?: 'time' | 'price' | 'all' = 'all';
+
+  @IsOptional()
+  @IsEnum(SourceType)
+  source?: SourceType;
 }

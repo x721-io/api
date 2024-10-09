@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import OtherCommon from 'src/commons/Other.common';
 import { GetCollectionMarketData } from '../../graph-qlcaller/getCollectionMarketData.service';
-import { Prisma, TX_STATUS, CONTRACT_TYPE } from '@prisma/client';
+import { Prisma, TX_STATUS, CONTRACT_TYPE, User } from '@prisma/client';
 import PaginationCommon from 'src/commons/HasNext.common';
 import { CollectionEntity } from '../../collection/entities/collection.entity';
 import { GetAllCollectionDto } from '../../collection/dto/get-all-collection.dto';
@@ -20,7 +20,6 @@ import { GetAllNftDto } from '../../nft/dto/get-all-nft.dto';
 import { OrderDirection, SellStatus } from 'src/generated/graphql';
 import { NftService } from '../../nft/nft.service';
 import { NFTHepler } from '../../nft/helper/nft-helper.service';
-
 interface CollectionGeneral {
   totalOwner: number;
   volumn: string;

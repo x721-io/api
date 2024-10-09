@@ -25,7 +25,7 @@ import { CreateAccountDto } from '../dto/create-account.dto';
 import { GetAllAccountDto } from '../dto/get-all-account.dto';
 import { validate as isValidUUID } from 'uuid';
 import { GetCollectionMarketData } from '../../graph-qlcaller/getCollectionMarketData.service';
-import { Account, Prisma } from '@prisma/client';
+import { Account, Prisma, TX_STATUS } from '@prisma/client';
 import PaginationCommon from 'src/commons/HasNext.common';
 import { accountListSelect } from '../../../commons/definitions/Constraint.Object';
 import MetricCommon from 'src/commons/Metric.common';
@@ -35,6 +35,7 @@ import { GraphQlcallerService } from 'src/modules/graph-qlcaller/graph-qlcaller.
 import { EventType } from 'src/generated/graphql';
 import { ethers } from 'ethers';
 import SecureUtil from '../../../commons/Secure.common';
+import { CreateCollectionExternalDto } from '../dto/create-collection-external.dto';
 interface CountTransactionDto {
   start: number;
   end: number;
@@ -719,6 +720,67 @@ export class CMSService {
       const resultSummary = await SecureUtil.getSessionInfo(`summary-cms`);
       const result: SummmaryAllResponse = JSON.parse(resultSummary);
       return result;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async createCollectionExternal(
+    input: CreateCollectionExternalDto,
+  ): Promise<any> {
+    try {
+      const checkExist = await this.prisma.collection.findFirst({
+        where: {
+          OR: [
+            { txCreationHash: input.txCreationHash },
+            { name: input.name },
+            { shortUrl: input.shortUrl },
+          ],
+        },
+      });
+      if (checkExist) {
+        throw new Error(
+          'Transaction hash or name or Short URL are already exists',
+        );
+      }
+      if (!isValidUUID(input.userId)) {
+        throw new Error('Invalid owner. Please try again !');
+      }
+
+      const checkUser = await this.prisma.user.findUnique({
+        where: {
+          id: input.userId,
+        },
+      });
+
+      if (!checkUser) {
+        throw new NotFoundException();
+      }
+      const collection = await this.prisma.collection.create({
+        data: {
+          txCreationHash: input.txCreationHash,
+          name: input.name,
+          symbol: input.symbol,
+          description: input.description,
+          status: TX_STATUS.SUCCESS,
+          type: input.type,
+          ...(input.shortUrl && { shortUrl: input.shortUrl }),
+          coverImage: input.coverImage,
+          metadata: input.metadata,
+          avatar: input.avatar,
+          flagExtend: input.flagExternal,
+          subgraphUrl: input.subgraphUrl,
+          ...(input.categoryId && { categoryId: Number(input.categoryId) }),
+        },
+      });
+
+      await this.prisma.userCollection.create({
+        data: {
+          userId: input.userId,
+          collectionId: collection.id,
+        },
+      });
+      return collection;
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }

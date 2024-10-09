@@ -6,6 +6,8 @@ import { TraitService } from '../nft/trait.service';
 import { GetCollectionMarketData } from '../graph-qlcaller/getCollectionMarketData.service';
 import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
 import { CollectionPriceService } from './collectionPrice.service';
+import { UserService } from '../user/user.service';
+import { ActivityService } from '../nft/activity.service';
 
 @Module({
   providers: [
@@ -15,6 +17,8 @@ import { CollectionPriceService } from './collectionPrice.service';
     GetCollectionMarketData,
     GraphQlcallerService,
     CollectionPriceService,
+    UserService,
+    ActivityService,
   ],
   controllers: [CollectionController],
 })

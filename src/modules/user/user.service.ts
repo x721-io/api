@@ -14,7 +14,11 @@ import { findProjectsUserSubscribe } from '../launchpad/dto/find-project.dto';
 import { ListProjectEntity } from './entities/project.entity';
 import { UserEntity } from './entities/user.entity';
 import { ActivityService } from '../nft/activity.service';
-import { GetActivityBase } from './dto/activity-user.dto';
+import {
+  GetActivityBase,
+  GetFollowingDto,
+  GetListBid,
+} from './dto/activity-user.dto';
 import { Redis } from 'src/database';
 import { SendVerifyEmailDto, VerifyEmailDto } from './dto/verify-email.dto';
 import * as jwt from 'jsonwebtoken';
@@ -31,6 +35,7 @@ import MetricCommon from 'src/commons/Metric.common';
 import {
   userSelectFull,
   projectSelect,
+  userFollow,
 } from '../../commons/definitions/Constraint.Object';
 import { MetricCategory, TypeCategory } from 'src/constants/enums/Metric.enum';
 interface UserRedisinterface {
@@ -720,6 +725,125 @@ export class UserService {
       const result = await SecureUtil.getSessionInfo(address);
       return result ? JSON.parse(result) : null;
     } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+  async fetchOrCreateUser(address: string) {
+    try {
+      // Attempt to find the user by their address
+      let user = await this.prisma.user.findUnique({
+        where: {
+          signer: address,
+        },
+      });
+
+      // If the user doesn't exist, create a new one
+      if (!user) {
+        user = await this.prisma.user.create({
+          data: {
+            signer: address.toLowerCase(),
+            publicKey: address.toLowerCase(),
+          },
+        });
+      }
+
+      return user;
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async getListFollowing(user: User, input: GetFollowingDto) {
+    try {
+      const whereCondition: Prisma.UserFollowWhereInput = {};
+      whereCondition.AND = [];
+
+      whereCondition.AND.push({
+        followerId: user.id,
+      });
+      whereCondition.AND.push({
+        isFollow: true,
+      });
+
+      if (input.search) {
+        const userWhereCondition: Prisma.UserWhereInput = {};
+        userWhereCondition.AND = [
+          {
+            ...(isValidUUID(input.search)
+              ? { id: input.search }
+              : {
+                  OR: [
+                    {
+                      shortLink: { equals: input.search, mode: 'insensitive' },
+                    },
+                    {
+                      signer: {
+                        equals: input.search.toLowerCase(),
+                        mode: 'insensitive',
+                      },
+                    },
+                    {
+                      username: {
+                        contains: input.search,
+                        mode: 'insensitive',
+                      },
+                    },
+                  ],
+                }),
+          },
+        ];
+
+        whereCondition.user = userWhereCondition;
+      }
+      const listFollower = await this.prisma.userFollow.findMany({
+        where: whereCondition,
+        include: {
+          user: {
+            select: userFollow,
+          },
+          follower: {
+            select: userFollow,
+          },
+        },
+        skip: (input.page - 1) * input.limit,
+        take: input.limit,
+      });
+
+      const hasNext = await PaginationCommon.hasNextPage(
+        input.page,
+        input.limit,
+        'userFollow',
+        whereCondition,
+      );
+
+      return {
+        data: listFollower,
+        paging: {
+          hasNext: hasNext,
+          page: input.page,
+          limit: input.limit,
+        },
+      };
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getListActivityWithEvent(user: User, input: GetListBid) {
+    try {
+      const { result, hasNext } =
+        await this.activetiService.getActivityWithEvent(user, input);
+
+      return {
+        data: result,
+        paging: {
+          hasNext: hasNext,
+          page: input.page,
+          limit: input.limit,
+        },
+      };
+    } catch (error) {
+      console.log(error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }

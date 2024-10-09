@@ -9,7 +9,14 @@ import { UpdateCollectionDto } from './dto/update-collection.dto';
 import { CollectionDetailDto } from './dto/get-detail-collection.dto';
 import { CollectionEntity } from './entities/collection.entity';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CONTRACT_TYPE, Prisma, TX_STATUS, User } from '@prisma/client';
+import {
+  AnalysisCollection,
+  AnalysisCollectionPayload,
+  CONTRACT_TYPE,
+  Prisma,
+  TX_STATUS,
+  User,
+} from '@prisma/client';
 import { validate as isValidUUID } from 'uuid';
 import { Redis } from 'src/database';
 import { TraitService } from '../nft/trait.service';
@@ -22,11 +29,22 @@ import { GraphQLClient } from 'graphql-request';
 import { getSdk } from '../../generated/graphql';
 import { oneWeekInMilliseconds } from '../../constants/Timestamp.constant';
 import OtherCommon from 'src/commons/Other.common';
+import CollectionHepler from './helper/collection-helper.service';
 import {
   creatorSelect,
   collectionSelect,
+  CollectionSelect,
 } from '../../commons/definitions/Constraint.Object';
 import PaginationCommon from 'src/commons/HasNext.common';
+import { GetAnalysisDto } from './dto/get-analysis-collection.dto';
+import * as moment from 'moment';
+import {
+  AnalysisModeSort,
+  AnalysisType,
+} from 'src/constants/enums/Analysis.enum';
+import { CreationMode } from 'src/constants/enums/Creation.enum';
+import { ethers } from 'ethers';
+import { UserService } from '../user/user.service';
 interface CollectionGeneral {
   totalOwner: number;
   volumn: string;
@@ -52,6 +70,7 @@ export class CollectionService {
     private traitService: TraitService,
     private readonly collectionData: GetCollectionMarketData,
     private readonly collectionPriceService: CollectionPriceService,
+    private userService: UserService,
   ) {}
 
   private readonly endpoint = process.env.SUBGRAPH_URL;
@@ -63,6 +82,7 @@ export class CollectionService {
   private sdk = getSdk(this.client);
 
   async create(input: CreateCollectionDto, user: User): Promise<any> {
+    let userCreator = user;
     try {
       const checkExist = await this.prisma.collection.findFirst({
         where: {
@@ -78,6 +98,17 @@ export class CollectionService {
           'Transaction hash or name or Short URL are already exists',
         );
       } else {
+        if (input.modeCreate == CreationMode.outside) {
+          if (!input.creatorAddress) {
+            throw new Error('Please enter creator address.');
+          }
+          if (!ethers.isAddress(input.creatorAddress)) {
+            throw new Error('Invalid wallet address.');
+          }
+          userCreator = await this.userService.fetchOrCreateUser(
+            input.creatorAddress,
+          );
+        }
         const collection = await this.prisma.collection.create({
           data: {
             txCreationHash: input.txCreationHash,
@@ -92,12 +123,13 @@ export class CollectionService {
             avatar: input.avatar,
             // categoryId: ...(input.categoryId  Number(input.categoryId),
             ...(input.categoryId && { categoryId: Number(input.categoryId) }),
+            source: input.source,
           },
         });
 
         await this.prisma.userCollection.create({
           data: {
-            userId: user.id,
+            userId: userCreator.id,
             collectionId: collection.id,
           },
         });
@@ -198,13 +230,9 @@ export class CollectionService {
           mode: 'insensitive',
         },
       }),
-      // creators: {
-      //   some: {
-      //     userId: {
-      //       in: addresses,
-      //     },
-      //   },
-      // },
+      ...(input.source && {
+        source: input.source,
+      }),
       ...(addresses.length > 0 && {
         creators: {
           some: {
@@ -247,7 +275,6 @@ export class CollectionService {
       ...whereCondition,
       isActive: true,
     };
-    console.log(whereCondition);
 
     if (input.max && input.min && BigInt(input.min) > BigInt(input.max)) {
       return {
@@ -652,5 +679,153 @@ export class CollectionService {
       process: 'update-floor-price',
     });
     return true;
+  }
+
+  async getAnalysis(input: GetAnalysisDto) {
+    try {
+      const minValue =
+        input.minMaxBy === 'volume'
+          ? input.min
+          : input.min
+          ? BigInt(input.min)
+          : undefined;
+      const maxValue =
+        input.minMaxBy === 'volume'
+          ? input.max
+          : input.max
+          ? BigInt(input.max)
+          : undefined;
+
+      // Construct whereCondition based on min and max values
+      let whereCondition: Prisma.AnalysisCollectionWhereInput = {
+        ...(input.search && {
+          collection: {
+            OR: [
+              {
+                nameSlug: {
+                  contains: OtherCommon.stringToSlugSearch(input.search),
+                  mode: 'insensitive',
+                },
+              },
+              {
+                address: {
+                  contains: input.search,
+                  mode: 'insensitive',
+                },
+              },
+            ],
+          },
+        }),
+        [input.minMaxBy]: {
+          ...(minValue !== undefined && { gte: minValue }),
+          ...(maxValue !== undefined && { lte: maxValue }),
+        },
+      };
+
+      const { start: startDay, end: endDay } = CollectionHepler.getPastDay(1); // Current => Get back 1 day
+      if (startDay && endDay) {
+        whereCondition = {
+          ...whereCondition,
+          createdAt: {
+            gte: startDay,
+            lte: endDay,
+          },
+        };
+      }
+
+      // Determine sorting order based on input mode and order
+      const orderBy: Prisma.Enumerable<Prisma.AnalysisCollectionOrderByWithAggregationInput> =
+        [
+          { createdAt: 'desc' }, // Default to sorting by createdAt first
+          { [input.orderBy]: input.order }, // Dynamic sorting based on mode and order
+        ];
+
+      const dataAnalysis = await this.prisma.analysisCollection.findMany({
+        where: whereCondition,
+        skip: (input.page - 1) * input.limit,
+        take: input.limit,
+        include: {
+          collection: {
+            select: CollectionSelect,
+          },
+        },
+        orderBy: orderBy,
+      });
+
+      const dataCompare = await Promise.all(
+        dataAnalysis.map(async (item) => this.getAndCompare(item, input.type)),
+      );
+
+      const hasNext = await PaginationCommon.hasNextPage(
+        input.page,
+        input.limit,
+        'analysisCollection',
+        whereCondition,
+      );
+
+      return {
+        data: dataCompare,
+        paging: {
+          hasNext: hasNext,
+          limit: input.limit,
+          page: input.page,
+        },
+      };
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getAndCompare(item: AnalysisCollection, type: AnalysisType) {
+    try {
+      const typeDate =
+        type === AnalysisType.ONEWEEK
+          ? 8
+          : type === AnalysisType.ONEMONTH
+          ? 31
+          : 2;
+      const { start: startPast, end: EndPast } =
+        CollectionHepler.getPastDay(typeDate);
+
+      const pastRecord = await this.prisma.analysisCollection.findFirst({
+        where: {
+          collectionId: item.collectionId,
+          createdAt: {
+            gte: startPast,
+            lte: EndPast,
+          },
+        },
+      });
+
+      if (!pastRecord) {
+        return {
+          volumeChange: BigInt(0),
+          floorPriceChange: BigInt(0),
+          ...item,
+        };
+      }
+
+      const calculateChangeBigInt = (current: bigint, past: bigint) =>
+        past > Number(0)
+          ? ((Number(current) - Number(past)) / Number(past)) * Number(100)
+          : Number(0);
+
+      const calculateChange = (current: any, past: any) =>
+        past > 0 ? ((current - past) / past) * 100 : 0;
+
+      const volumeChange = calculateChange(item?.volume, pastRecord.volume);
+      const floorPriceChange = calculateChangeBigInt(
+        item?.floorPrice,
+        pastRecord.floorPrice,
+      );
+
+      return { volumeChange, floorPriceChange, ...item };
+    } catch (error) {
+      throw new HttpException(
+        `Error in function getAndCompare: ${error.message}`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 }

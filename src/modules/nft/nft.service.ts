@@ -38,6 +38,9 @@ import { GetGeneralInforDto } from './dto/get-general-infor.dto';
 import { GeneralInfor } from 'src/constants/enums/GeneralInfor.enum';
 import PaginationCommon from 'src/commons/HasNext.common';
 import { NFTHepler } from './helper/nft-helper.service';
+import { CreationMode } from 'src/constants/enums/Creation.enum';
+import { ethers } from 'ethers';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class NftService {
@@ -49,6 +52,7 @@ export class NftService {
     private activityService: ActivityService,
     private collectionPriceService: CollectionPriceService,
     private nftHepler: NFTHepler,
+    private userService: UserService,
   ) {}
 
   private readonly endpoint = process.env.SUBGRAPH_URL;
@@ -88,6 +92,7 @@ export class NftService {
   }
   async create(input: CreateNftDto, user: User): Promise<NftDto> {
     try {
+      let userCreator = user;
       const checkExist = await this.prisma.nFT.findFirst({
         where: {
           txCreationHash: input.txCreationHash,
@@ -107,6 +112,18 @@ export class NftService {
       // if (!isValidUUID(input.creatorId)) {
       //   throw new Error('Invalid Creator ID. Please try again !');
       // }
+
+      if (input.modeCreate == CreationMode.outside) {
+        if (!input.creatorAddress) {
+          throw new Error('Please enter creator address.');
+        }
+        if (!ethers.isAddress(input.creatorAddress)) {
+          throw new Error('Invalid wallet address.');
+        }
+        userCreator = await this.userService.fetchOrCreateUser(
+          input.creatorAddress,
+        );
+      }
 
       if (!collection) throw new NotFoundException('Collection not found');
 
@@ -135,9 +152,10 @@ export class NftService {
           status: TX_STATUS.PENDING,
           tokenUri: input.tokenUri,
           txCreationHash: input.txCreationHash,
-          creatorId: user.id,
+          creatorId: userCreator.id,
           collectionId: collection.id,
           animationUrl: input.animationUrl,
+          source: input.source,
         },
         include: {
           traits: true,
@@ -146,7 +164,7 @@ export class NftService {
       });
       await this.prisma.userNFT.create({
         data: {
-          userId: user.id,
+          userId: userCreator.id,
           nftId: input.id,
           collectionId: collection.id,
         },
@@ -303,6 +321,11 @@ export class NftService {
           creator: {
             publicKey: filter.creatorAddress,
           },
+        });
+      }
+      if (filter.source) {
+        whereConditionInternal.AND.push({
+          source: filter.source,
         });
       }
 
@@ -596,6 +619,9 @@ export class NftService {
         traits: true,
       },
     });
+    if (!nft) {
+      throw new NotFoundException();
+    }
     let owners: any, totalSupply: any;
     if (collection.flagExtend == true) {
       ({ owners, totalSupply } = await this.getCurrentOwnersExtend(
@@ -725,16 +751,29 @@ export class NftService {
         select: creatorSelect,
       });
     }
+
     if (owners.length === 0) {
-      return {
-        // @ts-ignore
-        owners: [
-          {
-            signer: nftInfoWithOwner?.items?.[0]?.owner?.id,
-          },
-        ],
-        totalSupply,
-      };
+      if (nft.collection.type === 'ERC1155') {
+        const ownersNon =
+          nftInfoWithOwner?.userBalances?.map((item) => ({
+            signer: item?.owner?.id || '',
+            quantity: item?.balance || 0,
+          })) || [];
+
+        return {
+          owners: ownersNon,
+          totalSupply: totalSupply,
+        };
+      } else {
+        return {
+          owners: [
+            {
+              signer: nftInfoWithOwner?.items?.[0]?.owner?.id || '',
+            },
+          ],
+          totalSupply,
+        };
+      }
     } else {
       return { owners, totalSupply };
     }
