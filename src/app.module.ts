@@ -17,6 +17,7 @@ import { HealthcheckController } from './modules/healthcheck/healthcheck.control
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { BigIntInterceptor } from './commons/interceptors/bigint.interceptor';
 import { CMSModule } from './modules/cms/cms.module';
+import { OrderModule } from './modules/order/order.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -38,6 +39,7 @@ import { CMSModule } from './modules/cms/cms.module';
     ValidatorModule,
     LaunchpadModule,
     CMSModule,
+    OrderModule,
   ],
   providers: [
     PrismaService,

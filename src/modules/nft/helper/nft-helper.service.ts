@@ -1,7 +1,14 @@
 import { createHash } from 'crypto';
 import { encode } from 'punycode';
 import { ApiCallerService } from 'src/modules/api-caller/api-caller.service';
-import { Prisma, User, MarketplaceStatus } from '@prisma/client';
+import {
+  Prisma,
+  User,
+  MarketplaceStatus,
+  Order,
+  ORDERSTATUS,
+  ORDERTYPE,
+} from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
   Injectable,
@@ -18,6 +25,11 @@ import { GraphQlcallerService } from 'src/modules/graph-qlcaller/graph-qlcaller.
 import { OrderDirection } from 'src/generated/graphql';
 
 interface NFTMarketplaceResponse {
+  result: NftDto[];
+  hasNext: boolean;
+}
+
+interface NFTOrderResponse {
   result: NftDto[];
   hasNext: boolean;
 }
@@ -64,6 +76,37 @@ export class NFTHepler {
       }),
     );
   }
+
+  async handleFormatNFTResponseOrder(nfts: any[]) {
+    return Promise.all(
+      nfts.map(async (item) => {
+        if (item?.OrderByTokenId && item?.OrderByTokenId.length > 0) {
+          const { price, orderStatus, orderType, quantity, quoteToken } =
+            item.OrderByTokenId.reduce(
+              (minItem, currentItem) =>
+                currentItem.priceNum < minItem.priceNum ? currentItem : minItem,
+              item.OrderByTokenId[0],
+            );
+          const quoteTokenData = await this.getQuoteTokens(quoteToken);
+          delete item.OrderByTokenId;
+          return {
+            ...item,
+            price: price,
+            orderStatus: orderStatus,
+            orderType: orderType,
+            quantity,
+            quoteToken,
+            derivedETH: quoteTokenData?.derivedETH || 0,
+            derivedUSD: quoteTokenData?.derivedUSD || 0,
+          };
+        } else {
+          delete item.OrderByTokenId;
+          return item;
+        }
+      }),
+    );
+  }
+
   async getQuoteTokens(address: string) {
     try {
       if (!address) {
@@ -142,7 +185,7 @@ export class NFTHepler {
   }
 
   // Get Smallest Price of 1 NFT
-  getSmallestPrices(arr: MarketplaceStatus[]): NftDto[] {
+  getSmallestPrices(arr: MarketplaceStatus[] | Order[]): NftDto[] {
     const uniqueCombinationMap = {};
     arr.forEach((item) => {
       const { tokenId, collectionId, quoteToken, price } = item;
@@ -188,6 +231,43 @@ export class NFTHepler {
     return whereMarketPlaceStatus;
   }
 
+  generateWhereOrder(filter: GetAllNftDto): Prisma.OrderWhereInput {
+    const priceFilter: Prisma.FloatFilter = {};
+    const currentDate = Math.floor(Date.now() / 1000);
+    const whereOrder: Prisma.OrderWhereInput = {
+      start: {
+        lte: currentDate,
+      },
+      end: {
+        gte: currentDate,
+      },
+      orderStatus: ORDERSTATUS.OPEN,
+      orderType: {
+        in: [ORDERTYPE.SINGLE, ORDERTYPE.BULK],
+      },
+    };
+    whereOrder.AND = [];
+
+    whereOrder.AND.push({
+      quoteToken:
+        (filter.quoteToken
+          ? filter.quoteToken.toLowerCase()
+          : process.env.NATIVE_U2U) ?? process.env.NATIVE_U2U,
+    });
+
+    if (filter.priceMin !== undefined || filter.priceMax !== undefined) {
+      if (filter.priceMin !== undefined) {
+        priceFilter.gte = this.weiToEther(filter.priceMin);
+      }
+      if (filter.priceMax !== undefined) {
+        priceFilter.lte = this.weiToEther(filter.priceMax);
+      }
+      whereOrder.AND.push({ priceNum: priceFilter });
+    }
+
+    return whereOrder;
+  }
+
   sortERC1155balances(dataArray, inputOrder = 'asc') {
     const compareTimestamps = (a, b) => a.createAt - b.createAt;
 
@@ -197,5 +277,45 @@ export class NFTHepler {
     }
 
     return sortedArray;
+  }
+
+  async getListNFTWithOrder(
+    filter: GetAllNftDto,
+    whereOrder: Prisma.OrderWhereInput,
+  ): Promise<NFTOrderResponse> {
+    const order = await this.prisma.order.findMany({
+      where: whereOrder,
+      skip: (filter.page - 1) * filter.limit,
+      take: filter.limit,
+      orderBy: [
+        {
+          price: filter.order,
+        },
+      ],
+      include: {
+        nftById: {
+          select: nftSelect,
+        },
+      },
+    });
+    const result = this.getSmallestPrices(order);
+
+    const listFormat = await Promise.all(
+      result.map(async (item) => {
+        const quoteTokenData = await this.getQuoteTokens(item.quoteToken);
+        return {
+          ...item,
+          derivedETH: quoteTokenData?.derivedETH || 0,
+          derivedUSD: quoteTokenData?.derivedUSD || 0,
+        };
+      }),
+    );
+    const hasNext = await PaginationCommon.hasNextPage(
+      filter.page,
+      filter.limit,
+      'marketplaceStatus',
+      whereOrder,
+    );
+    return { result: listFormat, hasNext: hasNext };
   }
 }

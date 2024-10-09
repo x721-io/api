@@ -79,9 +79,11 @@ export class GetCollectionMarketData {
       const response = await SecureUtil.getSessionInfo(`External-${contract}`);
       const result: responseRedisExternal = JSON.parse(response);
       return {
-        totalNftExternal: result?.totalNft ? parseInt(result.totalNft) : 0,
+        totalNftExternal: result?.totalNft
+          ? parseInt(result?.totalNft || `0`)
+          : 0,
         totalOwnerExternal: result?.totalOwner
-          ? parseInt(result?.totalOwner)
+          ? parseInt(result?.totalOwner || `0`)
           : 0,
       };
     } catch (error) {
