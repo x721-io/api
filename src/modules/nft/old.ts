@@ -1042,3 +1042,393 @@
 //     throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
 //   }
 // }
+
+// async findAll(filter: GetAllNftDto): Promise<PagingResponseHasNext<NftDto>> {
+//   // TODO: Reimplement pagination strategy
+//   // Get the result totally from subgraph and match data to local storage
+//   // For each set of condition, use different subgraph query as source
+//   // owner: getNFTFromOwner
+//   // owner + sellStatus + priceMax + priceMin + collectionType: marketplace721S and marketplace1155S
+//   try {
+//     let traitsConditions = [];
+
+//     // TODO: if price and status are included, then use subgraph as main source and use other to eliminate
+//     if (filter.traits) {
+//       traitsConditions = filter.traits.map((trait) => ({
+//         traits: {
+//           some: {
+//             trait_type: trait.trait_type,
+//             ...(trait.value && { value: trait.value }),
+//             ...(trait.display_type && { display_type: trait.display_type }),
+//           },
+//         },
+//       }));
+//     }
+//     let nftIdFromOwner = [];
+//     let nftCollectionFromOwner = [];
+//     let hasNextNftOwner = false;
+//     if (filter.owner) {
+//       // External
+//       const resultOwnerExternal =
+//         await this.GraphqlService.getNFTExternalFromOwner(
+//           filter.owner.toLocaleLowerCase(),
+//           filter.order as OrderDirection,
+//           filter.page,
+//           Math.floor(filter.limit / 2),
+//         );
+
+//       const hasNextNftOwnerExternalTemp =
+//         await this.GraphqlService.getNFTExternalFromOwner(
+//           filter.owner.toLocaleLowerCase(),
+//           filter.order as OrderDirection,
+//           filter.page + 1,
+//           Math.floor(filter.limit / 2),
+//         );
+
+//       hasNextNftOwner =
+//         (hasNextNftOwnerExternalTemp &&
+//           hasNextNftOwnerExternalTemp.erc721Tokens.length > 0) ||
+//         (hasNextNftOwnerExternalTemp &&
+//           hasNextNftOwnerExternalTemp.erc1155Balances.length > 0);
+
+//       if (resultOwnerExternal) {
+//         const erc1155BalancesSort = this.nftHepler.sortERC1155balances(
+//           resultOwnerExternal.erc1155Balances,
+//           filter.order,
+//         );
+
+//         const nftIdFromOwnerExternal = resultOwnerExternal.erc721Tokens
+//           .map((item) => item.tokenID)
+//           .concat(erc1155BalancesSort.map((item) => item.token.tokenID));
+//         const nftCollectionFromOwnerExternal =
+//           resultOwnerExternal.erc721Tokens
+//             .map((item) => item.contract)
+//             .concat(erc1155BalancesSort.map((item) => item.token.contract));
+
+//         nftIdFromOwner = [...nftIdFromOwnerExternal];
+//         nftCollectionFromOwner = [...nftCollectionFromOwnerExternal];
+//       }
+//       // Check if the number of external items is less than the limit
+//       if (nftIdFromOwner?.length < filter.limit) {
+//         // Internal
+//         const limitRemaining = filter.limit - (nftIdFromOwner?.length || 0);
+
+//         const { account } = await this.GraphqlService.getNFTFromOwner(
+//           filter.owner.toLocaleLowerCase(),
+//           filter.order as OrderDirection,
+//           filter.page,
+//           Math.floor(limitRemaining / 2),
+//         );
+//         const { account: hasNextNftOwnerTemp } =
+//           await this.GraphqlService.getNFTFromOwner(
+//             filter.owner.toLocaleLowerCase(),
+//             filter.order as OrderDirection,
+//             filter.page + 1,
+//             Math.floor(limitRemaining / 2),
+//           );
+//         hasNextNftOwner =
+//           hasNextNftOwner ||
+//           (hasNextNftOwnerTemp &&
+//             hasNextNftOwnerTemp.ERC721tokens.length > 0) ||
+//           (hasNextNftOwnerTemp &&
+//             hasNextNftOwnerTemp.ERC1155balances.length > 0);
+//         if (account) {
+//           const erc1155BalancesSort = this.nftHepler.sortERC1155balances(
+//             account.ERC1155balances,
+//             filter.order,
+//           );
+//           const nftIdFromOwnerInternal = account.ERC721tokens.map(
+//             (item) => item.tokenId,
+//           ).concat(erc1155BalancesSort.map((item) => item.token.tokenId));
+//           const nftCollectionFromOwnerInternal = account.ERC721tokens.map(
+//             (item) => item.contract.id,
+//           ).concat(erc1155BalancesSort.map((item) => item.token.contract.id));
+//           nftIdFromOwner = [...nftIdFromOwner, ...nftIdFromOwnerInternal];
+//           nftCollectionFromOwner = [
+//             ...nftCollectionFromOwner,
+//             ...nftCollectionFromOwnerInternal,
+//           ];
+//         }
+//       }
+//     }
+//     const whereCondition: Prisma.NFTWhereInput = {};
+//     const whereConditionInternal: Prisma.NFTWhereInput = {};
+//     whereConditionInternal.AND = [];
+//     whereCondition.OR = [];
+
+//     // Handle traits conditions
+//     if (traitsConditions.length > 0) {
+//       whereConditionInternal.AND.push(...traitsConditions);
+//     }
+
+//     whereConditionInternal.AND.push({
+//       status: TX_STATUS.SUCCESS,
+//     });
+
+//     whereConditionInternal.AND.push({
+//       isActive: true,
+//     });
+//     if (filter.creatorAddress) {
+//       whereConditionInternal.AND.push({
+//         creator: {
+//           publicKey: filter.creatorAddress,
+//         },
+//       });
+//     }
+//     if (filter.source) {
+//       whereConditionInternal.AND.push({
+//         source: filter.source,
+//       });
+//     }
+
+//     if (filter.collectionAddress || filter.type) {
+//       const collectionCondition: Prisma.CollectionWhereInput = {};
+
+//       if (filter.collectionAddress) {
+//         collectionCondition.address = filter.collectionAddress;
+//       }
+
+//       if (filter.type) {
+//         collectionCondition.type = filter.type;
+//       }
+
+//       whereConditionInternal.AND.push({ collection: collectionCondition });
+//     }
+
+//     if (filter.name) {
+//       whereConditionInternal.AND.push({
+//         // name: {
+//         //   contains: filter.name,
+//         //   mode: 'insensitive',
+//         // },
+//         nameSlug: {
+//           contains: OtherCommon.stringToSlugSearch(filter.name),
+//           mode: 'insensitive',
+//         },
+//       });
+//     }
+
+//     if (nftIdFromOwner.length > 0) {
+//       const collectionToTokenIds: Record<string, string[]> = {};
+//       for (let i = 0; i < nftIdFromOwner.length; i++) {
+//         const collection = nftCollectionFromOwner[i];
+//         if (!collectionToTokenIds[collection]) {
+//           collectionToTokenIds[collection] = [];
+//         }
+//         collectionToTokenIds[collection].push(nftIdFromOwner[i]);
+//       }
+//       for (const [collection, tokenIds] of Object.entries(
+//         collectionToTokenIds,
+//       )) {
+//         const tokenIdConditions = tokenIds.map((tokenId) => ({
+//           OR: [{ u2uId: tokenId }, { id: tokenId }],
+//         }));
+//         whereCondition.OR.push({
+//           AND: [
+//             { OR: tokenIdConditions },
+//             {
+//               collection: {
+//                 address: collection,
+//               },
+//             },
+//             ...whereConditionInternal.AND,
+//           ],
+//         });
+//       }
+//     } else if (filter.owner) {
+//       // console.log(whereConditionInternal);
+//     } else {
+//       whereCondition.AND = whereConditionInternal.AND;
+//       delete whereCondition.OR;
+//     }
+//     //----------
+//     if (
+//       (!filter.priceMin && !filter.priceMax && !filter.sellStatus) ||
+//       filter.name
+//     ) {
+//       if (filter.quoteToken !== undefined) {
+//         whereCondition.MarketplaceByTokenId = { some: {} };
+//         whereCondition.MarketplaceByTokenId.some.quoteToken =
+//           filter.quoteToken.toLowerCase();
+//       }
+//       const whereMarketPlaceStatus: Prisma.MarketplaceStatusWhereInput =
+//         this.nftHepler.generateWhereMarketPlaceStatus(filter);
+
+//       if (filter.orderBy === 'price') {
+//         whereMarketPlaceStatus.nftById = whereCondition;
+//         const { result, hasNext } =
+//           await this.nftHepler.getListNFTWithMarketplaceStatus(
+//             filter,
+//             whereMarketPlaceStatus,
+//           );
+//         return {
+//           data: result,
+//           paging: {
+//             hasNext: hasNext,
+//             limit: filter.limit,
+//             page: filter.page,
+//           },
+//         };
+//       } else {
+//         const orderByProperties: Prisma.NFTOrderByWithRelationAndSearchRelevanceInput =
+//           {};
+
+//         if (filter.orderBy == 'time') {
+//           orderByProperties.createdAt = filter.order;
+//         } else {
+//           orderByProperties.metricPoint = 'desc';
+//         }
+//         const nfts = await this.prisma.nFT.findMany({
+//           ...(!filter.owner && {
+//             skip: (filter.page - 1) * filter.limit,
+//             take: filter.limit,
+//           }),
+//           where: whereCondition,
+//           orderBy: orderByProperties,
+//           include: {
+//             creator: {
+//               select: creatorSelect,
+//             },
+//             collection: {
+//               select: CollectionSelect,
+//             },
+//             MarketplaceByTokenId: {
+//               where: whereMarketPlaceStatus,
+//               select: marketplaceSelect,
+//             },
+//             traits: true,
+//           },
+//         });
+//         const Nftformat = await this.nftHepler.handleFormatNFTResponse(nfts);
+//         const hasNext =
+//           (await PaginationCommon.hasNextPage(
+//             filter.page,
+//             filter.limit,
+//             'nFT',
+//             whereCondition,
+//           )) || hasNextNftOwner;
+//         return {
+//           data: Nftformat,
+//           paging: {
+//             hasNext: hasNext,
+//             limit: filter.limit,
+//             page: filter.page,
+//           },
+//         };
+//       }
+//     } else {
+//       if (Number(filter.priceMin) > Number(filter.priceMax)) {
+//         // If priceMin is higher than priceMax, return an empty array
+//         return {
+//           data: [],
+//           paging: {
+//             hasNext: false,
+//             limit: filter.limit,
+//             page: filter.page,
+//           },
+//         };
+//       }
+//       const whereMarketPlaceStatus: Prisma.MarketplaceStatusWhereInput =
+//         this.nftHepler.generateWhereMarketPlaceStatus(filter);
+//       const whereCondition1: Prisma.NFTWhereInput = {
+//         AND: [whereCondition],
+//       };
+//       // Ensure that MarketplaceByTokenId is initialized
+//       if (!whereCondition1.MarketplaceByTokenId) {
+//         whereCondition1.MarketplaceByTokenId = { some: {} };
+//       }
+
+//       if (filter.priceMin !== undefined || filter.priceMax !== undefined) {
+//         whereCondition1.MarketplaceByTokenId.some.price = {};
+//         if (filter.priceMin !== undefined) {
+//           whereCondition1.MarketplaceByTokenId.some.price.gte = Number(
+//             OtherCommon.weiToEther(filter.priceMin),
+//           );
+//         }
+//         if (filter.priceMax !== undefined) {
+//           whereCondition1.MarketplaceByTokenId.some.price.lte = Number(
+//             OtherCommon.weiToEther(filter.priceMax),
+//           );
+//         }
+//       }
+//       // Check if filter.from or filter.quoteToken is defined before adding it to the query
+//       if (filter.from !== undefined || filter.owner !== undefined) {
+//         whereCondition1.MarketplaceByTokenId.some.from =
+//           filter.sellStatus === SellStatus.AskNew && filter.owner
+//             ? filter.owner.toLowerCase()
+//             : filter.from;
+//       }
+
+//       whereCondition1.MarketplaceByTokenId.some.quoteToken =
+//         (filter.quoteToken
+//           ? filter.quoteToken.toLowerCase()
+//           : process.env.QUOTE_TOKEN_U2U) ?? process.env.QUOTE_TOKEN_U2U;
+
+//       if (filter.orderBy === 'price') {
+//         whereMarketPlaceStatus.nftById = whereCondition1;
+//         const { result, hasNext } =
+//           await this.nftHepler.getListNFTWithMarketplaceStatus(
+//             filter,
+//             whereMarketPlaceStatus,
+//           );
+//         return {
+//           data: result,
+//           paging: {
+//             hasNext: hasNext,
+//             limit: filter.limit,
+//             page: filter.page,
+//           },
+//         };
+//       } else {
+//         const orderByProperties: Prisma.NFTOrderByWithRelationAndSearchRelevanceInput =
+//           {};
+
+//         if (filter.orderBy == 'time') {
+//           orderByProperties.createdAt = filter.order;
+//         } else {
+//           orderByProperties.metricPoint = 'desc';
+//         }
+
+//         const nfts = await this.prisma.nFT.findMany({
+//           ...(!filter.owner && {
+//             skip: (filter.page - 1) * filter.limit,
+//             take: filter.limit,
+//           }),
+//           where: whereCondition1,
+//           orderBy: orderByProperties,
+//           include: {
+//             creator: {
+//               select: creatorSelect,
+//             },
+//             collection: {
+//               select: CollectionSelect,
+//             },
+//             MarketplaceByTokenId: {
+//               where: whereMarketPlaceStatus,
+//               select: marketplaceSelect,
+//             },
+//             traits: true,
+//           },
+//         });
+//         const Nftformat = await this.nftHepler.handleFormatNFTResponse(nfts);
+//         const hasNext = await PaginationCommon.hasNextPage(
+//           filter.page,
+//           filter.limit,
+//           'nFT',
+//           whereCondition1,
+//         );
+//         return {
+//           data: Nftformat,
+//           paging: {
+//             hasNext: hasNext,
+//             limit: filter.limit,
+//             page: filter.page,
+//           },
+//         };
+//       }
+//     }
+//   } catch (error) {
+//     console.error(error);
+//     throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+//   }
+// }

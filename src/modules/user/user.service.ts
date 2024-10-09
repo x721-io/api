@@ -731,12 +731,11 @@ export class UserService {
   async fetchOrCreateUser(address: string) {
     try {
       // Attempt to find the user by their address
-      let user = await this.prisma.user.findUnique({
+      let user = await this.prisma.user.findFirst({
         where: {
-          signer: address,
+          signer: address.toLowerCase(),
         },
       });
-
       // If the user doesn't exist, create a new one
       if (!user) {
         user = await this.prisma.user.create({

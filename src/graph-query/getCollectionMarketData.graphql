@@ -101,3 +101,40 @@ query GetNFTOwnersInfo721($nftId: String, $contractAddress: String) {
     }
   }
 }
+
+
+query GetNFTOwners1155($tokenId: String, $contract: String, $owner: String) {
+  erc1155Balances(
+    where: {contract: $contract, token_: {tokenId: $tokenId}, value_gt: 0, account: $owner}
+  ) {
+    value
+    account {
+      id
+    }
+    token {
+      tokenId
+    }
+    contract {
+      id
+    }
+  }
+}
+
+query GetNFTOwners721($tokenId: String, $contract: String, $owner: String) {
+  erc721Tokens(
+     where: {contract: $contract, tokenId: $tokenId, owner:$owner}
+  ) {
+    id
+    txCreation
+    contract {
+      id
+    }
+    owner {
+      id
+    }
+    tokenId
+  }
+}
+
+
+
