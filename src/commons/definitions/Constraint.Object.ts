@@ -228,3 +228,19 @@ export const userFollow: Prisma.UserSelect = {
   signer: true,
   shortLink: true,
 };
+
+export const orderSelect: Prisma.OrderSelect = {
+  price: true,
+  priceNum: true,
+  netPrice: true,
+  netPriceNum: true,
+  quantity: true,
+  quoteToken: true,
+  orderStatus: true,
+  orderType: true,
+  index: true,
+  sig: true,
+  filled: true,
+  start: true,
+  end: true,
+};
