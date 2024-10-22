@@ -283,7 +283,7 @@ model MarketplaceStatus {
 
 model SyncMasterData{
   timestamp      Int                @default(0)
-  type           CONTRACT_TYPE      @id
+  type           SYNCDATASTATUS     @id
   syncDataStatus Boolean            @default(true)
 }
 
@@ -380,14 +380,14 @@ model AnalysisCollection {
 }
 
 model Order {
-  orderId               String           @default(uuid()) @db.Uuid
+  index                 Int              @default(1) 
   sig                   String          
   makerId               String           @db.Uuid
   makeAssetType         Int
   makeAssetAddress      String           //  U2U Native address , Collection Address
   makeAssetValue        String
   makeAssetId           String           //  U2U native => 0 , Order NFT => NFT ID
-  takerId               String           @db.Uuid
+  takerId               String?           @db.Uuid
   takeAssetType         Int
   takeAssetAddress      String           //  U2U Native address , Collection Address
   takeAssetValue        String           
@@ -395,34 +395,44 @@ model Order {
   salt                  String           
   start                 Int              @default(0)
   end                   Int              @default(0)
-  dataOrder             String
   orderStatus           ORDERSTATUS      @default(OPEN)
   orderType             ORDERTYPE
-  listingRoot           String?
-  proof                 String?
+  root                  String           @default("0x0000000000000000000000000000000000000000000000000000000000000000")
+  proof                 String[]         @default([])
   tokenId               String           @db.VarChar(255)
   collectionId          String           @db.Uuid 
+  quantity              Int              @default(1)
   price                 String           @default("0")
   priceNum              Float            @default(0)
   netPrice              String           @default("0")
   netPriceNum           Float            @default(0)
   createAt              DateTime         @default(now())
-  updatedAt             DateTime?        @updatedAt          
+  updatedAt             DateTime?        @updatedAt         
+  quoteToken            String            
+  filled                Int              @default(0)   // Quanity filled order
   Maker                 User             @relation(fields: [makerId], references: [id], name: "UserMaker")
-  Taker                 User             @relation(fields: [takerId], references: [id], name: "UserTaker")
+  Taker                 User?            @relation(fields: [takerId], references: [id], name: "UserTaker")
   nftById               NFT              @relation("Order_byId", fields: [tokenId, collectionId], references: [id, collectionId], map: "order_by_id_fk") 
-  @@id([orderId, sig])
-  @@index([orderId, sig])
+  @@id([sig, index])
+  @@index([sig, index])
 }
 
 
 enum ORDERSTATUS {
   OPEN
+  PENDING
   CANCELLED
   FILLED
 }
 
 enum ORDERTYPE {
   BID
-  SELL
+  BULK   // SELL MULTIPLE
+  SINGLE // SELL 1 
+}
+
+enum SYNCDATASTATUS {
+  ERC1155
+  ERC721
+  ORDER
 }

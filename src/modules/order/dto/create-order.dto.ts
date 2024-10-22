@@ -2,8 +2,10 @@ import { InputType } from '@nestjs/graphql';
 import { ORDERSTATUS, ORDERTYPE } from '@prisma/client';
 import { stringList } from 'aws-sdk/clients/datapipeline';
 import {
+  IsArray,
   IsEnum,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -11,7 +13,7 @@ import {
 import { makeTakeType } from 'src/constants/enums/order.enum';
 
 @InputType()
-export class CreateOrderDto {
+export class CreateSingleDto {
   @IsString()
   @IsNotEmpty()
   sig: string;
@@ -35,7 +37,7 @@ export class CreateOrderDto {
   @IsString()
   @IsNotEmpty()
   @IsOptional()
-  takerAddress: string;
+  taker: string;
 
   @IsEnum(makeTakeType)
   @IsNotEmpty()
@@ -65,21 +67,9 @@ export class CreateOrderDto {
   @IsNotEmpty()
   end: number;
 
-  @IsString()
-  @IsNotEmpty()
-  dataOrder: string;
-
   @IsEnum(ORDERTYPE)
   @IsNotEmpty()
   orderType: ORDERTYPE;
-
-  @IsString()
-  @IsNotEmpty()
-  tokenId: string;
-
-  @IsString()
-  @IsNotEmpty()
-  collectionAddress: string;
 
   @IsString()
   @IsNotEmpty()
@@ -88,4 +78,27 @@ export class CreateOrderDto {
   @IsString()
   @IsNotEmpty()
   netPrice: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  index: number;
+
+  @IsString()
+  @IsOptional()
+  root: string;
+
+  @IsArray() // Ensure that proof is an array of strings
+  @IsString({ each: true }) // Validate that each element in the array is a string
+  @IsOptional()
+  proof: string[];
+}
+
+export class CreateBulkDto {
+  orders: CreateSingleDto[];
+}
+
+export class ItemBulkDto extends CreateSingleDto {
+  @IsString()
+  @IsOptional()
+  sig: string;
 }

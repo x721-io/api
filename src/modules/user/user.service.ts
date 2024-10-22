@@ -733,7 +733,7 @@ export class UserService {
       // Attempt to find the user by their address
       let user = await this.prisma.user.findFirst({
         where: {
-          signer: address,
+          signer: address.toLowerCase(),
         },
       });
       // If the user doesn't exist, create a new one

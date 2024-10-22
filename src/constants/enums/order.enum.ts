@@ -1,8 +1,9 @@
 enum makeTakeType {
-  U2U = 0,
-  ERC20TOKEN = 1,
-  ERC721 = 3,
-  ERC1155 = 4,
+  ERROR,
+  U2U,
+  ERC20TOKEN,
+  ERC721,
+  ERC1155,
 }
 
 export { makeTakeType };
