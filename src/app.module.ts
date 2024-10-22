@@ -14,6 +14,9 @@ import { NftModule } from './modules/nft/nft.module';
 import { ValidatorModule } from './modules/validator/validator.module';
 import { LaunchpadModule } from './modules/launchpad/launchpad.module';
 import { HealthcheckController } from './modules/healthcheck/healthcheck.controller';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { BigIntInterceptor } from './commons/interceptors/bigint.interceptor';
+import { CMSModule } from './modules/cms/cms.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -34,8 +37,15 @@ import { HealthcheckController } from './modules/healthcheck/healthcheck.control
     NftModule,
     ValidatorModule,
     LaunchpadModule,
+    CMSModule,
   ],
-  providers: [PrismaService],
+  providers: [
+    PrismaService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: BigIntInterceptor,
+    },
+  ],
   controllers: [HealthcheckController],
 })
 export class AppModule {

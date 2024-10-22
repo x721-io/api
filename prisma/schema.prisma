@@ -39,104 +39,121 @@ model User {
   follower         UserFollow[]     @relation(name: "Follower")
   accountStatus    Boolean          @default(false)
   verifyEmail      Boolean          @default(false)
+  isActive         Boolean          @default(true)
+  metricPoint      BigInt?          @default(0)
+  metricDetail     Json?            @default("{\"Verified\":0,\"Followers\":{\"key\":\"follower_lv0\",\"value\":0,\"point\":0,\"total\":0},\"CollectionMetric\":0,\"VolumeIndividual\":0}")
 }
 
 model NFT {
-  id             String     @db.VarChar(255)
-  u2uId          String?    @db.VarChar(255)
+  id             String             @db.VarChar(255)
+  u2uId          String?            @db.VarChar(255)
   description    String?
   name           String
   nameSlug       String?
   image          String?
   animationUrl   String?
   traits         Trait[]
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
   status         TX_STATUS
   tokenUri       String
   txCreationHash String
   owners         UserNFT[]
-  creatorId      String?    @db.Uuid
-  creator        User?      @relation(fields: [creatorId], references: [id])
-  collectionId   String     @db.Uuid
-  collection     Collection @relation(fields: [collectionId], references: [id])
-
+  isActive       Boolean            @default(true)
+  creatorId      String?            @db.Uuid
+  creator        User?              @relation(fields: [creatorId], references: [id])
+  collectionId   String             @db.Uuid
+  collection     Collection         @relation(fields: [collectionId], references: [id])
+  MarketplaceByTokenId              MarketplaceStatus[] @relation("Marketplace_byId")
+  metricPoint    BigInt?            @default(0)
+  metricDetail   Json?              @default("{\"VolumeIndividual\":0,\"UserMetric\":0}")
+  source         String?
   @@id([id, collectionId])
-  @@index([u2uId, collectionId])
+  @@index([u2uId, collectionId, isActive])
 }
 
 model Trait {
-  id           String  @id @default(uuid()) @db.Uuid
+  id           String               @id @default(uuid()) @db.Uuid
   trait_type   String
   display_type String?
   value        String
-  collectionId String  @db.Uuid
+  collectionId String               @db.Uuid
   nftId        String
-  NFT          NFT     @relation(fields: [nftId, collectionId], references: [id, collectionId])
+  NFT          NFT                  @relation(fields: [nftId, collectionId], references: [id, collectionId])
 
   @@index([nftId, collectionId])
 }
 
 model UserNFT {
-  userId       String @db.Uuid
-  nftId        String @db.VarChar(255)
-  collectionId String @db.Uuid
-  quantity     Int    @default(1)
-  user         User   @relation(fields: [userId], references: [id])
-  nft          NFT    @relation(fields: [nftId, collectionId], references: [id, collectionId])
+  userId       String               @db.Uuid
+  nftId        String               @db.VarChar(255)
+  collectionId String               @db.Uuid
+  quantity     Int                  @default(1)
+  user         User                 @relation(fields: [userId], references: [id])
+  nft          NFT                  @relation(fields: [nftId, collectionId], references: [id, collectionId])
 
   @@id([userId, nftId, collectionId])
 }
 
 model Collection {
-  id             String           @id @default(uuid()) @db.Uuid
-  txCreationHash String           @unique
-  name           String           @unique
+  id             String             @id @default(uuid()) @db.Uuid
+  txCreationHash String             @unique
+  name           String             @unique
   nameSlug       String?
   symbol         String
   description    String?
-  address        String?          @unique
-  shortUrl       String?          @unique
+  address        String?            @unique
+  shortUrl       String?            @unique
   metadata       String?
-  isU2U          Boolean          @default(true)
+  isU2U          Boolean            @default(true)
   status         TX_STATUS
   type           CONTRACT_TYPE
   categoryId     Int?
-  category       Category?        @relation(fields: [categoryId], references: [id])
+  category       Category?          @relation(fields: [categoryId], references: [id])
   nfts           NFT[]
   creators       UserCollection[]
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
   coverImage     String?
   avatar         String?
-  projectId      String?          @unique @db.Uuid
-  project        Project?         @relation(fields: [projectId], references: [id])
-
+  projectId      String?            @unique @db.Uuid
+  project        Project?           @relation(fields: [projectId], references: [id])
+  isVerified     Boolean            @default(false)
+  floorPrice     BigInt             @default(0)
+  isActive       Boolean            @default(true)
+  flagExtend     Boolean?           @default(false)
+  isSync         Boolean?           @default(true)
+  subgraphUrl    String?            
+  lastTimeSync   Int?               @default(0)
+  metricPoint    BigInt?            @default(0)
+  metricDetail   Json?              @default("{\"Verified\":0,\"Volume\":{\"key\":\"volume_lv0\",\"value\":\"0\",\"point\":0,\"total\":0},\"TotalUniqueOwner\":{\"key\":\"owner_lv0\",\"value\":\"0\",\"point\":0,\"total\":0},\"TotalItems\":{\"key\":\"item_lv0\",\"value\":0,\"point\":0,\"total\":0},\"Followers\":{\"key\":\"follower_lv0\",\"value\":0,\"point\":0,\"total\":0}}")
+  source         String?
+  AnalysisCollection  AnalysisCollection[]
   @@index([address], type: Hash)
 }
 
 model UserCollection {
-  userId       String     @db.Uuid
-  collectionId String     @db.Uuid
-  user         User       @relation(fields: [userId], references: [id])
-  collection   Collection @relation(fields: [collectionId], references: [id])
+  userId       String               @db.Uuid
+  collectionId String               @db.Uuid
+  user         User                 @relation(fields: [userId], references: [id])
+  collection   Collection           @relation(fields: [collectionId], references: [id])
 
   @@id([userId, collectionId])
 }
 
 model Category {
-  id         Int          @id @default(autoincrement())
+  id         Int                    @id @default(autoincrement())
   name       String
   collection Collection[]
 }
 
 model Project {
-  id           String           @id @default(uuid()) @db.Uuid
+  id           String               @id @default(uuid()) @db.Uuid
   idOnchain    Int
   name         String
   banner       String?
   description  String?
-  details      Json[]           @default([])
+  details      Json[]               @default([])
   organization String?
   website      String?
   telegram     String?
@@ -146,18 +163,20 @@ model Project {
   twitter      String?
   shortLink    String?
   logo         String?
-  isActivated  Boolean          @default(false)
+  isActivated  Boolean              @default(true)
+  isDelete     Boolean              @default(false)
   rounds       ProjectRound[]
   collection   Collection?
   subscriber   UserProject[]
   rangeTime    RoundRangeTime[]
+  @@index([id, isActivated, isDelete])
 }
 
 model ProjectRound {
-  projectId       String    @db.Uuid
-  project         Project   @relation(fields: [projectId], references: [id])
+  projectId       String            @db.Uuid
+  project         Project           @relation(fields: [projectId], references: [id])
   roundId         Int
-  round           RoundInfo @relation(fields: [roundId], references: [id])
+  round           RoundInfo         @relation(fields: [roundId], references: [id])
   address         String?
   start           DateTime
   end             DateTime
@@ -167,31 +186,34 @@ model ProjectRound {
   price           String?
   instruction     String?
   requiredStaking String?
-  claimableStart  DateTime  @default(now())
-  claimableIds    String[]  @default([])
+  claimableStart  DateTime          @default(now())
+  claimableIds    String[]          @default([])
 
   @@id([projectId, roundId])
 }
 
 model UserProject {
-  userId         String    @db.Uuid
-  projectId      String    @db.Uuid
-  subscribeDate  DateTime  @default(now())
+  userId         String             @db.Uuid
+  projectId      String             @db.Uuid
+  subscribeDate  DateTime           @default(now())
   stakingTotal   String?
-  lastDateRecord DateTime? @default(now())
-  user           User      @relation(fields: [userId], references: [id])
-  project        Project   @relation(fields: [projectId], references: [id])
+  lastDateRecord DateTime?          @default(now())
+  user           User               @relation(fields: [userId], references: [id])
+  project        Project            @relation(fields: [projectId], references: [id])
 
   @@id([userId, projectId])
 }
 
 model RoundInfo {
-  id          Int              @id @default(autoincrement())
+  id          Int                   @id @default(autoincrement())
   name        String?
   description String?
   type        String?
+  isActive    Boolean               @default(true)
+  isDelete    Boolean               @default(false)
   projects    ProjectRound[]
   rangeTime   RoundRangeTime[]
+  @@index([id, isActive, isDelete])
 }
 
 enum TX_STATUS {
@@ -205,22 +227,151 @@ enum CONTRACT_TYPE {
   ERC721
 }
 
+enum SELL_STATUS {
+  AskNew
+  AskCancel
+  Trade
+  AcceptBid
+  Bid
+  CancelBid
+}
+
 model RoundRangeTime {
-  id        String    @id @default(uuid()) @db.Uuid
+  id        String                  @id @default(uuid()) @db.Uuid
   roundId   Int
-  projectId String    @db.Uuid
+  projectId String                  @db.Uuid
   start     DateTime
   end       DateTime
-  round     RoundInfo @relation(fields: [roundId], references: [id])
-  project   Project   @relation(fields: [projectId], references: [id])
+  round     RoundInfo               @relation(fields: [roundId], references: [id])
+  project   Project                 @relation(fields: [projectId], references: [id])
 }
 
 model UserFollow {
-  userId     String  @db.Uuid
-  followerId String  @db.Uuid
-  isFollow   Boolean @default(true)
-  user       User    @relation(fields: [userId], references: [id], name: "UserTracked")
-  follower   User    @relation(fields: [followerId], references: [id], name: "Follower")
+  userId     String                 @db.Uuid
+  followerId String                 @db.Uuid
+  isFollow   Boolean                @default(true)
+  user       User                   @relation(fields: [userId], references: [id], name: "UserTracked")
+  follower   User                   @relation(fields: [followerId], references: [id], name: "Follower")
 
   @@id([userId, followerId])
+}
+
+model MarketplaceStatus {
+  id           Int                  @id @default(autoincrement())
+  tokenId      String               @db.VarChar(255) 
+  collectionId String               @db.Uuid
+  quoteToken   String?              @db.VarChar(255)
+  timestamp    Int
+  price        Float
+  priceWei     String
+  netPrice     Float
+  netPriceWei  String
+  event        SELL_STATUS
+  quantity     Int                  @default(1)
+  operationId  String?
+  txHash       String?
+  operation    String?
+  from         String?
+  askId        String?
+  metricPoint  BigInt?              @default(0)
+  nftById      NFT                  @relation("Marketplace_byId", fields: [tokenId, collectionId], references: [id, collectionId], map: "marketplace_by_id_fk") 
+  @@index([tokenId, collectionId])
+}
+
+model SyncMasterData{
+  timestamp      Int                @default(0)
+  type           CONTRACT_TYPE      @id
+  syncDataStatus Boolean            @default(true)
+}
+
+model Account {
+  id               String           @id @default(uuid()) @db.Uuid
+  avatar           String?
+  fullName         String?
+  password         String
+  email            String?
+  username         String           @unique
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime?        @updatedAt
+  twitterLink      String?
+  telegramLink     String?
+  phone            String?
+  roles            String[]         @default(["VIEWER"])
+  isActive         Boolean          @default(true)
+  isDelete         Boolean          @default(false)
+  logActions       LogAction[]
+  topic            Topic[]
+  blog             Blog[]
+  @@index([id, isActive, isDelete])
+}
+
+model Role {
+  id               BigInt           @id @default(autoincrement())
+  name             String             
+  keyRole          String             
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime?        @updatedAt  
+}
+
+model LogAction {
+  id               BigInt           @id @default(autoincrement())
+  detail           String
+  time             DateTime         @default(now())
+  accountId        String           @db.Uuid  
+  account          Account          @relation(fields: [accountId], references: [id])   
+}
+
+model Topic {
+  id               BigInt           @id @default(autoincrement())
+  nameTopic        String
+  createdAt        DateTime         @default(now())
+  createdBy        String           @db.Uuid 
+  isActive         Boolean          @default(true)
+  isDelete         Boolean          @default(false)
+  account          Account          @relation(fields: [createdBy], references: [id])   
+  blogs            BlogTopic[]              
+}
+
+model Blog {
+  id               String           @id @default(uuid()) @db.Uuid
+  title            String
+  createdAt        DateTime         @default(now())
+  createdBy        String           @db.Uuid 
+  description      String?
+  content          String?          @db.VarChar(35000)
+  isActive         Boolean          @default(true)
+  isDelete         Boolean          @default(false)         
+  account          Account          @relation(fields: [createdBy], references: [id])   
+  topics           BlogTopic[] 
+  @@index([id, isActive, isDelete])
+}
+
+model BlogTopic{
+  id                BigInt          @id @default(autoincrement())
+  topicId           BigInt
+  blogId            String          @db.Uuid
+  topic             Topic           @relation(fields: [topicId], references: [id])
+  blog              Blog            @relation(fields: [blogId], references: [id])   
+}
+model QuoteTokens {
+  address        String             @id @unique
+  symbol         String
+  name           String
+  derivedETH     Float
+  derivedUSD     Float
+}
+
+model AnalysisCollection {
+  id               String           @id
+  collectionId     String           @db.Uuid
+  keyTime          String
+  address          String  
+  type             CONTRACT_TYPE
+  volume           Decimal          @default(0) @db.Decimal(78, 0)
+  volumeWei        String           @default("0")
+  floorPrice       BigInt           @default(0)
+  items            BigInt           @default(0)
+  owner            BigInt           @default(0)
+  createdAt        DateTime         @default(now()) @db.Date
+  collection       Collection       @relation(fields: [collectionId], references: [id])
 }

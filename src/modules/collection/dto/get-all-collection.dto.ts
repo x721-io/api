@@ -1,14 +1,14 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsIn, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 import { OffsetPaginationDto } from 'src/commons/definitions/OffsetPagination.input';
-
+import { SourceType } from 'src/constants/enums/Source.enum';
 export class GetAllCollectionDto extends OffsetPaginationDto {
   // id: string;
-  @Type(() => Number)
+  @IsString()
   @IsOptional()
   min: string;
 
-  @Type(() => Number)
+  @IsString()
   @IsOptional()
   max: string;
 
@@ -19,4 +19,12 @@ export class GetAllCollectionDto extends OffsetPaginationDto {
   @IsString()
   @IsOptional()
   creatorAddresses: string;
+
+  @IsOptional()
+  @IsIn(['time', 'price', 'all'])
+  orderBy?: 'time' | 'price' | 'all' = 'all';
+
+  @IsOptional()
+  @IsEnum(SourceType)
+  source?: SourceType;
 }

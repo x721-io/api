@@ -9,11 +9,25 @@ import {
   ErcContractQuery,
   ErcContractQueryVariables,
 } from '../../generated/graphql';
+import {
+  ErcContractExternalQuery,
+  ErcContractExternalQueryVariables,
+  getSdk as getSdkExternal,
+} from '../../generated/SubgraphExternal/graphql';
 import { GraphQLClient } from 'graphql-request';
+import SecureUtil from '../../commons/Secure.common';
+
+interface responseRedisExternal {
+  address: string;
+  totalNft: string;
+  totalOwner: string;
+}
+
 @Injectable()
 export class GetCollectionMarketData {
   private readonly endpoint = process.env.SUBGRAPH_URL;
   private graphqlClient: GraphQLClient;
+  private readonly DeadAddress = '0x000000000000000000000000000000000000dead';
 
   constructor() {
     this.graphqlClient = new GraphQLClient(this.endpoint);
@@ -58,5 +72,20 @@ export class GetCollectionMarketData {
     const sdk = getSdk(client);
     const variables: ErcContractQueryVariables = { id: collectionAddress };
     return await sdk.ErcContract(variables);
+  }
+
+  async getAllCollectionExternal(contract: string) {
+    try {
+      const response = await SecureUtil.getSessionInfo(`External-${contract}`);
+      const result: responseRedisExternal = JSON.parse(response);
+      return {
+        totalNftExternal: result?.totalNft ? parseInt(result.totalNft) : 0,
+        totalOwnerExternal: result?.totalOwner
+          ? parseInt(result?.totalOwner)
+          : 0,
+      };
+    } catch (error) {
+      console.log('getAllCollectionExternal', error);
+    }
   }
 }

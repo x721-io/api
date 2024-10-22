@@ -10,11 +10,9 @@ WORKDIR /usr/src/app/u2u-server
 RUN yarn global add @nestjs/cli
 
 # Copy package.json and yarn.lock to the working directory
-COPY package.json yarn.lock ./
-
+COPY package.json ./
 # Install project dependencies
 RUN yarn install
-
 
 COPY . .
 RUN yarn codegen

@@ -10,6 +10,7 @@ import {
 import { Query } from '../../generated/graphql';
 import { ZERO_ADDR } from 'src/constants/web3Const/messages';
 import { GraphQLClient, gql } from 'graphql-request';
+import { creatorSelect } from '../../commons/definitions/Constraint.Object';
 @Injectable()
 export class CollectionPriceService {
   constructor(
@@ -24,7 +25,11 @@ export class CollectionPriceService {
       marketEvent1155S: filterSelling1155,
       marketEvent721S: filterSelling721,
     } = await this.graphQL.getNFTSellStatus1({
-      and: [{ event: SellStatus.AskNew }],
+      and: [
+        { event: SellStatus.AskNew },
+        { price_gte: min },
+        { price_lte: max },
+      ],
       // or: [{ from: filter.owner }, { to: filter.owner }],
     });
     const collectionsWithFloorPrice = this.getFloorPrices([
@@ -121,14 +126,7 @@ export class CollectionPriceService {
     try {
       return await this.prisma.user.findFirst({
         where: { signer },
-        select: {
-          id: true,
-          email: true,
-          avatar: true,
-          username: true,
-          signer: true,
-          shortLink: true,
-        },
+        select: creatorSelect,
       });
     } catch (error) {
       console.error(`Error fetching user data for signer ${signer}:`, error);

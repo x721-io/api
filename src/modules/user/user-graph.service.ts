@@ -321,6 +321,7 @@ export class UserServiceExtend {
                   type: true,
                   categoryId: true,
                   createdAt: true,
+                  flagExtend: true,
                   category: {
                     select: {
                       id: true,
@@ -344,6 +345,7 @@ export class UserServiceExtend {
             await this.collectionService.getGeneralCollectionData(
               collection.address,
               collection.type,
+              collection.flagExtend,
             );
           return { ...collection, ...generalInfo };
         }),

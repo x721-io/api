@@ -12,7 +12,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { GetCurrentUser } from 'src/decorators/get-current-user.decorator';
-import { User } from '@prisma/client';
+import { User, Account } from '@prisma/client';
 import { CreateNftDto } from './dto/create-nft.dto';
 import { UpdateNftDto } from './dto/update-nft.dto';
 import { NftService } from './nft.service';
@@ -23,7 +23,7 @@ import { GetAllNftDto } from './dto/get-all-nft.dto';
 import { MarketplaceService } from './nft-marketplace.service';
 import { GetEventBase } from './dto/event-base.dto';
 import { GetActivityBase } from './dto/activity-nft.dto';
-
+import { GetGeneralInforDto } from './dto/get-general-infor.dto';
 @Controller('nft')
 export class NftController {
   constructor(
@@ -97,5 +97,9 @@ export class NftController {
   @Post('/activity')
   findActivityNFT(@Body() input: GetActivityBase) {
     return this.nftService.findActivityNFT(input);
+  }
+  @Post('/general-count')
+  getGeneralInfor(@Body() query: GetGeneralInforDto) {
+    return this.nftService.getGeneralInfor(query);
   }
 }

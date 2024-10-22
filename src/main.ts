@@ -7,6 +7,7 @@ import * as cookieParser from 'cookie-parser';
 // import helmet from 'helmet';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+
 // import { GraphQLErrorFilter } from './commons/errors/ExceptionFilter';
 function matchRegexArray(arr: string[], str: string): boolean {
   for (const pattern of arr) {
@@ -18,19 +19,8 @@ function matchRegexArray(arr: string[], str: string): boolean {
   return false;
 }
 
-const whitelist = [
-  'http://localhost:3000',
-  'nebulas.u2nft.io',
-  'nebulas.u2nft.io/',
-  'u2nft.io',
-  'u2nft.io/',
-  'https://nft-launchpad.uniultra.xyz/',
-  'https://nft-launchpad.uniultra.xyz',
-  'https://marketplace-dev.uniultra.xyz/',
-  'https://marketplace-dev.uniultra.xyz',
-];
-
 async function bootstrap() {
+  const whitelist = process.env.ALLOWED_DOMAIN.split(',');
   const app = await NestFactory.create(AppModule);
 
   app.use(cookieParser());
@@ -58,6 +48,7 @@ async function bootstrap() {
     .addTag('NFT Marketplace')
     .build();
   const document = SwaggerModule.createDocument(app, config);
+
   SwaggerModule.setup('api', app, document);
   const redisConnectFn = Redis.getClient();
   await redisConnectFn;

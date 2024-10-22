@@ -14,7 +14,11 @@ import { findProjectsUserSubscribe } from '../launchpad/dto/find-project.dto';
 import { ListProjectEntity } from './entities/project.entity';
 import { UserEntity } from './entities/user.entity';
 import { ActivityService } from '../nft/activity.service';
-import { GetActivityBase } from './dto/activity-user.dto';
+import {
+  GetActivityBase,
+  GetFollowingDto,
+  GetListBid,
+} from './dto/activity-user.dto';
 import { Redis } from 'src/database';
 import { SendVerifyEmailDto, VerifyEmailDto } from './dto/verify-email.dto';
 import * as jwt from 'jsonwebtoken';
@@ -26,6 +30,14 @@ import {
   GetTransferNftQueryVariables,
 } from '../../generated/graphql';
 import SecureUtil from '../../commons/Secure.common';
+import PaginationCommon from 'src/commons/HasNext.common';
+import MetricCommon from 'src/commons/Metric.common';
+import {
+  userSelectFull,
+  projectSelect,
+  userFollow,
+} from '../../commons/definitions/Constraint.Object';
+import { MetricCategory, TypeCategory } from 'src/constants/enums/Metric.enum';
 interface UserRedisinterface {
   timestamp: string;
   email: string;
@@ -105,13 +117,13 @@ export class UserService {
   async findAll(
     filter: GetAllUser,
     currentUser: User,
-  ): Promise<PagingResponse<any>> {
+  ): Promise<PagingResponseHasNext<any>> {
     const currentUserId = currentUser?.id;
     // const limit = (filter.limit || 12) as number;
     // const cursor = filter.cursor;
     // @ts-ignore
     // const take: number = limit && limit > 0 ? parseInt(limit) + 1 : 13;
-    const whereCondition: any = {
+    const whereCondition: Prisma.UserWhereInput = {
       ...(filter.search
         ? {
             OR: [
@@ -146,58 +158,26 @@ export class UserService {
       username: {
         not: null,
       },
+      isActive: true,
     };
-
     const usersWithFollowStatus = await this.prisma.user.findMany({
-      orderBy: {
-        createdAt: filter.order,
-      },
+      orderBy: [
+        {
+          metricPoint: 'desc',
+        },
+        {
+          createdAt: filter.order,
+        },
+      ],
       where: whereCondition,
       skip: (filter.page - 1) * filter.limit,
       take: filter.limit,
-      select: {
-        id: true,
-        email: true,
-        avatar: true,
-        username: true,
-        signature: true,
-        signedMessage: true,
-        signDate: true,
-        signer: true,
-        publicKey: true,
-        acceptedTerms: true,
-        createdAt: true,
-        updatedAt: true,
-        bio: true,
-        facebookLink: true,
-        twitterLink: true,
-        telegramLink: true,
-        shortLink: true,
-        discordLink: true,
-        webURL: true,
-        coverImage: true,
-        followers: true,
-        following: true,
-        accountStatus: true,
-        verifyEmail: true,
-        ...(currentUserId
-          ? {
-              user: {
-                select: {
-                  isFollow: true,
-                },
-                where: {
-                  followerId: currentUserId,
-                },
-              },
-            }
-          : {}),
-      },
+      select: userSelectFull(currentUserId),
     });
 
-    const total = await this.prisma.user.count({
-      where: whereCondition,
-    });
+    // const total = await this.prisma.user.count({
+    //   where: whereCondition,
+    // });
     const usersWithFollowStatusAndPaging = usersWithFollowStatus.map(
       ({ user, ...rest }) => ({
         ...rest,
@@ -210,11 +190,16 @@ export class UserService {
     //   nextCursor = nextUser.id;
     // }
     // return { users, nextCursor };
-
+    const hasNext = await PaginationCommon.hasNextPage(
+      filter.page,
+      filter.limit,
+      'user',
+      whereCondition,
+    );
     return {
       data: usersWithFollowStatusAndPaging,
       paging: {
-        total,
+        hasNext,
         page: filter.page,
         limit: filter.limit,
       },
@@ -232,58 +217,26 @@ export class UserService {
 
       const result = await this.prisma.user.findFirst({
         where: {
-          ...(isUuid
-            ? { id: input }
-            : {
-                OR: [
-                  { shortLink: { equals: input, mode: 'insensitive' } },
-                  {
-                    signer: {
-                      equals: input.toLowerCase(),
-                      mode: 'insensitive',
-                    },
-                  },
-                ],
-              }),
+          AND: [
+            {
+              ...(isUuid
+                ? { id: input }
+                : {
+                    OR: [
+                      { shortLink: { equals: input, mode: 'insensitive' } },
+                      {
+                        signer: {
+                          equals: input.toLowerCase(),
+                          mode: 'insensitive',
+                        },
+                      },
+                    ],
+                  }),
+            },
+            { isActive: true },
+          ],
         },
-        select: {
-          id: true,
-          email: true,
-          avatar: true,
-          username: true,
-          signature: true,
-          signedMessage: true,
-          signDate: true,
-          signer: true,
-          publicKey: true,
-          acceptedTerms: true,
-          createdAt: true,
-          updatedAt: true,
-          bio: true,
-          facebookLink: true,
-          twitterLink: true,
-          telegramLink: true,
-          shortLink: true,
-          discordLink: true,
-          webURL: true,
-          coverImage: true,
-          followers: true,
-          following: true,
-          accountStatus: true,
-          verifyEmail: true,
-          ...(currentUserId
-            ? {
-                user: {
-                  select: {
-                    isFollow: true,
-                  },
-                  where: {
-                    followerId: currentUserId,
-                  },
-                },
-              }
-            : {}),
-        },
+        select: userSelectFull(currentUserId),
       });
 
       if (!result) {
@@ -427,23 +380,7 @@ export class UserService {
         include: {
           project: {
             select: {
-              id: true,
-              idOnchain: true,
-              name: true,
-              banner: true,
-              website: true,
-              telegram: true,
-              facebook: true,
-              instagram: true,
-              discord: true,
-              shortLink: true,
-              organization: true,
-              description: true,
-              isActivated: true,
-              collection: true,
-              details: true,
-              twitter: true,
-              logo: true,
+              ...projectSelect,
               rounds: {
                 where: whereRounds,
                 include: {
@@ -558,7 +495,6 @@ export class UserService {
           followerId: follower.id,
         },
       });
-
       const existingFollow = await this.prisma.userFollow.upsert({
         where: {
           userId_followerId: {
@@ -573,7 +509,6 @@ export class UserService {
           isFollow: true,
         },
       });
-
       const increment = !existingFollow.isFollow ? -1 : 1;
       // Followers
       await this.prisma.user.update({
@@ -597,7 +532,11 @@ export class UserService {
           },
         },
       });
-
+      await MetricCommon.handleMetric(
+        TypeCategory.User,
+        MetricCategory.Followers,
+        user.id,
+      );
       return { isFollowed: existingFollow.isFollow };
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
@@ -651,12 +590,17 @@ export class UserService {
     }
   }
 
-  async checkVerifyEmail(input: VerifyEmailDto, user: User) {
+  async checkVerifyEmail(input: VerifyEmailDto) {
     try {
       const validatie = this.verifyTokenConfirm(input.token);
       if (!validatie) {
         throw Error('Token is invalid');
       }
+      const user = await this.prisma.user.findFirst({
+        where: {
+          id: validatie?.id,
+        },
+      });
       if (user.id != validatie?.id) {
         throw new Error('This email cannot be confirmed');
       }
@@ -721,6 +665,11 @@ export class UserService {
         },
       });
 
+      await MetricCommon.handleMetric(
+        TypeCategory.User,
+        MetricCategory.Verified,
+        user.id,
+      );
       // return resultGetVerify;
       return { listVerify: {}, accountStatus: resultGetVerify?.accountStatus };
     } catch (error) {
@@ -776,6 +725,125 @@ export class UserService {
       const result = await SecureUtil.getSessionInfo(address);
       return result ? JSON.parse(result) : null;
     } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+  async fetchOrCreateUser(address: string) {
+    try {
+      // Attempt to find the user by their address
+      let user = await this.prisma.user.findUnique({
+        where: {
+          signer: address,
+        },
+      });
+
+      // If the user doesn't exist, create a new one
+      if (!user) {
+        user = await this.prisma.user.create({
+          data: {
+            signer: address.toLowerCase(),
+            publicKey: address.toLowerCase(),
+          },
+        });
+      }
+
+      return user;
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async getListFollowing(user: User, input: GetFollowingDto) {
+    try {
+      const whereCondition: Prisma.UserFollowWhereInput = {};
+      whereCondition.AND = [];
+
+      whereCondition.AND.push({
+        followerId: user.id,
+      });
+      whereCondition.AND.push({
+        isFollow: true,
+      });
+
+      if (input.search) {
+        const userWhereCondition: Prisma.UserWhereInput = {};
+        userWhereCondition.AND = [
+          {
+            ...(isValidUUID(input.search)
+              ? { id: input.search }
+              : {
+                  OR: [
+                    {
+                      shortLink: { equals: input.search, mode: 'insensitive' },
+                    },
+                    {
+                      signer: {
+                        equals: input.search.toLowerCase(),
+                        mode: 'insensitive',
+                      },
+                    },
+                    {
+                      username: {
+                        contains: input.search,
+                        mode: 'insensitive',
+                      },
+                    },
+                  ],
+                }),
+          },
+        ];
+
+        whereCondition.user = userWhereCondition;
+      }
+      const listFollower = await this.prisma.userFollow.findMany({
+        where: whereCondition,
+        include: {
+          user: {
+            select: userFollow,
+          },
+          follower: {
+            select: userFollow,
+          },
+        },
+        skip: (input.page - 1) * input.limit,
+        take: input.limit,
+      });
+
+      const hasNext = await PaginationCommon.hasNextPage(
+        input.page,
+        input.limit,
+        'userFollow',
+        whereCondition,
+      );
+
+      return {
+        data: listFollower,
+        paging: {
+          hasNext: hasNext,
+          page: input.page,
+          limit: input.limit,
+        },
+      };
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getListActivityWithEvent(user: User, input: GetListBid) {
+    try {
+      const { result, hasNext } =
+        await this.activetiService.getActivityWithEvent(user, input);
+
+      return {
+        data: result,
+        paging: {
+          hasNext: hasNext,
+          page: input.page,
+          limit: input.limit,
+        },
+      };
+    } catch (error) {
+      console.log(error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }

@@ -1,12 +1,13 @@
-import { createHash } from 'crypto';
 import GCPPCommonCommon from './GCPPCommon.common';
 import { FileUpload } from './types/Fileupload.common';
-import { encode } from 'punycode';
 import { ApiCallerService } from 'src/modules/api-caller/api-caller.service';
-import SecureCommon from './Secure.common';
-import { HttpService } from '@nestjs/axios';
-import logger from './Logger.common';
-
+import * as bcrypt from 'bcrypt';
+import {
+  registerDecorator,
+  ValidationOptions,
+  ValidationArguments,
+} from 'class-validator';
+import { Role } from 'src/constants/enums/role.enum';
 type RecursivePartial<T> = {
   [P in keyof T]?: T[P] extends (infer U)[]
     ? RecursivePartial<U>[]
@@ -20,6 +21,8 @@ type PrismaSelect<T> = {
 };
 class OtherCommon {
   apiService: ApiCallerService;
+
+  private saltOrRounds = 10;
 
   public sortObject<T>(obj: T): T {
     const sorted = <T>{};
@@ -323,6 +326,38 @@ class OtherCommon {
     slug = '@' + slug + '@';
     slug = slug.replace(/\@\-|\-\@|\@/gi, '');
     return slug;
+  }
+
+  weiToEther(wei) {
+    return wei / 1000000000000000000; // 1 Ether = 10^18 Wei
+  }
+
+  async createHashPassword(password: string) {
+    return await bcrypt.hash(password, this.saltOrRounds);
+  }
+
+  async verifyPassword(password: string, hashPassword: string) {
+    return await bcrypt.compareSync(password, hashPassword);
+  }
+
+  IsValidRoles(validationOptions?: ValidationOptions) {
+    return function (object: any, propertyName: string) {
+      registerDecorator({
+        name: 'isValidRoles',
+        target: object.constructor,
+        propertyName: propertyName,
+        constraints: [],
+        options: validationOptions,
+        validator: {
+          validate(value: any, args: ValidationArguments) {
+            return (
+              Array.isArray(value) &&
+              value.every((role) => Object.values(Role).includes(role))
+            );
+          },
+        },
+      });
+    };
   }
 }
 

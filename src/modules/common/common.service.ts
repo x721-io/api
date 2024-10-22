@@ -1,140 +1,208 @@
-import { Injectable, Res } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Res } from '@nestjs/common';
 import { UpdateCommonDto } from './dto/update-common.dto';
 import { create } from 'ipfs-http-client';
 import OtherCommon from 'src/commons/Other.common';
-import { Response } from 'express';
+import { response, Response } from 'express';
 import * as fileType from 'file-type';
 import { SearchAllDto } from './dto/search-all.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SearchAllType } from 'src/constants/searchType.enum';
 import { Readable } from 'stream';
 import { concat as uint8ArrayConcat } from 'uint8arrays/concat';
-
+import { Prisma } from '@prisma/client';
+import PaginationCommon from 'src/commons/HasNext.common';
+import {
+  creatorSelect,
+  CollectionSelect,
+} from '../../commons/definitions/Constraint.Object';
 import * as path from 'path';
+import { AWSError, S3 } from 'aws-sdk';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class CommonService {
   private ipfs;
+  private readonly s3: S3;
+  private AWS_S3_BUCKET = process.env.AWS_S3_BUCKET_NAME;
+  private AWS_REGION = process.env.AWS_REGION;
   constructor(private readonly prisma: PrismaService) {
     this.ipfs = create({
       host: process.env.IPFS_URL,
       port: parseInt(process.env.IPFS_PORT),
       protocol: process.env.IPFS_PROTOCOL,
     });
+    this.s3 = new S3({
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      region: this.AWS_REGION,
+    });
   }
 
   async searchAll(input: SearchAllDto) {
-    if (input.mode === SearchAllType.COLLECTION) {
-      return this.prisma.collection.findMany({
-        where: {
-          OR: [
-            {
-              // name: {
-              //   contains: input.text,
-              //   mode: 'insensitive',
-              // },
-              nameSlug: {
-                contains: OtherCommon.stringToSlugSearch(input.text),
-                mode: 'insensitive',
-              },
+    if (!!input.text) {
+      if (input.mode === SearchAllType.COLLECTION) {
+        const whereConditionCollection: Prisma.CollectionWhereInput = {};
+        whereConditionCollection.OR = [];
+        whereConditionCollection.OR.push(
+          {
+            nameSlug: {
+              contains: OtherCommon.stringToSlugSearch(input.text),
+              mode: 'insensitive',
             },
-            {
-              symbol: {
-                contains: input.text,
-                mode: 'insensitive',
-              },
+          },
+          {
+            nameSlug: {
+              contains: OtherCommon.stringToSlugSearch(input.text),
+              mode: 'insensitive',
             },
-            {
-              shortUrl: {
-                contains: input.text,
-                mode: 'insensitive',
-              },
+          },
+          {
+            symbol: {
+              contains: input.text,
+              mode: 'insensitive',
             },
-            {
-              address: {
-                contains: input.text,
-                mode: 'insensitive',
-              },
+          },
+          {
+            shortUrl: {
+              contains: input.text,
+              mode: 'insensitive',
             },
-          ],
-        },
-      });
-    } else if (input.mode === SearchAllType.USER) {
-      return this.prisma.user.findMany({
-        select: {
-          id: true,
-          signer: true,
-          username: true,
-          avatar: true,
-          createdAt: true,
-          shortLink: true,
-        },
-        where: {
-          OR: [
-            {
-              username: {
-                contains: input.text,
-                mode: 'insensitive',
-              },
+          },
+          {
+            address: {
+              contains: input.text,
+              mode: 'insensitive',
             },
-            {
-              signer: {
-                contains: input.text,
-                mode: 'insensitive',
-              },
-            },
-            {
-              shortLink: {
-                contains: input.text,
-                mode: 'insensitive',
-              },
-            },
-          ],
-        },
-      });
-    } else if (input.mode === SearchAllType.NFT) {
-      return this.prisma.nFT.findMany({
-        where: {
-          OR: [
-            {
-              // name: {
-              //   contains: input.text,
-              //   mode: 'insensitive',
-              //   // search: OtherCommon.combineWords(input.text),
-              // },
-              nameSlug: {
-                contains: OtherCommon.stringToSlugSearch(input.text),
-                mode: 'insensitive',
-              },
-            },
-          ],
-        },
-        include: {
-          collection: {
-            select: {
-              id: true,
-              txCreationHash: true,
-              name: true,
-              address: true,
-              metadata: true,
-              shortUrl: true,
-              symbol: true,
-              description: true,
-              status: true,
-              type: true,
-              categoryId: true,
-              createdAt: true,
-              avatar: true,
-              category: {
-                select: {
-                  id: true,
-                  name: true,
+          },
+        );
+
+        const dataCollection = await this.prisma.collection.findMany({
+          where: whereConditionCollection,
+          include: {
+            creators: {
+              select: {
+                userId: true,
+                user: {
+                  select: creatorSelect,
                 },
               },
             },
           },
+          skip: (input.page - 1) * input.limit,
+          take: input.limit,
+        });
+
+        const hasNext = await PaginationCommon.hasNextPage(
+          input.page,
+          input.limit,
+          'collection',
+          whereConditionCollection,
+        );
+        return {
+          data: dataCollection,
+          paging: {
+            hasNext,
+            page: input.page,
+            limit: input.limit,
+          },
+        };
+      } else if (input.mode === SearchAllType.USER) {
+        const whereConditionUser: Prisma.UserWhereInput = {};
+        whereConditionUser.OR = [];
+        whereConditionUser.OR.push(
+          {
+            username: {
+              contains: input.text,
+              mode: 'insensitive',
+            },
+          },
+          {
+            signer: {
+              contains: input.text,
+              mode: 'insensitive',
+            },
+          },
+          {
+            shortLink: {
+              contains: input.text,
+              mode: 'insensitive',
+            },
+          },
+        );
+
+        const dataUser = await this.prisma.user.findMany({
+          select: creatorSelect,
+          where: whereConditionUser,
+          skip: (input.page - 1) * input.limit,
+          take: input.limit,
+        });
+        const hasNext = await PaginationCommon.hasNextPage(
+          input.page,
+          input.limit,
+          'user',
+          whereConditionUser,
+        );
+        return {
+          data: dataUser,
+          paging: {
+            hasNext,
+            page: input.page,
+            limit: input.limit,
+          },
+        };
+      } else if (input.mode === SearchAllType.NFT) {
+        const whereConditionNFT: Prisma.NFTWhereInput = {};
+        whereConditionNFT.OR = [];
+        whereConditionNFT.OR.push({
+          nameSlug: {
+            contains: OtherCommon.stringToSlugSearch(input.text),
+            mode: 'insensitive',
+          },
+        });
+        const dataNFT = await this.prisma.nFT.findMany({
+          where: whereConditionNFT,
+          skip: (input.page - 1) * input.limit,
+          take: input.limit,
+          // {
+          //   OR: [
+          //     {
+          //       nameSlug: {
+          //         contains: OtherCommon.stringToSlugSearch(input.text),
+          //         mode: 'insensitive',
+          //       },
+          //     },
+          //   ],
+          // },
+          include: {
+            collection: {
+              select: CollectionSelect,
+            },
+          },
+        });
+        const hasNext = await PaginationCommon.hasNextPage(
+          input.page,
+          input.limit,
+          'nFT',
+          whereConditionNFT,
+        );
+        return {
+          data: dataNFT,
+          paging: {
+            hasNext,
+            page: input.page,
+            limit: input.limit,
+          },
+        };
+      }
+    } else {
+      return {
+        data: [],
+        paging: {
+          hasNext: false,
+          page: input.page,
+          limit: input.limit,
         },
-      });
+      };
     }
   }
   async uploadIpfs(files: Express.Multer.File[], metadata: any) {
@@ -323,6 +391,45 @@ export class CommonService {
       const filePath = pathParts.slice(1).join('/');
 
       return { cid, filePath };
+    }
+  }
+
+  async uploadFile(files: Express.Multer.File[]) {
+    try {
+      return await Promise.all(
+        files.map(async (file) => {
+          const filename = uuidv4() + '-' + file.originalname;
+          const responseS3 = await this.s3_upload(
+            file.buffer,
+            filename,
+            file.mimetype,
+          );
+          return responseS3.Location;
+        }),
+      );
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async s3_upload(buffer: Buffer, name: string, mimetype: string) {
+    try {
+      const params = {
+        Bucket: this.AWS_S3_BUCKET,
+        Key: String(name),
+        Body: buffer,
+        ACL: 'public-read',
+        ContentType: mimetype,
+        ContentDisposition: 'inline',
+        CreateBucketConfiguration: {
+          LocationConstraint: this.AWS_REGION,
+        },
+      };
+      const s3Response = await this.s3.upload(params).promise();
+      return s3Response;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
 }

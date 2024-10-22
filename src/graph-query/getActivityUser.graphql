@@ -1,0 +1,23 @@
+query getActivityWithEvent($first: Int = 1000, $skip: Int = 0, $address: String, $event: EventType) {
+  blocks(
+    first: $first
+    skip: $skip
+    where: {
+    and : [
+    	{or : [{to:$address}, {from:$address}]},
+      {event:$event}
+    ]
+  }) {
+    tokenId
+    to
+    quoteToken
+    timestampt
+    price
+    quantity
+    id
+    from
+    event
+    blockNumber
+    address
+  }
+}

@@ -25,7 +25,11 @@ import { UserServiceExtend } from './user-graph.service';
 import { AuthenticationCustomizeGuard } from '../auth/guards/authCustomize.guard';
 import { FindAllProjectDto } from '../launchpad/dto/find-all-project.dto';
 import { findProjectsUserSubscribe } from '../launchpad/dto/find-project.dto';
-import { GetActivityBase } from './dto/activity-user.dto';
+import {
+  GetActivityBase,
+  GetFollowingDto,
+  GetListBid,
+} from './dto/activity-user.dto';
 import { ActivityService } from '../nft/activity.service';
 import { SendVerifyEmailDto, VerifyEmailDto } from './dto/verify-email.dto';
 @Controller('user')
@@ -104,17 +108,31 @@ export class UserController {
   }
 
   @Post('/verify-email')
-  @UseGuards(AuthenticationGuard)
-  async verifyEmail(
-    @GetCurrentUser() user: User,
-    @Body() verifyEmailDto: VerifyEmailDto,
-  ) {
-    return await this.userService.checkVerifyEmail(verifyEmailDto, user);
+  async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
+    return await this.userService.checkVerifyEmail(verifyEmailDto);
   }
 
   @Post('/list-verify')
   @UseGuards(AuthenticationGuard)
   async checkListVerify(@GetCurrentUser() user: User) {
     return await this.userService.checkListVerify(user);
+  }
+
+  @Get('/list-following')
+  @UseGuards(AuthenticationGuard)
+  async getListFollowing(
+    @GetCurrentUser() user: User,
+    @Query() query: GetFollowingDto,
+  ) {
+    return await this.userService.getListFollowing(user, query);
+  }
+
+  @Get('/list-activity')
+  @UseGuards(AuthenticationGuard)
+  async getListUserBid(
+    @GetCurrentUser() user: User,
+    @Query() query: GetListBid,
+  ) {
+    return await this.userService.getListActivityWithEvent(user, query);
   }
 }
