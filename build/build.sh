@@ -8,9 +8,9 @@ account_id=$(aws sts get-caller-identity | jq -r ".Account")
 aws ecr get-login-password --region "$region" | docker login --username AWS --password-stdin "$account_id.dkr.ecr.$region.amazonaws.com"
 
 # Build dockerfile
-docker build -t u2u/marketplace-be -f ../Dockerfile ../.
+docker build -t x721-io/x721-be -f ../Dockerfile ../.
 
 # Push to docker hub
-repo_url="$account_id.dkr.ecr.$region.amazonaws.com/marketplace-be:$version"
-docker tag u2u/marketplace-be:latest "$repo_url"
+repo_url="$account_id.dkr.ecr.$region.amazonaws.com/x721-be:$version"
+docker tag x721-io/x721-be:latest "$repo_url"
 docker push "$repo_url"
