@@ -1,22 +1,22 @@
 version: '3'
 services:
-  ext-server:
-    container_name: u2u-server
+  api:
+    container_name: api
     build:
       context: .
       dockerfile: Dockerfile
     restart: always
     ports:
-      - '8888:8888'
-      - '5555:5555'
+      - 8888:8888
+      - 5555:5555
     volumes:
-      - ../logs/u2u-marketplace-api:/usr/src/app/u2u-server/logs
+      - ../logs/api:/usr/src/app/api/logs
     networks:
       - u2u-nw
   redis:
     image: redis
     command: >
-      --requirepass u2umarketplace
+      --requirepass apimarketplace
     networks:
       - u2u-nw
     volumes:
