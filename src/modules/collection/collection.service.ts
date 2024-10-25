@@ -536,12 +536,11 @@ export class CollectionService {
       const collections = response.map((i) => i.collection);
 
       const subgraphCollection = collections.map(async (item) => {
-        console.log('🚀 ~ subgraphCollection ~ item:', item);
         if (item) {
           const generalInfo = await this.getGeneralCollectionData(
-            item.address,
-            item.type,
-            item.flagExtend,
+            item?.address,
+            item?.type,
+            item?.flagExtend,
           );
           return { ...item, ...generalInfo };
         }
