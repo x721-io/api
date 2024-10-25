@@ -517,12 +517,12 @@ export class CollectionService {
             category: true,
           },
         });
-        // if (baseCollection721) {
-        //   response.push({ collection: baseCollection721 });
-        // }
-        // if (baseCollection1155) {
-        //   response.push({ collection: baseCollection1155 });
-        // }
+        if (baseCollection721) {
+          response.push({ collection: baseCollection721 });
+        }
+        if (baseCollection1155) {
+          response.push({ collection: baseCollection1155 });
+        }
       }
 
       const total = await this.prisma.userCollection.count({
@@ -555,7 +555,7 @@ export class CollectionService {
         },
       };
     } catch (error) {
-      console.error(error);
+      console.log('🚀 ~ error:', error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
