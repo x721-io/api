@@ -22,7 +22,6 @@ function matchRegexArray(arr: string[], str: string): boolean {
 async function bootstrap() {
   const whitelist = process.env.ALLOWED_DOMAIN.split(',');
   const app = await NestFactory.create(AppModule);
-  console.log('🚀 ~ bootstrap ~ whitelist:', whitelist);
 
   app.use(cookieParser());
 
