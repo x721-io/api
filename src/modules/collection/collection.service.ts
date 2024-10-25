@@ -518,8 +518,12 @@ export class CollectionService {
           },
         });
 
-        response.push({ collection: baseCollection721 });
-        response.push({ collection: baseCollection1155 });
+        if (baseCollection721) {
+          response.push({ collection: baseCollection721 });
+        }
+        if (baseCollection1155) {
+          response.push({ collection: baseCollection1155 });
+        }
       }
 
       const total = await this.prisma.userCollection.count({
@@ -534,8 +538,8 @@ export class CollectionService {
 
       const subgraphCollection = collections.map(async (item) => {
         const generalInfo = await this.getGeneralCollectionData(
-          item.address,
-          item.type,
+          item?.address,
+          item?.type,
           item?.flagExtend,
         );
         return { ...item, ...generalInfo };
