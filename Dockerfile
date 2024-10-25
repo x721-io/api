@@ -15,9 +15,10 @@ COPY package.json ./
 RUN yarn install
 
 COPY . .
-RUN yarn codegen
 
-RUN npx prisma db seed
+RUN npx ts-node prisma/seed.ts
+
+RUN yarn codegen
 
 RUN npx prisma generate
 # Build the NestJS project
