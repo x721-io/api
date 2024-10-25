@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   // Seed User
-  const user = await prisma.user.upsert({
+  const creator = await prisma.user.upsert({
     where: { signer: '0x2d16d2fc0074fd4c1442258dc6fcba8834a405c5' },
     update: {},
     create: {
@@ -17,7 +17,7 @@ async function main() {
   });
 
   // Seed Collections
-  const collection1 = await prisma.collection.upsert({
+  const ERC721Base = await prisma.collection.upsert({
     where: { address: '0x7ddb1accb3160cf6ba4fee23e26b6d9ad45bc824' },
     update: {},
     create: {
@@ -32,7 +32,7 @@ async function main() {
     },
   });
 
-  const collection2 = await prisma.collection.upsert({
+  const ERC1155Base = await prisma.collection.upsert({
     where: { address: '0xda4a022bbc044b8097159c8f4527fe7c6111a70c' },
     update: {},
     create: {
@@ -47,20 +47,33 @@ async function main() {
     },
   });
 
-  // Seed UserCollection
-  await prisma.userCollection.createMany({
-    data: [
-      {
-        userId: user.id,
-        collectionId: collection1.id,
-      },
-      {
-        userId: user.id,
-        collectionId: collection2.id,
-      },
-    ],
-  });
+  await prisma.userCollection.upsert({
+    where: {
+      userId_collectionId: {
+        userId: creator.id,
+        collectionId: ERC721Base.id,
+      }
+    },
+    create: {
+      userId: creator.id,
+      collectionId: ERC721Base.id,
+    },
+    update: {}
+  })
 
+  await prisma.userCollection.upsert({
+    where: {
+      userId_collectionId: {
+        userId: creator.id,
+        collectionId: ERC1155Base.id,
+      }
+    },
+    create: {
+      userId: creator.id,
+      collectionId: ERC1155Base.id,
+    },
+    update: {}
+  })
   console.log('Seeding completed successfully.');
 }
 
