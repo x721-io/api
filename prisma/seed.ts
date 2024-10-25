@@ -6,7 +6,10 @@ async function main() {
   // Seed User
   const creator = await prisma.user.upsert({
     where: { signer: '0x2d16d2fc0074fd4c1442258dc6fcba8834a405c5' },
-    update: {},
+    update: {
+      username: 'X721 Creator',
+      email: "X721Creator@gmail.com"
+    },
     create: {
       id: '6c811c32-39c9-4303-883b-9e9ff5882ed2',
       username: 'X721 Creator',
