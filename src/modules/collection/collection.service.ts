@@ -517,9 +517,12 @@ export class CollectionService {
             category: true,
           },
         });
-        if (baseCollection721) response.push({ collection: baseCollection721 });
-        if (baseCollection1155)
+        if (baseCollection721) {
+          response.push({ collection: baseCollection721 });
+        }
+        if (baseCollection1155) {
           response.push({ collection: baseCollection1155 });
+        }
       }
 
       const total = await this.prisma.userCollection.count({
