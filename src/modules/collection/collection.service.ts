@@ -533,12 +533,14 @@ export class CollectionService {
       const collections = response.map((i) => i.collection);
 
       const subgraphCollection = collections.map(async (item) => {
-        const generalInfo = await this.getGeneralCollectionData(
-          item.address,
-          item.type,
-          item?.flagExtend,
-        );
-        return { ...item, ...generalInfo };
+        if (item) {
+          const generalInfo = await this.getGeneralCollectionData(
+            item.address,
+            item.type,
+            item.flagExtend,
+          );
+          return { ...item, ...generalInfo };
+        }
       });
       const dataArray = await Promise.all(subgraphCollection);
       return {
@@ -550,6 +552,7 @@ export class CollectionService {
         },
       };
     } catch (error) {
+      console.error(error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
