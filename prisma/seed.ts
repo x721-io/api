@@ -5,47 +5,48 @@ const prisma = new PrismaClient();
 async function main() {
   // Seed User
   const creator = await prisma.user.upsert({
-    where: { signer: '0x2d16d2fc0074fd4c1442258dc6fcba8834a405c5' },
+    where: { signer: '0x0d3c3d95df3c9e71d39fd00eb842026713ad64fe' },
     update: {
-      username: 'X721 Creator',
-      email: "X721Creator@gmail.com"
+      username: 'X721',
+      email: "X721@gmail.com",
     },
     create: {
-      id: '6c811c32-39c9-4303-883b-9e9ff5882ed2',
-      username: 'X721 Creator',
-      signer: '0x2d16d2fc0074fd4c1442258dc6fcba8834a405c5',
-      publicKey: '0x2d16D2fc0074FD4c1442258DC6fCBa8834a405C5',
+      id: '43dbe7f6-273e-4a0e-89c8-6a819b5e7f18',
+      username: 'X721',
+      signer: '0x0d3c3d95df3c9e71d39fd00eb842026713ad64fe',
+      publicKey: '0x0d3C3d95dF3c9e71d39fd00Eb842026713ad64fE',
+      accountStatus: true,
       updatedAt: new Date('2024-10-25T06:54:22.253Z'),
     },
   });
 
   // Seed Collections
   const ERC721Base = await prisma.collection.upsert({
-    where: { address: '0x7ddb1accb3160cf6ba4fee23e26b6d9ad45bc824' },
+    where: { address: '0x173bc76e109697d1c65d864072847f0cf3743b82' },
     update: {},
     create: {
-      id: '5a799476-3129-4066-bd2f-30d2d4f48b3e',
-      txCreationHash: '0x195d3eadeb3eb9837fb4d64cb2eccd2dd66b174b10f760508c9998cf23ae1d20',
+      id: 'c3a0c165-a179-4135-a53c-42d577d9e9a9',
+      txCreationHash: '0x5f80d996cb00170e77c87a45c7930703a614004d3e4c7f10c964ce0d8ba76056',
       name: 'ERC721Base',
       symbol: 'ERC721Base',
       status: 'SUCCESS',
       type: 'ERC721',
-      address: '0x7ddb1accb3160cf6ba4fee23e26b6d9ad45bc824',
+      address: '0x173bc76e109697d1c65d864072847f0cf3743b82',
       updatedAt: new Date('2024-10-25T06:54:22.253Z'),
     },
   });
 
   const ERC1155Base = await prisma.collection.upsert({
-    where: { address: '0xda4a022bbc044b8097159c8f4527fe7c6111a70c' },
+    where: { address: '0x68f903865e703da4de7804d2973182896efe073c' },
     update: {},
     create: {
-      id: '849003e2-5010-46d2-bb02-9bdc0dbd1384',
-      txCreationHash: '0xb4bda9104f049a6b0383981c06665ca40da15cb95a09b08f916969b6802ec1ea',
+      id: 'c3a0c165-a179-4135-a53c-42d577d9e9a9',
+      txCreationHash: '0xf72eb7d81a9788345bff7b6793b1f8ad278b8cbbf89a5083b77c621d3519f140',
       name: 'ERC1155Base',
       symbol: 'ERC1155Base',
       status: 'SUCCESS',
       type: 'ERC1155',
-      address: '0xda4a022bbc044b8097159c8f4527fe7c6111a70c',
+      address: '0x68f903865e703da4de7804d2973182896efe073c',
       updatedAt: new Date('2024-10-25T06:54:22.253Z'),
     },
   });
