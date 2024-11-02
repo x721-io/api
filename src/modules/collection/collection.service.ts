@@ -487,6 +487,9 @@ export class CollectionService {
           user: {
             ...(isUuid ? { id } : { OR: [{ signer: id }, { shortLink: id }] }),
           },
+          collection: {
+            status: TX_STATUS.SUCCESS,
+          },
         },
         skip: (input.page - 1) * input.limit,
         take: input.limit,
@@ -518,8 +521,12 @@ export class CollectionService {
           },
         });
 
-        response.push({ collection: baseCollection721 });
-        response.push({ collection: baseCollection1155 });
+        if (baseCollection721) {
+          response.push({ collection: baseCollection721 });
+        }
+        if (baseCollection1155) {
+          response.push({ collection: baseCollection1155 });
+        }
       }
 
       const total = await this.prisma.userCollection.count({
