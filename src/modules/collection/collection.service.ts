@@ -216,12 +216,14 @@ export class CollectionService {
           },
         })
       : [];
-    const minBigInt = input.min
-      ? BigInt(input.min) / BigInt(10) ** 18n
-      : undefined;
-    const maxBigInt = input.max
-      ? BigInt(input.max) / BigInt(10) ** 18n
-      : undefined;
+    // const minBigInt = input.min
+    //   ? BigInt(input.min) / BigInt(10) ** 18n
+    //   : undefined;
+    // const maxBigInt = input.max
+    //   ? BigInt(input.max) / BigInt(10) ** 18n
+    //   : undefined;
+    const minBigInt = input.min ? OtherCommon.weiToEther(input.min) : undefined;
+    const maxBigInt = input.max ? OtherCommon.weiToEther(input.max) : undefined;
     const addresses = creators.map((item) => item.id);
     let whereCondition: Prisma.CollectionWhereInput = {
       ...(input.name && {
@@ -247,7 +249,7 @@ export class CollectionService {
     if (input.min) {
       whereCondition = {
         ...whereCondition,
-        floorPrice: {
+        floor: {
           gte: minBigInt,
         },
       };
@@ -256,7 +258,7 @@ export class CollectionService {
     if (input.max) {
       whereCondition = {
         ...whereCondition,
-        floorPrice: {
+        floor: {
           lte: maxBigInt,
         },
       };
@@ -265,7 +267,7 @@ export class CollectionService {
     if (input.min && input.max) {
       whereCondition = {
         ...whereCondition,
-        floorPrice: {
+        floor: {
           gte: minBigInt,
           lte: maxBigInt,
         },
