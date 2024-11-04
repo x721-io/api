@@ -9,8 +9,11 @@ aws ecr get-login-password --region "$region" | docker login --username AWS --pa
 
 # Build dockerfile
 docker build -t x721-io/x721-be -f ../Dockerfile ../.
-
+docker build -t x721-io/x721-be-proxy -f ../Docker.nginx ../.
 # Push to docker hub
 repo_url="$account_id.dkr.ecr.$region.amazonaws.com/x721-be:$version"
+repo_proxy_url="$account_id.dkr.ecr.$region.amazonaws.com/x721-be-proxy:$version"
 docker tag x721-io/x721-be:latest "$repo_url"
+docker tag x721-io/x721-be-proxy:latest "$repo_proxy_url"
 docker push "$repo_url"
+docker push "$repo_proxy_url"
