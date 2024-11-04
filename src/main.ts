@@ -7,7 +7,7 @@ import * as cookieParser from 'cookie-parser';
 // import helmet from 'helmet';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-
+import * as bodyParser from 'body-parser';
 // import { GraphQLErrorFilter } from './commons/errors/ExceptionFilter';
 function matchRegexArray(arr: string[], str: string): boolean {
   for (const pattern of arr) {
@@ -22,7 +22,6 @@ function matchRegexArray(arr: string[], str: string): boolean {
 async function bootstrap() {
   const whitelist = process.env.ALLOWED_DOMAIN.split(',');
   const app = await NestFactory.create(AppModule);
-  console.log('🚀 ~ bootstrap ~ whitelist:', whitelist);
 
   app.use(cookieParser());
 
@@ -31,9 +30,11 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  app.use(bodyParser.json({ limit: '50mb' }));
+  app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+
   app.enableCors({
     origin: function (origin, callback) {
-      console.log('🚀 ~ bootstrap ~ origin:', origin);
       if (!origin || matchRegexArray(whitelist, origin)) {
         callback(null, true);
       } else {
