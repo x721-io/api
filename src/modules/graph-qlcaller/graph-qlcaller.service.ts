@@ -527,6 +527,20 @@ export class GraphQlcallerService {
     }
   }
 
+  async getNFTOnSales(address: string) {
+    try {
+      const client = this.getGraphqlClient();
+      const sdk = getSdk(client);
+      const response = (await sdk.CheckOnSales({
+        address: address,
+      })) as unknown as Query;
+      return response;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
   async getNFTExternalFromOwner(
     owner: string,
     orderDirection: OrderDirection,

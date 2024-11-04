@@ -1,3 +1,4 @@
+import { response } from 'express';
 import { Erc1155Balance } from './../../generated/graphql';
 import { CreateNftDto } from './dto/create-nft.dto';
 import { Prisma, TX_STATUS, User, CONTRACT_TYPE } from '@prisma/client';
@@ -1022,12 +1023,37 @@ export class NftService {
             );
           // internal
           const { ERC721tokens = [], ERC1155balances = [] } = account || {};
+          const internal721Filter = await this.filterExistingNFTs(
+            ERC721tokens,
+            (item) => item?.tokenId,
+            (item) => item?.contract?.id,
+          );
+
+          const internal1155Filter = await this.filterExistingNFTs(
+            ERC1155balances,
+            (item) => item?.token?.tokenId,
+            (item) => item?.token?.contract?.id,
+          );
+
           // external
           const { erc721Tokens = [], erc1155Balances = [] } =
             resultOwnerExternal || {};
 
-          let countHolding = [...ERC721tokens, ...ERC1155balances].length || 0;
-          countHolding += [...erc721Tokens, ...erc1155Balances].length || 0;
+          const external721Filter = await this.filterExistingNFTs(
+            erc721Tokens,
+            (item) => item?.tokenID,
+            (item) => item?.contract,
+          );
+
+          const external1155Filter = await this.filterExistingNFTs(
+            erc1155Balances,
+            (item) => item?.token?.tokenID,
+            (item) => item?.token?.contract,
+          );
+          let countHolding =
+            [...internal721Filter, ...internal1155Filter].length || 0;
+          countHolding +=
+            [...external721Filter, ...external1155Filter].length || 0;
 
           return countHolding;
         // const responseOwner = await this.GraphqlService.getNFTOnSalesAndOwner(
@@ -1068,10 +1094,22 @@ export class NftService {
           });
           return totalOwnerCreator;
         case GeneralInfor.ONSALES:
-          const response = await this.GraphqlService.getNFTOnSalesAndOwner(
-            filter.owner.toLowerCase(),
+          const { marketEvent1155S = [], marketEvent721S = [] } =
+            await this.GraphqlService.getNFTOnSales(filter.owner.toLowerCase());
+          const marketEvent1155SFilter = await this.filterExistingNFTs(
+            marketEvent1155S,
+            (item) => item?.nftId?.tokenId,
+            (item) => item?.nftId?.contract?.id,
           );
-          return (response && response.onSaleCount) || 0;
+
+          const marketEvent721SFilter = await this.filterExistingNFTs(
+            marketEvent721S,
+            (item) => item?.nftId?.tokenId,
+            (item) => item?.nftId?.contract?.id,
+          );
+          const countOnSalse =
+            [...marketEvent721SFilter, ...marketEvent1155SFilter].length || 0;
+          return countOnSalse;
         case GeneralInfor.COLLECTION:
           let isUuid = true;
           if (!isValidUUID(filter.owner)) {
@@ -1097,5 +1135,43 @@ export class NftService {
       console.log(error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
+  }
+
+  async checkExistNFT(tokenId: string, addressCollection: string) {
+    try {
+      const collection = await this.prisma.collection.findUnique({
+        where: {
+          address: addressCollection,
+        },
+      });
+      if (!collection) return false;
+      const nftExists = await this.prisma.nFT.findFirst({
+        where: {
+          collectionId: collection.id,
+          OR: [{ id: tokenId }, { u2uId: tokenId }],
+        },
+      });
+      return !!nftExists;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async filterExistingNFTs(
+    items: any[],
+    getTokenId: (item: any) => string,
+    getContractId: (item: any) => string,
+  ) {
+    const existsItems = await Promise.all(
+      items.map(async (item) => {
+        const exists = await this.checkExistNFT(
+          getTokenId(item),
+          getContractId(item),
+        );
+        return { item, exists };
+      }),
+    );
+
+    return existsItems.filter(({ exists }) => exists).map(({ item }) => item);
   }
 }
