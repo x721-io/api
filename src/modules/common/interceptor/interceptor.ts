@@ -6,8 +6,6 @@ export const multerOptions = {
   // Check the mimetypes to allow for upload
   fileFilter: (req: any, file: any, cb: any) => {
     const allowedTypes = [
-      'image/jpeg',
-      'image/jpg',
       'image/png',
       'image/gif',
       'image/bmp',
@@ -25,7 +23,7 @@ export const multerOptions = {
       // Reject file
       cb(
         new HttpException(
-          `Supported MIME Types: jpeg, jpg ,png, gif, bmp, tiff, webp, svg, mpeg, mp4, mp3 ,webm`,
+          `Supported MIME Types: png, gif, bmp, tiff, webp, svg, mpeg, mp4, mp3 ,webm`,
           HttpStatus.BAD_REQUEST,
         ),
         false,

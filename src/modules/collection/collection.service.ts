@@ -361,7 +361,10 @@ export class CollectionService {
       }
 
       const collection = await this.prisma.collection.findFirst({
-        where: whereCondition,
+        where: {
+          ...whereCondition,
+          status: TX_STATUS.SUCCESS,
+        },
         include: {
           category: {
             select: {
@@ -535,6 +538,9 @@ export class CollectionService {
         where: {
           user: {
             ...(isUuid ? { id } : { OR: [{ signer: id }, { shortLink: id }] }),
+          },
+          collection: {
+            status: TX_STATUS.SUCCESS,
           },
         },
       });
