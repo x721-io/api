@@ -3,6 +3,23 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
+  await prisma.syncMasterData.update({
+    where: {
+      type: 'ERC721'
+    },
+    data: {
+      timestamp: 0
+    }
+  })
+
+  await prisma.syncMasterData.update({
+    where: {
+      type: 'ERC1155'
+    },
+    data: {
+      timestamp: 0
+    }
+  })
   // Seed User
   // const creator = await prisma.user.upsert({
   //   where: { signer: '0x0d3c3d95df3c9e71d39fd00eb842026713ad64fe' },
