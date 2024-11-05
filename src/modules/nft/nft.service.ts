@@ -1050,10 +1050,18 @@ export class NftService {
             (item) => item?.token?.tokenID,
             (item) => item?.token?.contract,
           );
-          let countHolding =
-            [...internal721Filter, ...internal1155Filter].length || 0;
-          countHolding +=
-            [...external721Filter, ...external1155Filter].length || 0;
+
+          const countERC1155 = this.reduceData1155([
+            ...internal1155Filter,
+            ...external1155Filter,
+          ]);
+          const countERC721 = this.reduceData721([
+            ...internal721Filter,
+            ...external721Filter,
+          ]);
+
+          const countHolding =
+            (countERC721.length || 0) + (countERC1155.length || 0);
 
           return countHolding;
         // const responseOwner = await this.GraphqlService.getNFTOnSalesAndOwner(
@@ -1173,5 +1181,38 @@ export class NftService {
     );
 
     return existsItems.filter(({ exists }) => exists).map(({ item }) => item);
+  }
+
+  reduceData721(data: any[]) {
+    const uniqueData = Array.from(
+      data
+        .reduce((map, item) => {
+          const key = item?.id;
+          if (!map.has(key)) {
+            map.set(key, item);
+          }
+
+          return map;
+        }, new Map())
+        .values(),
+    );
+    return uniqueData;
+  }
+
+  reduceData1155(data: any[]) {
+    const uniqueData = Array.from(
+      data
+        .reduce((map, item) => {
+          const key = item?.token?.id;
+
+          if (!map.has(key)) {
+            map.set(key, item);
+          }
+
+          return map;
+        }, new Map())
+        .values(),
+    );
+    return uniqueData;
   }
 }
