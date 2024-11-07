@@ -1,4 +1,11 @@
-import { IsEnum, IsNumber, IsOptional, IsString, IsIn } from 'class-validator';
+import {
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsIn,
+  IsEthereumAddress,
+} from 'class-validator';
 import { QueryTraitDto } from './query-trait.dto';
 import { sellStatus } from 'src/constants/enums/SellStatus.enum';
 import { OffsetPaginationDto } from 'src/commons/definitions/OffsetPagination.input';
@@ -23,6 +30,7 @@ export class GetAllNftDto extends OffsetPaginationDto {
   priceMin: number;
 
   @IsOptional()
+  @IsEthereumAddress()
   collectionAddress: string;
 
   @IsOptional()
