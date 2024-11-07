@@ -46,6 +46,9 @@ export class UserController {
     @Body() updateProfile: UpdateUserDto,
     @GetCurrentUser() user: User,
   ) {
+    console.log('🚀 ~ UserController ~ updateProfile:', updateProfile);
+    console.log('🚀 ~ UserController ~ user:', user);
+
     return await this.userService.updateProfile(updateProfile, user);
   }
 
