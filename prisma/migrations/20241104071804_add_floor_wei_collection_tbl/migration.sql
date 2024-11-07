@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "AnalysisCollection" ADD COLUMN     "floor" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "floorWei" TEXT NOT NULL DEFAULT '0';
+
+-- AlterTable
+ALTER TABLE "Collection" ADD COLUMN     "floor" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "floorWei" TEXT NOT NULL DEFAULT '0';

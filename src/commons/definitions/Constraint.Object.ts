@@ -191,6 +191,8 @@ export const collectionSelect: Prisma.CollectionSelect = {
   isU2U: true,
   isVerified: true,
   floorPrice: true,
+  floor: true,
+  floorWei: true,
   isActive: true,
   flagExtend: true,
   category: {

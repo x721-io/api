@@ -21,6 +21,8 @@ export class CollectionEntity {
   nameSlug?: string;
   totalOwner?: number;
   floorPrice?: bigint;
+  floor?: number;
+  floorWei?: string;
   totalNft?: number;
   volumn?: string;
   coverImage?: string;
