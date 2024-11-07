@@ -120,6 +120,8 @@ model Collection {
   project        Project?           @relation(fields: [projectId], references: [id])
   isVerified     Boolean            @default(false)
   floorPrice     BigInt             @default(0)
+  floor          Float              @default(0)
+  floorWei       String             @default("0")
   isActive       Boolean            @default(true)
   flagExtend     Boolean?           @default(false)
   isSync         Boolean?           @default(true)
@@ -370,6 +372,8 @@ model AnalysisCollection {
   volume           Decimal          @default(0) @db.Decimal(78, 0)
   volumeWei        String           @default("0")
   floorPrice       BigInt           @default(0)
+  floor            Float            @default(0)
+  floorWei         String           @default("0")
   items            BigInt           @default(0)
   owner            BigInt           @default(0)
   createdAt        DateTime         @default(now()) @db.Date

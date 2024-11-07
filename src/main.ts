@@ -7,6 +7,7 @@ import * as cookieParser from 'cookie-parser';
 // import helmet from 'helmet';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as bodyParser from 'body-parser';
 
 // import { GraphQLErrorFilter } from './commons/errors/ExceptionFilter';
 function matchRegexArray(arr: string[], str: string): boolean {
@@ -24,6 +25,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.use(cookieParser());
+  app.use(bodyParser.json({ limit: '35mb' }));
+  app.use(bodyParser.urlencoded({ limit: '35mb', extended: true }));
 
   app.useGlobalPipes(
     new ValidationPipe({

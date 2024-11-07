@@ -216,12 +216,14 @@ export class CollectionService {
           },
         })
       : [];
-    const minBigInt = input.min
-      ? BigInt(input.min) / BigInt(10) ** 18n
-      : undefined;
-    const maxBigInt = input.max
-      ? BigInt(input.max) / BigInt(10) ** 18n
-      : undefined;
+    // const minBigInt = input.min
+    //   ? BigInt(input.min) / BigInt(10) ** 18n
+    //   : undefined;
+    // const maxBigInt = input.max
+    //   ? BigInt(input.max) / BigInt(10) ** 18n
+    //   : undefined;
+    const minBigInt = input.min ? OtherCommon.weiToEther(input.min) : undefined;
+    const maxBigInt = input.max ? OtherCommon.weiToEther(input.max) : undefined;
     const addresses = creators.map((item) => item.id);
     let whereCondition: Prisma.CollectionWhereInput = {
       ...(input.name && {
@@ -247,7 +249,7 @@ export class CollectionService {
     if (input.min) {
       whereCondition = {
         ...whereCondition,
-        floorPrice: {
+        floor: {
           gte: minBigInt,
         },
       };
@@ -256,7 +258,7 @@ export class CollectionService {
     if (input.max) {
       whereCondition = {
         ...whereCondition,
-        floorPrice: {
+        floor: {
           lte: maxBigInt,
         },
       };
@@ -265,7 +267,7 @@ export class CollectionService {
     if (input.min && input.max) {
       whereCondition = {
         ...whereCondition,
-        floorPrice: {
+        floor: {
           gte: minBigInt,
           lte: maxBigInt,
         },
@@ -359,7 +361,10 @@ export class CollectionService {
       }
 
       const collection = await this.prisma.collection.findFirst({
-        where: whereCondition,
+        where: {
+          ...whereCondition,
+          status: TX_STATUS.SUCCESS,
+        },
         include: {
           category: {
             select: {
@@ -487,6 +492,9 @@ export class CollectionService {
           user: {
             ...(isUuid ? { id } : { OR: [{ signer: id }, { shortLink: id }] }),
           },
+          collection: {
+            status: TX_STATUS.SUCCESS,
+          },
         },
         skip: (input.page - 1) * input.limit,
         take: input.limit,
@@ -530,6 +538,9 @@ export class CollectionService {
         where: {
           user: {
             ...(isUuid ? { id } : { OR: [{ signer: id }, { shortLink: id }] }),
+          },
+          collection: {
+            status: TX_STATUS.SUCCESS,
           },
         },
       });
