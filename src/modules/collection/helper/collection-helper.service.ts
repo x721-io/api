@@ -21,6 +21,19 @@ class CollectionHepler {
       end: momentDate.utc().endOf('day').toDate(),
     };
   }
+
+  removeDuplicates(array, key) {
+    const seen = new Set();
+    return array.filter((item) => {
+      const value = key.split('.').reduce((o, k) => (o || {})[k], item);
+      if (seen.has(value)) {
+        return false;
+      } else {
+        seen.add(value);
+        return true;
+      }
+    });
+  }
 }
 
 export default new CollectionHepler();

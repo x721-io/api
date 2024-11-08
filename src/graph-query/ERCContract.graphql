@@ -27,3 +27,29 @@ query GetUniqueOwnersCount($contractAddress: String!, $skip: Int = 0, $first: In
     timestamp
   }
 }
+
+query getOwnerAndItems($address: String) {
+  erc721Tokens(where: {contract: $address}
+  , first: 100, skip: 0
+  ) {
+    id
+    owner {
+      id
+    }
+    contract {
+      id
+    }
+  }
+  erc1155Balances(where: {value_gte: 0, contract: $address}
+  , first: 100, skip: 0
+  ) {
+    id
+    value
+    contract {
+      id
+    }
+    account {
+      id
+    }
+  }
+}

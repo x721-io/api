@@ -175,6 +175,43 @@ export class CollectionService {
       // this.getVolumeCollection(collectionAddress),
     ]);
 
+    const { erc721Tokens = [], erc1155Balances = [] } =
+      await this.collectionData.getCountItemsAndOwner(collectionAddress);
+    // if length so high get from subgraph count;
+    if (
+      (erc721Tokens?.length > 0 && erc721Tokens.length < 70) ||
+      (erc1155Balances?.length > 0 && erc1155Balances.length < 70)
+    ) {
+      if (type === 'ERC721') {
+        const countItem = CollectionHepler.removeDuplicates(erc721Tokens, 'id');
+        const countOwner = CollectionHepler.removeDuplicates(
+          erc721Tokens,
+          'owner.id',
+        );
+        return {
+          volumn: statusCollection.erc721Contract?.volume || 0,
+          totalOwner: !!flagExtend
+            ? totalOwnerExternal
+            : countOwner?.length || 0,
+          totalNft: !!flagExtend ? totalNftExternal : countItem?.length || 0,
+        };
+      } else {
+        const countOwner = CollectionHepler.removeDuplicates(
+          erc1155Balances,
+          'account.id',
+        );
+        return {
+          volumn: statusCollection.erc1155Contract?.volume || 0,
+          totalOwner: !!flagExtend
+            ? totalOwnerExternal
+            : countOwner?.length || 0,
+          totalNft: !!flagExtend
+            ? totalNftExternal
+            : statusCollection.erc1155Contract?.count || 0,
+        };
+      }
+    }
+    // Get Infor from subgraph
     if (type === 'ERC721') {
       return {
         // volumn: sum.toString(),
