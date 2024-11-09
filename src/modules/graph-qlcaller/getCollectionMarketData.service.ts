@@ -8,6 +8,8 @@ import {
   GetCollectionTokensQuery,
   ErcContractQuery,
   ErcContractQueryVariables,
+  GetContractQuery,
+  GetContractQueryVariables,
 } from '../../generated/graphql';
 import {
   ErcContractExternalQuery,
@@ -72,6 +74,13 @@ export class GetCollectionMarketData {
     const sdk = getSdk(client);
     const variables: ErcContractQueryVariables = { id: collectionAddress };
     return await sdk.ErcContract(variables);
+  }
+
+  async getContractInfor(collectionAddress: string): Promise<GetContractQuery> {
+    const client = this.getGraphqlClient();
+    const sdk = getSdk(client);
+    const variables: GetContractQueryVariables = { address: collectionAddress };
+    return await sdk.getContract(variables);
   }
 
   async getAllCollectionExternal(contract: string) {
