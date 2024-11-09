@@ -27,3 +27,11 @@ query GetUniqueOwnersCount($contractAddress: String!, $skip: Int = 0, $first: In
     timestamp
   }
 }
+
+query getContract($address:ID!) {
+  contract(id: $address) {
+    id
+    count
+    contract
+  }
+}
