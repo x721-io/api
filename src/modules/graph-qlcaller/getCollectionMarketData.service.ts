@@ -18,6 +18,7 @@ import {
 } from '../../generated/SubgraphExternal/graphql';
 import { GraphQLClient } from 'graphql-request';
 import SecureUtil from '../../commons/Secure.common';
+import axios from 'axios';
 
 interface responseRedisExternal {
   address: string;
@@ -81,6 +82,13 @@ export class GetCollectionMarketData {
     const sdk = getSdk(client);
     const variables: GetContractQueryVariables = { address: collectionAddress };
     return await sdk.getContract(variables);
+  }
+
+  async getContractInforV2(collectionAddress: string) {
+    const { data } = await axios.get<any, any>(
+      `${process.env.EXPLORE_API}tokens/${collectionAddress}/counters`,
+    );
+    return data;
   }
 
   async getAllCollectionExternal(contract: string) {
