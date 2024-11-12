@@ -92,33 +92,51 @@ async function main() {
             
     //     ]
     // }) 
-    const ProjectRound = await prisma.projectRound.create({
-        data: {
-            projectId : "2d7e9dcb-aa1a-4c9e-ba95-b4a5b94d0536",
-            address: "0xcb56b723abb4202553e0facd48bcf18a6c6fbf21",
-            end: new Date("2025-02-01 5:00:00.000"),
-            start: new Date("2024-11-11 5:00:00.000"),
-            roundId: 3,
-            claimableStart: new Date("2024-11-11 5:00:00.000"),
-            maxPerWallet : 1,
-            price: "500000000000000000",
-            totalNftt: 0,
-            requiredStaking : "0",
-            stakeBefore : new Date("2024-11-11 5:00:00.000"),
-            instruction: "https://x721.io/"
-        }
-    })
+    // const ProjectRound = await prisma.projectRound.create({
+    //     data: {
+    //         projectId : "2d7e9dcb-aa1a-4c9e-ba95-b4a5b94d0536",
+    //         address: "0xcb56b723abb4202553e0facd48bcf18a6c6fbf21",
+    //         end: new Date("2025-02-01 5:00:00.000"),
+    //         start: new Date("2024-11-11 5:00:00.000"),
+    //         roundId: 3,
+    //         claimableStart: new Date("2024-11-11 5:00:00.000"),
+    //         maxPerWallet : 1,
+    //         price: "500000000000000000",
+    //         totalNftt: 0,
+    //         requiredStaking : "0",
+    //         stakeBefore : new Date("2024-11-11 5:00:00.000"),
+    //         instruction: "https://x721.io/"
+    //     }
+    // })
 
-    const updateProjectCollection = await prisma.collection.update({
+    // const updateProjectCollection = await prisma.collection.update({
+    //     data: {
+    //         projectId: "2d7e9dcb-aa1a-4c9e-ba95-b4a5b94d0536"
+    //     },
+    //     where: {
+    //         id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
+    //     }
+    // })
+
+    const updateNFT = await prisma.nFT.update({
         data: {
-            projectId: "2d7e9dcb-aa1a-4c9e-ba95-b4a5b94d0536"
+            name : "U2U Network x Bitget Wallet #1",
+            image : "https://indigo-accessible-raccoon-107.mypinata.cloud/ipfs/QmP5rVzqDnHsNdSF611HBL59fxuzdXEFZ3dWfV5rxvjRuJ",
+            tokenUri : "https://indigo-accessible-raccoon-107.mypinata.cloud/ipfs/Qme8PkZo8EW7UsBB4EUW85neYq7fYtWGJBEzZEdAheHrjF"
         },
         where: {
-            id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
+            id_collectionId: {
+                id: "1",
+                collectionId : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
+            }
         }
+
     })
-    console.log("🚀 ~ main ~ updateProjectCollection:", updateProjectCollection)
-    console.log("🚀 ~ main ~ ProjectRound:", ProjectRound)
+    console.log("🚀 ~ main ~ updateNFT:", updateNFT)
+
+    // https://indigo-accessible-raccoon-107.mypinata.cloud/ipfs/QmP5rVzqDnHsNdSF611HBL59fxuzdXEFZ3dWfV5rxvjRuJ
+    // console.log("🚀 ~ main ~ updateProjectCollection:", updateProjectCollection)
+    // console.log("🚀 ~ main ~ ProjectRound:", ProjectRound)
     // console.log("🚀 ~ main ~ ERC721BitGet:", ERC721BitGet)
     // console.log("🚀 ~ main ~ creator:", creator)
 // //   Seed User
