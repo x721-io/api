@@ -23,11 +23,11 @@ export class GetAnalysisDto extends OffsetPaginationDto {
 
   @IsEnum(AnalysisModeSort)
   @IsOptional()
-  orderBy: AnalysisModeSort = AnalysisModeSort.volume;
+  orderBy: AnalysisModeSort = AnalysisModeSort.vol;
 
   @IsOptional()
   @IsEnum(AnalysisModeMinMax)
-  minMaxBy: AnalysisModeMinMax = AnalysisModeMinMax.volume;
+  minMaxBy: AnalysisModeMinMax = AnalysisModeMinMax.vol;
 
   @IsString()
   @IsOptional()

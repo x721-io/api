@@ -18,4 +18,5 @@ export class NftDto {
   collection?: unknown;
   quoteToken?: string;
   creator?: unknown;
+  quantity?: unknown;
 }

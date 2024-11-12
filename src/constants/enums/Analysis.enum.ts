@@ -5,15 +5,15 @@ enum AnalysisType {
 }
 
 enum AnalysisModeSort {
-  floorPrice = 'floorPrice',
-  volume = 'volume',
+  floor = 'floor',
+  vol = 'vol',
   owner = 'owner',
   items = 'items',
 }
 
 enum AnalysisModeMinMax {
-  floorPrice = 'floorPrice',
-  volume = 'volume',
+  floor = 'floor',
+  vol = 'vol',
 }
 
 export { AnalysisType, AnalysisModeSort, AnalysisModeMinMax };

@@ -42,6 +42,10 @@ model User {
   isActive         Boolean          @default(true)
   metricPoint      BigInt?          @default(0)
   metricDetail     Json?            @default("{\"Verified\":0,\"Followers\":{\"key\":\"follower_lv0\",\"value\":0,\"point\":0,\"total\":0},\"CollectionMetric\":0,\"VolumeIndividual\":0}")
+  takes            Order[]          @relation(name: "UserTaker")
+  makes            Order[]          @relation(name: "UserMaker")
+  orderFrom        OrderHistory[]   @relation(name: "OrderFrom")
+  orderTo          OrderHistory[]   @relation(name: "OrderTo")
 }
 
 model NFT {
@@ -65,6 +69,7 @@ model NFT {
   collectionId   String             @db.Uuid
   collection     Collection         @relation(fields: [collectionId], references: [id])
   MarketplaceByTokenId              MarketplaceStatus[] @relation("Marketplace_byId")
+  OrderByTokenId                    Order[] @relation("Order_byId")
   metricPoint    BigInt?            @default(0)
   metricDetail   Json?              @default("{\"VolumeIndividual\":0,\"UserMetric\":0}")
   source         String?
@@ -133,6 +138,8 @@ model Collection {
   gameId         String?
   source         String?
   categoryG      Json?
+  vol            Float            @default(0)
+  volumeWei      String           @default("0")
   AnalysisCollection  AnalysisCollection[]
   @@index([address], type: Hash)
 }
@@ -285,7 +292,7 @@ model MarketplaceStatus {
 
 model SyncMasterData{
   timestamp      Int                @default(0)
-  type           CONTRACT_TYPE      @id
+  type           String             @id
   syncDataStatus Boolean            @default(true)
 }
 
@@ -373,6 +380,7 @@ model AnalysisCollection {
   address          String  
   type             CONTRACT_TYPE
   volume           Decimal          @default(0) @db.Decimal(78, 0)
+  vol              Float            @default(0)
   volumeWei        String           @default("0")
   floorPrice       BigInt           @default(0)
   floor            Float            @default(0)
@@ -410,4 +418,73 @@ model OverviewTemplate {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime? @updatedAt
   Platform    Platform  @relation("PlatformToTemplates", fields: [platformId], references: [id])
+}
+model Order {
+  index                 Int              @default(1) 
+  sig                   String          
+  makerId               String           @db.Uuid
+  makeAssetType         Int
+  makeAssetAddress      String           //  U2U Native address , Collection Address
+  makeAssetValue        String
+  makeAssetId           String           //  U2U native => 0 , Order NFT => NFT ID
+  takerId               String?           @db.Uuid
+  takeAssetType         Int
+  takeAssetAddress      String           //  U2U Native address , Collection Address
+  takeAssetValue        String           
+  takeAssetId           String           //  U2U native => 0 , Order NFT => NFT ID
+  salt                  String           
+  start                 Int              @default(0)
+  end                   Int              @default(0)
+  orderStatus           ORDERSTATUS      @default(OPEN)
+  orderType             ORDERTYPE
+  root                  String           @default("0x0000000000000000000000000000000000000000000000000000000000000000")
+  proof                 String[]         @default([])
+  tokenId               String           @db.VarChar(255)
+  collectionId          String           @db.Uuid 
+  quantity              Int              @default(1)
+  price                 String           @default("0")
+  priceNum              Float            @default(0)
+  netPrice              String           @default("0")
+  netPriceNum           Float            @default(0)
+  createAt              DateTime         @default(now())
+  updatedAt             DateTime?        @updatedAt         
+  quoteToken            String            
+  filledQty             Int              @default(0)   // Quanity filled order
+  Maker                 User             @relation(fields: [makerId], references: [id], name: "UserMaker")
+  Taker                 User?            @relation(fields: [takerId], references: [id], name: "UserTaker")
+  nftById               NFT              @relation("Order_byId", fields: [tokenId, collectionId], references: [id, collectionId], map: "order_by_id_fk") 
+  orderHistory          OrderHistory[]       
+  @@id([sig, index])
+  @@index([sig, index])
+}
+
+model OrderHistory {
+  id                    String           @id @default(uuid()) @db.Uuid
+  index                 Int              @default(1) 
+  sig                   String  
+  nonce                 String?
+  fromId                String           @db.Uuid
+  toId                  String           @db.Uuid   
+  qtyMatch              Int              @default(0)
+  price                 String           @default("0")
+  priceNum              Float            @default(0)                 
+  timestamp             Int              @default(0)
+  orderBySig            Order            @relation(fields: [sig, index], references: [sig, index]) 
+  From                  User             @relation(fields: [fromId], references: [id], name: "OrderFrom")
+  To                    User             @relation(fields: [toId], references: [id], name: "OrderTo")
+  @@index([sig, index, nonce])
+}
+
+
+enum ORDERSTATUS {
+  OPEN
+  PENDING
+  CANCELLED
+  FILLED
+}
+
+enum ORDERTYPE {
+  BID
+  BULK   // SELL MULTIPLE
+  SINGLE // SELL 1 
 }
