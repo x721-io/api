@@ -84,32 +84,31 @@ export class GetCollectionMarketData {
     return await sdk.getContract(variables);
   }
 
-  async getContractInforV2(collectionAddress: string) {
-    // console.log(
-    //   `${process.env.EXPLORE_API}tokens/${collectionAddress}/counters`,
-    // );
-    console.log(
-      `https://u2uscan.xyz/api/v2/tokens/${collectionAddress}/counters`,
-    );
-    try {
-      const { data } = await axios.get<any, any>(
-        `https://u2uscan.xyz/api/v2/tokens/${collectionAddress}/counters`,
-      );
+  // async getContractInforV2(collectionAddress: string) {
+  //   // console.log(
+  //   //   `${process.env.EXPLORE_API}tokens/${collectionAddress}/counters`,
+  //   // );
+  //   try {
+  //     const { data } = await axios.get<any, any>(
+  //       `https://u2uscan.xyz/api/v2/tokens/${collectionAddress}/counters`,
+  //     );
 
-      return data;
-    } catch (err) {
-      return null;
-    }
-  }
+  //     return data;
+  //   } catch (err) {
+  //     return null;
+  //   }
+  // }
 
   async getAllCollectionExternal(contract: string) {
     try {
       const response = await SecureUtil.getSessionInfo(`External-${contract}`);
       const result: responseRedisExternal = JSON.parse(response);
       return {
-        totalNftExternal: result?.totalNft ? parseInt(result.totalNft) : 0,
+        totalNftExternal: result?.totalNft
+          ? parseInt(result?.totalNft || `0`)
+          : 0,
         totalOwnerExternal: result?.totalOwner
-          ? parseInt(result?.totalOwner)
+          ? parseInt(result?.totalOwner || `0`)
           : 0,
       };
     } catch (error) {

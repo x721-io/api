@@ -7,6 +7,8 @@ import {
   User,
   CONTRACT_TYPE,
   SELL_STATUS,
+  ORDERSTATUS,
+  ORDERTYPE,
 } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { NftDto } from './dto/nft.dto';
@@ -40,6 +42,7 @@ import {
   nftSelect,
   userSelect,
   nftOwnerShip,
+  orderSelect,
 } from '../../commons/definitions/Constraint.Object';
 import { GetGeneralInforDto } from './dto/get-general-infor.dto';
 import { GeneralInfor } from 'src/constants/enums/GeneralInfor.enum';
@@ -325,24 +328,25 @@ export class NftService {
         delete whereCondition.OR;
       }
       if (
-        (!filter.priceMin && !filter.priceMax && !filter.sellStatus) ||
+        (!filter.priceMin &&
+          !filter.priceMax &&
+          (!filter.orderType || !filter.orderStatus)) ||
         filter.name
       ) {
         if (filter.quoteToken !== undefined) {
-          whereCondition.MarketplaceByTokenId = { some: {} };
-          whereCondition.MarketplaceByTokenId.some.quoteToken =
+          whereCondition.OrderByTokenId = { some: {} };
+          whereCondition.OrderByTokenId.some.quoteToken =
             filter.quoteToken.toLowerCase();
         }
-        const whereMarketPlaceStatus: Prisma.MarketplaceStatusWhereInput =
-          this.nftHepler.generateWhereMarketPlaceStatus(filter);
+        const whereOrder: Prisma.OrderWhereInput =
+          this.nftHepler.generateWhereOrder(filter);
 
         if (filter.orderBy === 'price') {
-          whereMarketPlaceStatus.nftById = whereCondition;
-          const { result, hasNext } =
-            await this.nftHepler.getListNFTWithMarketplaceStatus(
-              filter,
-              whereMarketPlaceStatus,
-            );
+          whereOrder.nftById = whereCondition;
+          const { result, hasNext } = await this.nftHepler.getListNFTWithOrder(
+            filter,
+            whereOrder,
+          );
           return {
             data: result,
             paging: {
@@ -376,14 +380,15 @@ export class NftService {
               collection: {
                 select: CollectionSelect,
               },
-              MarketplaceByTokenId: {
-                where: whereMarketPlaceStatus,
-                select: marketplaceSelect,
+              OrderByTokenId: {
+                select: orderSelect,
+                where: whereOrder,
               },
               traits: true,
             },
           });
-          const Nftformat = await this.nftHepler.handleFormatNFTResponse(nfts);
+          const Nftformat =
+            await this.nftHepler.handleFormatNFTResponseOrder(nfts);
           const hasNext =
             (await PaginationCommon.hasNextPage(
               filter.page,
@@ -412,50 +417,65 @@ export class NftService {
             },
           };
         }
-
-        const whereMarketPlaceStatus: Prisma.MarketplaceStatusWhereInput =
-          this.nftHepler.generateWhereMarketPlaceStatus(filter);
+        const whereOrder: Prisma.OrderWhereInput =
+          this.nftHepler.generateWhereOrder(filter);
         const whereCondition1: Prisma.NFTWhereInput = {
           AND: [whereCondition],
         };
         // Ensure that MarketplaceByTokenId is initialized
-        if (!whereCondition1.MarketplaceByTokenId) {
-          whereCondition1.MarketplaceByTokenId = { some: {} };
+        if (!whereCondition1.OrderByTokenId) {
+          whereCondition1.OrderByTokenId = { some: {} };
         }
 
         if (filter.priceMin !== undefined || filter.priceMax !== undefined) {
-          whereCondition1.MarketplaceByTokenId.some.price = {};
+          whereCondition1.OrderByTokenId.some.priceNum = {};
           if (filter.priceMin !== undefined) {
-            whereCondition1.MarketplaceByTokenId.some.price.gte = Number(
+            whereCondition1.OrderByTokenId.some.priceNum.gte = Number(
               OtherCommon.weiToEther(filter.priceMin),
             );
           }
           if (filter.priceMax !== undefined) {
-            whereCondition1.MarketplaceByTokenId.some.price.lte = Number(
+            whereCondition1.OrderByTokenId.some.priceNum.lte = Number(
               OtherCommon.weiToEther(filter.priceMax),
             );
           }
         }
         // Check if filter.from or filter.quoteToken is defined before adding it to the query
         if (filter.from !== undefined || filter.owner !== undefined) {
-          whereCondition1.MarketplaceByTokenId.some.from =
-            filter.sellStatus === SellStatus.AskNew && filter.owner
-              ? filter.owner.toLowerCase()
-              : filter.from;
+          const ownerAddress = await this.prisma.user.findFirst({
+            where: {
+              signer:
+                (filter.orderStatus === ORDERSTATUS.OPEN &&
+                  filter.orderType == ORDERTYPE.SINGLE) ||
+                (filter.orderType == ORDERTYPE.BULK && filter.owner)
+                  ? filter.owner.toLowerCase()
+                  : filter.from,
+            },
+          });
+          whereCondition1.OrderByTokenId.some.makerId = ownerAddress.id;
         }
 
-        whereCondition1.MarketplaceByTokenId.some.quoteToken =
-          (filter.quoteToken
-            ? filter.quoteToken.toLowerCase()
-            : process.env.QUOTE_TOKEN_U2U) ?? process.env.QUOTE_TOKEN_U2U;
+        whereCondition1.OrderByTokenId.some = {
+          quoteToken:
+            (filter.quoteToken
+              ? filter.quoteToken.toLowerCase()
+              : process.env.NATIVE_U2U) ?? process.env.NATIVE_U2U,
+          orderStatus: filter.orderStatus, // Adding orderStatus condition
+          orderType: filter.orderType, // Adding orderType condition
+          start: {
+            lte: Math.floor(Date.now() / 1000), // Adding start condition with current date fallback
+          },
+          end: {
+            gte: Math.floor(Date.now() / 1000), // Adding end condition with current date fallback
+          },
+        };
 
         if (filter.orderBy === 'price') {
-          whereMarketPlaceStatus.nftById = whereCondition1;
-          const { result, hasNext } =
-            await this.nftHepler.getListNFTWithMarketplaceStatus(
-              filter,
-              whereMarketPlaceStatus,
-            );
+          whereOrder.nftById = whereCondition1;
+          const { result, hasNext } = await this.nftHepler.getListNFTWithOrder(
+            filter,
+            whereOrder,
+          );
           return {
             data: result,
             paging: {
@@ -489,9 +509,9 @@ export class NftService {
               collection: {
                 select: CollectionSelect,
               },
-              MarketplaceByTokenId: {
-                where: whereMarketPlaceStatus,
-                select: marketplaceSelect,
+              OrderByTokenId: {
+                where: whereOrder,
+                select: orderSelect,
               },
               traits: true,
             },
@@ -523,8 +543,8 @@ export class NftService {
   async getNftDetailTransactionInfo(
     nftId: string,
     collectionAddress: string,
-    page,
-    limit,
+    page: number,
+    limit: number,
   ) {
     let collection = await this.prisma.collection.findUnique({
       where: {
@@ -584,25 +604,24 @@ export class NftService {
     } else {
       ({ owners, totalSupply } = await this.getCurrentOwnersInternal(nft));
     }
-    const sellInfo = await this.eventService.findEvents({
+    const sellInfo = await this.eventService.findOrder({
       contractAddress: nft.collection.address,
-      nftId: nft.u2uId ? nft.u2uId : nft.id,
-      event: SellStatus.AskNew,
-      type: nft.collection.type,
-      page: 0,
-      limit: owners.length > 0 ? owners.length : 1,
+      nftId: nft.id,
+      status: ORDERSTATUS.OPEN,
+      event: [ORDERTYPE.BULK, ORDERTYPE.SINGLE],
+      page: page,
+      limit: limit,
     });
-
-    const bidInfo = await this.eventService.findEvents({
+    const bidInfo = await this.eventService.findOrder({
       contractAddress: nft.collection.address,
-      nftId: nft.u2uId ? nft.u2uId : nft.id,
-      event: SellStatus.Bid,
-      type: nft.collection.type,
-      page: (page - 1) * limit,
+      nftId: nft.id,
+      status: ORDERSTATUS.OPEN,
+      event: [ORDERTYPE.BID],
+      page: page,
       limit: limit,
     });
 
-    const bidderAddress = bidInfo.map((bidder) => bidder.to);
+    const bidderAddress = bidInfo.map((bidder) => bidder.Taker.signer);
 
     const bidderInfo = await this.prisma.user.findMany({
       where: {
@@ -613,7 +632,9 @@ export class NftService {
       select: userSelect,
     });
 
-    const sellerAddress = bidInfo.concat(sellInfo).map((seller) => seller.from);
+    const sellerAddress = bidInfo
+      .concat(sellInfo)
+      .map((seller) => seller.Maker.signer);
 
     const sellerInfo = await this.prisma.user.findMany({
       where: {
@@ -625,13 +646,17 @@ export class NftService {
     });
 
     const mergedBidder = bidInfo.map((item) => {
-      const match = bidderInfo.find((item1) => item1.signer == item.to);
+      const match = bidderInfo.find(
+        (item1) => item1.signer == item?.Taker?.signer,
+      );
       return match ? { ...item, to: match as OwnerOutputDto } : item;
     });
 
     const mergedSeller = sellInfo.map((item) => {
-      const match = sellerInfo.find((item1) => item1.signer == item.from);
-      return match ? { ...item, from: match as OwnerOutputDto } : item;
+      const match = sellerInfo.find(
+        (item1) => item1?.signer == item?.Maker?.signer,
+      );
+      return match ? { ...item, Maker: match as OwnerOutputDto } : item;
     });
     return {
       bidInfo: mergedBidder,
@@ -1207,6 +1232,66 @@ export class NftService {
     } catch (error) {
       console.log(error);
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+  async getHistoryPrices(tokenId: string, collectionAddress: string) {
+    try {
+      const collection = await this.prisma.collection.findUnique({
+        where: {
+          address: collectionAddress.toLowerCase(),
+        },
+      });
+
+      if (!collection) {
+        throw new NotFoundException('No collection was found');
+      }
+
+      const nftCondition: Prisma.NFTWhereInput = {};
+      nftCondition.OR = [];
+
+      const nftOrConditionId: Prisma.NFTWhereInput = {
+        AND: [{ id: tokenId, collectionId: collection.id }],
+      };
+      const nftOrConditionu2uId: Prisma.NFTWhereInput = {
+        AND: [{ u2uId: tokenId, collectionId: collection.id }],
+      };
+
+      nftCondition.OR.push(nftOrConditionId, nftOrConditionu2uId);
+
+      const nft = await this.prisma.nFT.findFirst({
+        where: nftCondition,
+      });
+      if (!nft) {
+        throw new NotFoundException('No NFT found');
+      }
+
+      const historyList = await this.prisma.orderHistory.findMany({
+        where: {
+          orderBySig: {
+            collectionId: collection.id,
+            tokenId: tokenId,
+          },
+        },
+        orderBy: {
+          timestamp: 'asc',
+        },
+        include: {
+          From: {
+            select: userSelect,
+          },
+          To: {
+            select: userSelect,
+          },
+        },
+      });
+      return historyList;
+    } catch (error) {
+      throw new HttpException(
+        `${error.message}`,
+        error?.response?.statusCode
+          ? error?.response?.statusCode
+          : HttpStatus.BAD_REQUEST,
+      );
     }
   }
 }

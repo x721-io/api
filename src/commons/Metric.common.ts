@@ -183,6 +183,8 @@ class MetricCommon {
             await this.getGeneralCollectionData(
               collection.address,
               collection.type,
+              collection?.flagExtend,
+              collection?.volumeWei,
             );
           let updatedMetricPoint = collection.metricPoint;
           if (metricDetail.TotalItems?.total)
@@ -308,29 +310,54 @@ class MetricCommon {
   async getGeneralCollectionData(
     collectionAddress: string,
     type: CONTRACT_TYPE,
+    flagExtend = false,
+    volumeWei: string,
   ): Promise<CollectionGeneral> {
     if (!collectionAddress) {
       return {
         volumn: '0',
         totalOwner: Number(0),
         totalNft: Number(0),
+        // floorPrice: BigInt(0),
       };
     }
-    const [statusCollection] = await Promise.all([
+    let totalNftExternal = 0;
+    let totalOwnerExternal = 0;
+
+    if (!!flagExtend) {
+      const resultExternal =
+        await this.collectionData.getAllCollectionExternal(collectionAddress);
+      totalNftExternal = resultExternal.totalNftExternal;
+      totalOwnerExternal = resultExternal.totalOwnerExternal;
+    }
+
+    const [statusCollection, contractOwner] = await Promise.all([
       this.collectionData.getCollectionCount(collectionAddress),
+      this.collectionData.getContractInfor(collectionAddress),
+      // this.getVolumeCollection(collectionAddress),
     ]);
 
     if (type === 'ERC721') {
       return {
-        volumn: statusCollection.erc721Contract?.volume || 0,
-        totalOwner: statusCollection.erc721Contract?.holderCount || 0,
-        totalNft: statusCollection.erc721Contract?.count || 0,
+        // volumn: statusCollection.erc721Contract?.volume || 0,
+        volumn: volumeWei || `0`,
+        totalOwner: !!flagExtend
+          ? totalOwnerExternal
+          : contractOwner?.contract?.count || 0,
+        totalNft: !!flagExtend
+          ? totalNftExternal
+          : statusCollection.erc721Contract?.count || 0,
       };
     } else {
       return {
-        volumn: statusCollection.erc1155Contract?.volume || 0,
-        totalOwner: statusCollection.erc1155Contract?.holderCount || 0,
-        totalNft: statusCollection.erc1155Contract?.count || 0,
+        // volumn: statusCollection.erc1155Contract?.volume || 0,
+        volumn: volumeWei || `0`,
+        totalOwner: !!flagExtend
+          ? totalOwnerExternal
+          : contractOwner?.contract?.count || 0,
+        totalNft: !!flagExtend
+          ? totalNftExternal
+          : statusCollection.erc1155Contract?.count || 0,
       };
     }
   }

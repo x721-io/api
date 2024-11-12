@@ -102,4 +102,11 @@ export class NftController {
   getGeneralInfor(@Body() query: GetGeneralInforDto) {
     return this.nftService.getGeneralInfor(query);
   }
+  @Get('/history-prices')
+  getHistoryPrices(
+    @Query('id') id: string,
+    @Query('collection') collection: string,
+  ) {
+    return this.nftService.getHistoryPrices(id, collection);
+  }
 }

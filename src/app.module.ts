@@ -19,6 +19,7 @@ import { BigIntInterceptor } from './commons/interceptors/bigint.interceptor';
 import { CMSModule } from './modules/cms/cms.module';
 import { PlatformOverviewModule } from './modules/platform-overview/platform-overview.module';
 import { PlatformTemplateModule } from './modules/platform-template/platform-template.module';
+import { OrderModule } from './modules/order/order.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -42,6 +43,7 @@ import { PlatformTemplateModule } from './modules/platform-template/platform-tem
     CMSModule,
     PlatformOverviewModule,
     PlatformTemplateModule,
+    OrderModule,
   ],
   providers: [
     PrismaService,

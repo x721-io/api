@@ -151,6 +151,7 @@ export class CollectionService {
     collectionAddress: string,
     type: CONTRACT_TYPE,
     flagExtend = false,
+    volumeWei: string,
   ): Promise<CollectionGeneral> {
     if (!collectionAddress) {
       return {
@@ -178,32 +179,25 @@ export class CollectionService {
 
     if (type === 'ERC721') {
       return {
-        // volumn: sum.toString(),
-        volumn: statusCollection.erc721Contract?.volume || 0,
+        // volumn: statusCollection.erc721Contract?.volume || 0,
+        volumn: volumeWei || `0`,
         totalOwner: !!flagExtend
           ? totalOwnerExternal
           : contractOwner?.contract?.count || 0,
-        // contractOwner?.token_holders_count || 0,
-        // totalOwner: !!flagExtend
-        //   ? totalOwnerExternal
-        //   : statusCollection.erc721Contract?.holderCount || 0,
         totalNft: !!flagExtend
           ? totalNftExternal
           : statusCollection.erc721Contract?.count || 0,
-        // floorPrice: BigInt(0),
       };
     } else {
       return {
-        // volumn: sum.toString(),
-        volumn: statusCollection.erc1155Contract?.volume || 0,
+        // volumn: statusCollection.erc1155Contract?.volume || 0,
+        volumn: volumeWei || `0`,
         totalOwner: !!flagExtend
           ? totalOwnerExternal
           : contractOwner?.contract?.count || 0,
-        // contractOwner?.token_holders_count || 0,
         totalNft: !!flagExtend
           ? totalNftExternal
           : statusCollection.erc1155Contract?.count || 0,
-        // floorPrice: BigInt(0),
       };
     }
   }
@@ -331,9 +325,10 @@ export class CollectionService {
     const dataArray = await Promise.all(
       collections.map(async (item) => {
         const generalInfo = await this.getGeneralCollectionData(
-          item.address,
-          item.type,
-          item.flagExtend,
+          item?.address,
+          item?.type,
+          item?.flagExtend,
+          item?.volumeWei,
         );
         return { ...item, ...generalInfo };
       }),
@@ -395,7 +390,12 @@ export class CollectionService {
       // Parallelize async operations
       const [traitsAvailable, generalInfo, royalties] = await Promise.all([
         this.traitService.findUniqueTraitsInCollection(collectionId),
-        this.getGeneralCollectionData(address, type, collection.flagExtend),
+        this.getGeneralCollectionData(
+          address,
+          type,
+          collection?.flagExtend,
+          collection?.volumeWei,
+        ),
         this.collectionPriceService.FetchRoyaltiesFromGraph(address),
       ]);
       const totalRoyalties = royalties.reduce(
@@ -561,6 +561,7 @@ export class CollectionService {
           item?.address,
           item?.type,
           item?.flagExtend,
+          item?.volumeWei,
         );
         return { ...item, ...generalInfo };
       });
@@ -708,16 +709,17 @@ export class CollectionService {
   async getAnalysis(input: GetAnalysisDto) {
     try {
       const minValue =
-        input.minMaxBy === 'volume'
+        input.minMaxBy === 'vol'
           ? input.min
-          : input.min
-          ? BigInt(input.min)
+            ? parseFloat(input.min)
+            : undefined
           : undefined;
+
       const maxValue =
-        input.minMaxBy === 'volume'
+        input.minMaxBy === 'vol'
           ? input.max
-          : input.max
-          ? BigInt(input.max)
+            ? parseFloat(input.max)
+            : undefined
           : undefined;
 
       // Construct whereCondition based on min and max values
@@ -745,6 +747,8 @@ export class CollectionService {
           ...(maxValue !== undefined && { lte: maxValue }),
         },
       };
+
+      console.log(whereCondition);
 
       const { start: startDay, end: endDay } = CollectionHepler.getPastDay(1); // Current => Get back 1 day
       if (startDay && endDay) {
