@@ -958,20 +958,20 @@ export class NftService {
             1,
             1000,
           );
-          const { ERC721tokens = [], ERC1155balances = [] } = account;
+          // const { ERC721tokens = [], ERC1155balances = [] } = account;
           let internal721Filter = [];
           let internal1155Filter = [];
 
           if (account) {
             internal721Filter = await this.nftHepler.filterExistingNFTs(
-              ERC721tokens,
+              account?.ERC721tokens,
               (item) => item?.tokenId,
               (item) => item?.contract?.id,
               false,
             );
 
             internal1155Filter = await this.nftHepler.filterExistingNFTs(
-              ERC1155balances,
+              account?.ERC1155balances,
               (item) => item?.token?.tokenId,
               (item) => item?.token?.contract?.id,
               false,
