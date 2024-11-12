@@ -368,6 +368,9 @@ export class NFTHepler {
     getContractId: (item: any) => string,
     external?: boolean,
   ) {
+    if (items && items.length <= 0) {
+      return [];
+    }
     const existsItems = await Promise.all(
       items.map(async (item) => {
         const exists = await this.checkExistNFT(
