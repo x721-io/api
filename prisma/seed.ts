@@ -118,21 +118,32 @@ async function main() {
     //     }
     // })
 
-    const updateNFT = await prisma.nFT.update({
+    // const updateNFT = await prisma.nFT.update({
+    //     data: {
+    //         name : "U2U Network x Bitget Wallet #1",
+    //         image : "https://indigo-accessible-raccoon-107.mypinata.cloud/ipfs/QmP5rVzqDnHsNdSF611HBL59fxuzdXEFZ3dWfV5rxvjRuJ",
+    //         tokenUri : "https://indigo-accessible-raccoon-107.mypinata.cloud/ipfs/Qme8PkZo8EW7UsBB4EUW85neYq7fYtWGJBEzZEdAheHrjF"
+    //     },
+    //     where: {
+    //         id_collectionId: {
+    //             id: "1",
+    //             collectionId : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
+    //         }
+    //     }
+
+    // })
+
+    const updateCollection = await prisma.collection.update({
         data: {
-            name : "U2U Network x Bitget Wallet #1",
-            image : "https://indigo-accessible-raccoon-107.mypinata.cloud/ipfs/QmP5rVzqDnHsNdSF611HBL59fxuzdXEFZ3dWfV5rxvjRuJ",
-            tokenUri : "https://indigo-accessible-raccoon-107.mypinata.cloud/ipfs/Qme8PkZo8EW7UsBB4EUW85neYq7fYtWGJBEzZEdAheHrjF"
+            shortUrl: "/u2uxbitget"
         },
         where: {
-            id_collectionId: {
-                id: "1",
-                collectionId : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
-            }
+            id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
         }
-
     })
-    console.log("🚀 ~ main ~ updateNFT:", updateNFT)
+    console.log("🚀 ~ main ~ updateCollection:", updateCollection)
+
+    // console.log("🚀 ~ main ~ updateNFT:", updateNFT)
 
     // https://indigo-accessible-raccoon-107.mypinata.cloud/ipfs/QmP5rVzqDnHsNdSF611HBL59fxuzdXEFZ3dWfV5rxvjRuJ
     // console.log("🚀 ~ main ~ updateProjectCollection:", updateProjectCollection)
