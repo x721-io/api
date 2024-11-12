@@ -85,10 +85,10 @@ export class GetCollectionMarketData {
   }
 
   async getContractInforV2(collectionAddress: string) {
-    const { data } = await axios.get<any, any>(
+    console.log(
       `${process.env.EXPLORE_API}tokens/${collectionAddress}/counters`,
     );
-    console.log(
+    const { data } = await axios.get<any, any>(
       `${process.env.EXPLORE_API}tokens/${collectionAddress}/counters`,
     );
     return data;
