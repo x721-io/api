@@ -135,7 +135,7 @@ async function main() {
 
     const updateCollection = await prisma.collection.update({
         data: {
-            shortUrl: "/u2uxbitget"
+            shortUrl: "u2uxbitget"
         },
         where: {
             id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
