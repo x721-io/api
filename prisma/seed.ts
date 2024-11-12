@@ -133,15 +133,29 @@ async function main() {
 
     // })
 
-    const updateCollection = await prisma.collection.update({
+    const updateProjectRound = await prisma.projectRound.update({
         data: {
-            shortUrl: "u2uxbitget"
+            address : "0xd987584bda5e1bf12fc5b64dbfe5060c60bc0738",
+            price: "0"
         },
         where: {
-            id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
+            projectId_roundId:{
+                projectId : "2d7e9dcb-aa1a-4c9e-ba95-b4a5b94d0536",
+                roundId : 3,
+            }
         }
     })
-    console.log("🚀 ~ main ~ updateCollection:", updateCollection)
+    console.log("🚀 ~ main ~ updateProjectRound:", updateProjectRound)
+
+    // const updateCollection = await prisma.collection.update({
+    //     data: {
+    //         shortUrl: "u2uxbitget"
+    //     },
+    //     where: {
+    //         id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
+    //     }
+    // })
+    // console.log("🚀 ~ main ~ updateCollection:", updateCollection)
 
     // console.log("🚀 ~ main ~ updateNFT:", updateNFT)
 
