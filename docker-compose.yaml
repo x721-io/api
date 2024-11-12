@@ -13,6 +13,11 @@ services:
       - ../logs/api:/usr/src/app/api/logs
     networks:
       - u2u-nw
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 300m
+        tag: "{{.ImageName}}|{{.Name}}|{{.ImageFullID}}|{{.FullID}}"
   redis:
     image: redis
     command: >

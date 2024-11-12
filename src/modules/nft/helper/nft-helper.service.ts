@@ -12,7 +12,10 @@ import {
 } from '@nestjs/common';
 import { NftDto } from '../dto/nft.dto';
 import { GetAllNftDto } from '../dto/get-all-nft.dto';
-import { nftSelect } from 'src/commons/definitions/Constraint.Object';
+import {
+  creatorSelect,
+  nftSelect,
+} from 'src/commons/definitions/Constraint.Object';
 import PaginationCommon from 'src/commons/HasNext.common';
 import { GraphQlcallerService } from 'src/modules/graph-qlcaller/graph-qlcaller.service';
 import { OrderDirection } from 'src/generated/graphql';
@@ -36,6 +39,7 @@ export class NFTHepler {
   async handleFormatNFTResponse(nfts: any[]) {
     return Promise.all(
       nfts.map(async (item) => {
+        const check = await this.checkCreator(item.collectionId, item.creator);
         if (
           item?.MarketplaceByTokenId &&
           item?.MarketplaceByTokenId.length > 0
@@ -50,6 +54,7 @@ export class NFTHepler {
           delete item.MarketplaceByTokenId;
           return {
             ...item,
+            creator: check,
             price: priceWei,
             sellStatus: event,
             quantity,
@@ -60,7 +65,7 @@ export class NFTHepler {
           };
         } else {
           delete item.MarketplaceByTokenId;
-          return item;
+          return { ...item, creator: check };
         }
       }),
     );
@@ -296,24 +301,26 @@ export class NFTHepler {
             Math.floor(filter.limit / 2),
           );
 
-        const hasNext721Exist = await this.filterExistingNFTs(
-          hasNextNftOwnerTemp?.ERC721tokens,
-          (item) => item?.tokenId,
-          (item) => item?.contract?.id,
-          false,
-        );
+        if (hasNextNftOwnerTemp) {
+          const hasNext721Exist = await this.filterExistingNFTs(
+            hasNextNftOwnerTemp?.ERC721tokens,
+            (item) => item?.tokenId,
+            (item) => item?.contract?.id,
+            false,
+          );
 
-        const hasNext1155Exist = await this.filterExistingNFTs(
-          hasNextNftOwnerTemp?.ERC1155balances,
-          (item) => item?.tokenId,
-          (item) => item?.contract?.id,
-          false,
-        );
+          const hasNext1155Exist = await this.filterExistingNFTs(
+            hasNextNftOwnerTemp?.ERC1155balances,
+            (item) => item?.tokenId,
+            (item) => item?.contract?.id,
+            false,
+          );
 
-        hasNextNftOwner =
-          hasNextNftOwner ||
-          hasNext1155Exist?.length > 0 ||
-          hasNext721Exist?.length > 0;
+          hasNextNftOwner =
+            hasNextNftOwner ||
+            hasNext1155Exist?.length > 0 ||
+            hasNext721Exist?.length > 0;
+        }
 
         if (account) {
           // Lọc các record fake của external 721 được ghi vào subgraph chính
@@ -368,6 +375,9 @@ export class NFTHepler {
     getContractId: (item: any) => string,
     external?: boolean,
   ) {
+    if (items && items.length <= 0) {
+      return [];
+    }
     const existsItems = await Promise.all(
       items.map(async (item) => {
         const exists = await this.checkExistNFT(
@@ -415,6 +425,33 @@ export class NFTHepler {
         },
       });
       return !!nftExists;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async checkCreator(collectionId: string, creator: any) {
+    try {
+      const collection = await this.prisma.collection.findUnique({
+        where: {
+          id: collectionId,
+        },
+      });
+
+      if (collection?.flagExtend && !creator) {
+        const creatorExtra = await this.prisma.userCollection.findFirst({
+          where: {
+            collectionId: collection.id,
+          },
+          include: {
+            user: {
+              select: creatorSelect,
+            },
+          },
+        });
+        return creatorExtra?.user || null;
+      }
+      return creator;
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }

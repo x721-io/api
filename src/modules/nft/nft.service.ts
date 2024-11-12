@@ -347,13 +347,14 @@ export class NftService {
             },
           };
         } else {
-          const orderByProperties: Prisma.NFTOrderByWithRelationAndSearchRelevanceInput =
-            {};
+          const orderByProperties: Prisma.NFTOrderByWithRelationAndSearchRelevanceInput[] =
+            [];
 
           if (filter.orderBy == 'time') {
-            orderByProperties.createdAt = filter.order;
+            orderByProperties.push({ createdAt: filter.order });
           } else {
-            orderByProperties.metricPoint = 'desc';
+            orderByProperties.push({ metricPoint: 'desc' });
+            orderByProperties.push({ createdAt: 'desc' });
           }
 
           const nfts = await this.prisma.nFT.findMany({
@@ -381,7 +382,7 @@ export class NftService {
           const hasNext =
             (await PaginationCommon.hasNextPage(
               filter.page,
-              filter.limit,
+              Math.floor(filter.limit / 2),
               'nFT',
               whereCondition,
             )) || hasNextNftOwner;
@@ -459,13 +460,14 @@ export class NftService {
             },
           };
         } else {
-          const orderByProperties: Prisma.NFTOrderByWithRelationAndSearchRelevanceInput =
-            {};
+          const orderByProperties: Prisma.NFTOrderByWithRelationAndSearchRelevanceInput[] =
+            [];
 
           if (filter.orderBy == 'time') {
-            orderByProperties.createdAt = filter.order;
+            orderByProperties.push({ createdAt: filter.order });
           } else {
-            orderByProperties.metricPoint = 'desc';
+            orderByProperties.push({ metricPoint: 'desc' });
+            orderByProperties.push({ createdAt: 'desc' });
           }
 
           const nfts = await this.prisma.nFT.findMany({
@@ -493,7 +495,7 @@ export class NftService {
           const hasNext =
             (await PaginationCommon.hasNextPage(
               filter.page,
-              filter.limit,
+              Math.floor(filter.limit / 2),
               'nFT',
               whereCondition1,
             )) || hasNextNftOwner;
@@ -829,6 +831,7 @@ export class NftService {
         // const ownerAndSupplyInfo = await this.getCurrentOwners(nft);
         // owners = ownerAndSupplyInfo.owners;
       }
+
       // @ts-ignore
       nft.owners = owners;
       // const sellInfo = await this.eventService.findEvents({
@@ -866,6 +869,19 @@ export class NftService {
         // sellInfo: sellInfo,
         // bidInfo: bidInfo,
       };
+      if (collection?.flagExtend == true && !returnNft?.creator) {
+        const creator = await this.prisma.userCollection.findFirst({
+          where: {
+            collectionId: collection.id,
+          },
+          include: {
+            user: {
+              select: creatorSelect,
+            },
+          },
+        });
+        returnNft.creator = creator?.user || null;
+      }
       return returnNft;
     } catch (error) {
       console.error(error);
@@ -958,7 +974,25 @@ export class NftService {
             1,
             1000,
           );
-          const { ERC721tokens = [], ERC1155balances = [] } = account;
+          // const { ERC721tokens = [], ERC1155balances = [] } = account;
+          let internal721Filter = [];
+          let internal1155Filter = [];
+
+          if (account) {
+            internal721Filter = await this.nftHepler.filterExistingNFTs(
+              account?.ERC721tokens,
+              (item) => item?.tokenId,
+              (item) => item?.contract?.id,
+              false,
+            );
+
+            internal1155Filter = await this.nftHepler.filterExistingNFTs(
+              account?.ERC1155balances,
+              (item) => item?.token?.tokenId,
+              (item) => item?.token?.contract?.id,
+              false,
+            );
+          }
 
           const external721Filter = await this.nftHepler.filterExistingNFTs(
             erc721Tokens,
@@ -971,20 +1005,6 @@ export class NftService {
             (item) => item?.token?.tokenID,
             (item) => item?.token?.contract,
             true,
-          );
-
-          const internal721Filter = await this.nftHepler.filterExistingNFTs(
-            ERC721tokens,
-            (item) => item?.tokenId,
-            (item) => item?.contract?.id,
-            false,
-          );
-
-          const internal1155Filter = await this.nftHepler.filterExistingNFTs(
-            ERC1155balances,
-            (item) => item?.token?.tokenId,
-            (item) => item?.token?.contract?.id,
-            false,
           );
 
           const countERC1155 = this.nftHepler.reduceData1155([
