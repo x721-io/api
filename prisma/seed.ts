@@ -8,7 +8,7 @@ const ERC721BitGet = await prisma.collection.upsert({
     where: { address: '0x2ac49144a804e1f8652e1a0c1bad90606ac2094a' },
     update: {},
     create: {
-        id: 'c3a0c165-a179-4135-a53c-42d577d9e9a9',
+        id: 'f35961f7-4a6a-4a39-b048-948e7636ccfd',
         txCreationHash: '0xa21ec8e8c105af74cc34a995372b134f84f0f010480b680fbe214462facc8786',
         name: 'U2U Network x Bitget Wallet',
         symbol: 'U2UxBGW',
@@ -26,7 +26,7 @@ const ERC721BitGet = await prisma.collection.upsert({
 
     const creator = await prisma.userCollection.create({
         data: {
-            collectionId : 'c3a0c165-a179-4135-a53c-42d577d9e9a9',
+            collectionId : 'f35961f7-4a6a-4a39-b048-948e7636ccfd',
             userId: '43dbe7f6-273e-4a0e-89c8-6a819b5e7f18'
         }
     })
@@ -129,7 +129,7 @@ const ERC721BitGet = await prisma.collection.upsert({
             projectId: "2d7e9dcb-aa1a-4c9e-ba95-b4a5b94d0536"
         },
         where: {
-            id : "c3a0c165-a179-4135-a53c-42d577d9e9a9"
+            id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
         }
     })
     console.log("🚀 ~ main ~ updateProjectCollection:", updateProjectCollection)
