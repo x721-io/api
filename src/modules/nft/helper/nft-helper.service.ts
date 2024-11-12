@@ -296,24 +296,26 @@ export class NFTHepler {
             Math.floor(filter.limit / 2),
           );
 
-        const hasNext721Exist = await this.filterExistingNFTs(
-          hasNextNftOwnerTemp?.ERC721tokens,
-          (item) => item?.tokenId,
-          (item) => item?.contract?.id,
-          false,
-        );
+        if (hasNextNftOwnerTemp) {
+          const hasNext721Exist = await this.filterExistingNFTs(
+            hasNextNftOwnerTemp?.ERC721tokens,
+            (item) => item?.tokenId,
+            (item) => item?.contract?.id,
+            false,
+          );
 
-        const hasNext1155Exist = await this.filterExistingNFTs(
-          hasNextNftOwnerTemp?.ERC1155balances,
-          (item) => item?.tokenId,
-          (item) => item?.contract?.id,
-          false,
-        );
+          const hasNext1155Exist = await this.filterExistingNFTs(
+            hasNextNftOwnerTemp?.ERC1155balances,
+            (item) => item?.tokenId,
+            (item) => item?.contract?.id,
+            false,
+          );
 
-        hasNextNftOwner =
-          hasNextNftOwner ||
-          hasNext1155Exist?.length > 0 ||
-          hasNext721Exist?.length > 0;
+          hasNextNftOwner =
+            hasNextNftOwner ||
+            hasNext1155Exist?.length > 0 ||
+            hasNext721Exist?.length > 0;
+        }
 
         if (account) {
           // Lọc các record fake của external 721 được ghi vào subgraph chính
