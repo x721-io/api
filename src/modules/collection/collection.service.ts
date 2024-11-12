@@ -172,7 +172,7 @@ export class CollectionService {
 
     const [statusCollection, contractOwner] = await Promise.all([
       this.collectionData.getCollectionCount(collectionAddress),
-      this.collectionData.getContractInfor(collectionAddress),
+      this.collectionData.getContractInforV2(collectionAddress),
       // this.getVolumeCollection(collectionAddress),
     ]);
 
@@ -182,7 +182,8 @@ export class CollectionService {
         volumn: statusCollection.erc721Contract?.volume || 0,
         totalOwner: !!flagExtend
           ? totalOwnerExternal
-          : contractOwner?.contract?.count || 0,
+          : // : contractOwner?.contract?.count || 0,
+            contractOwner?.token_holders_count || 0,
         // totalOwner: !!flagExtend
         //   ? totalOwnerExternal
         //   : statusCollection.erc721Contract?.holderCount || 0,
@@ -197,7 +198,8 @@ export class CollectionService {
         volumn: statusCollection.erc1155Contract?.volume || 0,
         totalOwner: !!flagExtend
           ? totalOwnerExternal
-          : contractOwner?.contract?.count || 0,
+          : // : contractOwner?.contract?.count || 0,
+            contractOwner?.token_holders_count || 0,
         totalNft: !!flagExtend
           ? totalNftExternal
           : statusCollection.erc1155Contract?.count || 0,
