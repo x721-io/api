@@ -88,6 +88,9 @@ export class GetCollectionMarketData {
     // console.log(
     //   `${process.env.EXPLORE_API}tokens/${collectionAddress}/counters`,
     // );
+    console.log(
+      `https://u2uscan.xyz/api/v2/tokens/${collectionAddress}/counters`,
+    );
     const { data } = await axios.get<any, any>(
       `https://u2uscan.xyz/api/v2/tokens/${collectionAddress}/counters`,
     );
