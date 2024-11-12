@@ -133,20 +133,20 @@ async function main() {
 
     // })
 
-    const updateProjectRound = await prisma.projectRound.update({
-        data: {
-            // address : "0xd987584bda5e1bf12fc5b64dbfe5060c60bc0738",
-            // price: "0"
-            end: new Date("2025-2-8 5:00:00.000"),
-        },
-        where: {
-            projectId_roundId:{
-                projectId : "2d7e9dcb-aa1a-4c9e-ba95-b4a5b94d0536",
-                roundId : 3,
-            }
-        }
-    })
-    console.log("🚀 ~ main ~ updateProjectRound:", updateProjectRound)
+    // const updateProjectRound = await prisma.projectRound.update({
+    //     data: {
+    //         // address : "0xd987584bda5e1bf12fc5b64dbfe5060c60bc0738",
+    //         // price: "0"
+    //         end: new Date("2025-2-8 5:00:00.000"),
+    //     },
+    //     where: {
+    //         projectId_roundId:{
+    //             projectId : "2d7e9dcb-aa1a-4c9e-ba95-b4a5b94d0536",
+    //             roundId : 3,
+    //         }
+    //     }
+    // })
+    // console.log("🚀 ~ main ~ updateProjectRound:", updateProjectRound)
 
     // const updateCollection = await prisma.collection.update({
     //     data: {
