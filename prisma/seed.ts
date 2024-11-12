@@ -4,94 +4,94 @@ const prisma = new PrismaClient();
 
 async function main() {
 
-const ERC721BitGet = await prisma.collection.upsert({
-    where: { address: '0x2ac49144a804e1f8652e1a0c1bad90606ac2094a' },
-    update: {},
-    create: {
-        id: 'f35961f7-4a6a-4a39-b048-948e7636ccfd',
-        txCreationHash: '0xa21ec8e8c105af74cc34a995372b134f84f0f010480b680fbe214462facc8786',
-        name: 'U2U Network x Bitget Wallet',
-        symbol: 'U2UxBGW',
-        status: 'SUCCESS',
-        type: 'ERC721',
-        description : 'U2U Network x Bitget Wallet Incentivized Campaign',
-        address: '0x2ac49144a804e1f8652e1a0c1bad90606ac2094a',
-        subgraphUrl: 'https://graph-02.u2u.xyz/subgraphs/name/u2u/u2u-bitget',
-        coverImage: 'https://ug-assets-dev.s3.ap-southeast-1.amazonaws.com/eafe210c-44f5-4f30-9a77-061e25783ff5-coverImage.png',
-        avatar: 'https://ug-assets-dev.s3.ap-southeast-1.amazonaws.com/3820948b-8a64-4293-aad4-c147cfe6caff-BITGET%20X%20U2U%20Network%20NFT.png',
-        updatedAt: new Date('2024-10-25T06:54:22.253Z'),
-        flagExtend: true,
-        },
-    });
+// const ERC721BitGet = await prisma.collection.upsert({
+//     where: { address: '0x2ac49144a804e1f8652e1a0c1bad90606ac2094a' },
+//     update: {},
+//     create: {
+//         id: 'f35961f7-4a6a-4a39-b048-948e7636ccfd',
+//         txCreationHash: '0xa21ec8e8c105af74cc34a995372b134f84f0f010480b680fbe214462facc8786',
+//         name: 'U2U Network x Bitget Wallet',
+//         symbol: 'U2UxBGW',
+//         status: 'SUCCESS',
+//         type: 'ERC721',
+//         description : 'U2U Network x Bitget Wallet Incentivized Campaign',
+//         address: '0x2ac49144a804e1f8652e1a0c1bad90606ac2094a',
+//         subgraphUrl: 'https://graph-02.u2u.xyz/subgraphs/name/u2u/u2u-bitget',
+//         coverImage: 'https://ug-assets-dev.s3.ap-southeast-1.amazonaws.com/eafe210c-44f5-4f30-9a77-061e25783ff5-coverImage.png',
+//         avatar: 'https://ug-assets-dev.s3.ap-southeast-1.amazonaws.com/3820948b-8a64-4293-aad4-c147cfe6caff-BITGET%20X%20U2U%20Network%20NFT.png',
+//         updatedAt: new Date('2024-10-25T06:54:22.253Z'),
+//         flagExtend: true,
+//         },
+//     });
 
-    const creator = await prisma.userCollection.create({
-        data: {
-            collectionId : 'f35961f7-4a6a-4a39-b048-948e7636ccfd',
-            userId: '43dbe7f6-273e-4a0e-89c8-6a819b5e7f18'
-        }
-    })
+    // const creator = await prisma.userCollection.create({
+    //     data: {
+    //         collectionId : 'f35961f7-4a6a-4a39-b048-948e7636ccfd',
+    //         userId: '43dbe7f6-273e-4a0e-89c8-6a819b5e7f18'
+    //     }
+    // })
 
-    const roundInfo = await prisma.roundInfo.createMany({
-        data: [
-            {
-                name :'Whitelist Mint',
-                id: 2,
-                type : 'U2UMintRoundWhitelist',
-                isActive : true,
-                isDelete: false
-            },
-            {
-                name :'FCFS Mint',
-                id: 3,
-                type : 'U2UMintRoundFCFS',
-                isActive : true,
-                isDelete: false
-            },
-            {
-                name :'Round zero Premint',
-                id: 4,
-                type : 'U2UPremintRoundZero',
-                isActive : true,
-                isDelete: false
-            },
-            {
-                name :'Whitelist Premint',
-                id: 5,
-                type : 'U2UPremintRoundWhitelist',
-                isActive : true,
-                isDelete: false
-            },
-            {
-                name :'FCFS Premint',
-                id: 6,
-                type : 'U2UPremintRoundFCFS',
-                isActive : true,
-                isDelete: false
-            },
-            {
-                name :'Round zero Mint',
-                id: 1,
-                type : 'U2UMintRoundZero',
-                isActive : true,
-                isDelete: false
-            },
-            {
-                name :'Whitelist Mint',
-                id: 7,
-                type : 'U2UMintRoundWhitelistCustomized',
-                isActive : true,
-                isDelete: false
-            },
-            {
-                name :'Memetaverse Round',
-                id: 8,
-                type : 'Memetaverse',
-                isActive : true,
-                isDelete: false
-            }
+    // const roundInfo = await prisma.roundInfo.createMany({
+    //     data: [
+    //         {
+    //             name :'Whitelist Mint',
+    //             id: 2,
+    //             type : 'U2UMintRoundWhitelist',
+    //             isActive : true,
+    //             isDelete: false
+    //         },
+    //         {
+    //             name :'FCFS Mint',
+    //             id: 3,
+    //             type : 'U2UMintRoundFCFS',
+    //             isActive : true,
+    //             isDelete: false
+    //         },
+    //         {
+    //             name :'Round zero Premint',
+    //             id: 4,
+    //             type : 'U2UPremintRoundZero',
+    //             isActive : true,
+    //             isDelete: false
+    //         },
+    //         {
+    //             name :'Whitelist Premint',
+    //             id: 5,
+    //             type : 'U2UPremintRoundWhitelist',
+    //             isActive : true,
+    //             isDelete: false
+    //         },
+    //         {
+    //             name :'FCFS Premint',
+    //             id: 6,
+    //             type : 'U2UPremintRoundFCFS',
+    //             isActive : true,
+    //             isDelete: false
+    //         },
+    //         {
+    //             name :'Round zero Mint',
+    //             id: 1,
+    //             type : 'U2UMintRoundZero',
+    //             isActive : true,
+    //             isDelete: false
+    //         },
+    //         {
+    //             name :'Whitelist Mint',
+    //             id: 7,
+    //             type : 'U2UMintRoundWhitelistCustomized',
+    //             isActive : true,
+    //             isDelete: false
+    //         },
+    //         {
+    //             name :'Memetaverse Round',
+    //             id: 8,
+    //             type : 'Memetaverse',
+    //             isActive : true,
+    //             isDelete: false
+    //         }
             
-        ]
-    }) 
+    //     ]
+    // }) 
 
     const project = await prisma.project.create({
         data: {
@@ -111,15 +111,15 @@ const ERC721BitGet = await prisma.collection.upsert({
         data: {
             projectId : "2d7e9dcb-aa1a-4c9e-ba95-b4a5b94d0536",
             address: "0xcb56b723abb4202553e0facd48bcf18a6c6fbf21",
-            end: "2025-02-01 5:00:00.000",
-            start: "2024-11-11 5:00:00.000",
+            end: new Date("2025-02-01 5:00:00.000"),
+            start: new Date("2024-11-11 5:00:00.000"),
             roundId: 3,
-            claimableStart: "2024-11-11 5:00:00.000",
+            claimableStart: new Date("2024-11-11 5:00:00.000"),
             maxPerWallet : 1,
             price: "500000000000000000",
             totalNftt: 0,
             requiredStaking : "0",
-            stakeBefore : "2024-11-11 5:00:00.000",
+            stakeBefore : new Date("2024-11-11 5:00:00.000"),
             instruction: "https://x721.io/"
         }
     })
@@ -135,8 +135,8 @@ const ERC721BitGet = await prisma.collection.upsert({
     console.log("🚀 ~ main ~ updateProjectCollection:", updateProjectCollection)
     console.log("🚀 ~ main ~ project:", project)
     console.log("🚀 ~ main ~ ProjectRound:", ProjectRound)
-    console.log("🚀 ~ main ~ ERC721BitGet:", ERC721BitGet)
-    console.log("🚀 ~ main ~ creator:", creator)
+    // console.log("🚀 ~ main ~ ERC721BitGet:", ERC721BitGet)
+    // console.log("🚀 ~ main ~ creator:", creator)
 // //   Seed User
 //   const creator = await prisma.user.upsert({
 //     where: { signer: '0x0d3c3d95df3c9e71d39fd00eb842026713ad64fe' },
