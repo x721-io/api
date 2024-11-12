@@ -92,21 +92,6 @@ async function main() {
             
     //     ]
     // }) 
-
-    const project = await prisma.project.create({
-        data: {
-            id : "2d7e9dcb-aa1a-4c9e-ba95-b4a5b94d0536",
-            idOnchain: 10,
-            name: 'U2U Network x Bitget Wallet',
-            banner : 'https://ug-assets-dev.s3.ap-southeast-1.amazonaws.com/3820948b-8a64-4293-aad4-c147cfe6caff-BITGET%20X%20U2U%20Network%20NFT.png',
-            description : 'U2U Network x Bitget Wallet Incentivized Campaign',
-            organization : 'U2U Network x Bitget',
-            website : 'https://x721.io/',
-            isActivated: true,
-            logo : 'https://ug-assets-dev.s3.ap-southeast-1.amazonaws.com/3820948b-8a64-4293-aad4-c147cfe6caff-BITGET%20X%20U2U%20Network%20NFT.png',
-        }
-    })
-
     const ProjectRound = await prisma.projectRound.create({
         data: {
             projectId : "2d7e9dcb-aa1a-4c9e-ba95-b4a5b94d0536",
@@ -133,7 +118,6 @@ async function main() {
         }
     })
     console.log("🚀 ~ main ~ updateProjectCollection:", updateProjectCollection)
-    console.log("🚀 ~ main ~ project:", project)
     console.log("🚀 ~ main ~ ProjectRound:", ProjectRound)
     // console.log("🚀 ~ main ~ ERC721BitGet:", ERC721BitGet)
     // console.log("🚀 ~ main ~ creator:", creator)
