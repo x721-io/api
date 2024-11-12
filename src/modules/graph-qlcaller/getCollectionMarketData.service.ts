@@ -85,11 +85,11 @@ export class GetCollectionMarketData {
   }
 
   async getContractInforV2(collectionAddress: string) {
-    console.log(
-      `${process.env.EXPLORE_API}tokens/${collectionAddress}/counters`,
-    );
+    // console.log(
+    //   `${process.env.EXPLORE_API}tokens/${collectionAddress}/counters`,
+    // );
     const { data } = await axios.get<any, any>(
-      `${process.env.EXPLORE_API}tokens/${collectionAddress}/counters`,
+      `https://u2uscan.xyz/api/v2/tokens/${collectionAddress}/counters`,
     );
     return data;
   }
