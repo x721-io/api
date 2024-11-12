@@ -91,10 +91,15 @@ export class GetCollectionMarketData {
     console.log(
       `https://u2uscan.xyz/api/v2/tokens/${collectionAddress}/counters`,
     );
-    const { data } = await axios.get<any, any>(
-      `https://u2uscan.xyz/api/v2/tokens/${collectionAddress}/counters`,
-    );
-    return data;
+    try {
+      const { data } = await axios.get<any, any>(
+        `https://u2uscan.xyz/api/v2/tokens/${collectionAddress}/counters`,
+      );
+
+      return data;
+    } catch (err) {
+      return null;
+    }
   }
 
   async getAllCollectionExternal(contract: string) {
