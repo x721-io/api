@@ -553,8 +553,8 @@ export class CollectionService {
 
       const subgraphCollection = collections.map(async (item) => {
         const generalInfo = await this.getGeneralCollectionData(
-          item.address,
-          item.type,
+          item?.address,
+          item?.type,
           item?.flagExtend,
         );
         return { ...item, ...generalInfo };
