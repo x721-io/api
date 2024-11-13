@@ -118,37 +118,35 @@ async function main() {
     //     }
     // })
 
-    const updateNFT = await prisma.nFT.updateMany({
-        data: {
-            image : "https://indigo-accessible-raccoon-107.mypinata.cloud/ipfs/QmXahNKuC1ji1j9qCoEaopp8DVooWeUAnwBYSV1GpQtSb5",
-            tokenUri : "https://indigo-accessible-raccoon-107.mypinata.cloud/ipfs/QmTjTtDbkhgDHQ7MVvpZnFWNwX1Lm8MsMis9CPjGeSr1Wz"
-        },
-        where: {
-            collectionId : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
-        }
-    })
+    // const updateNFT = await prisma.nFT.updateMany({
+    //     data: {
+    //         image : "https://indigo-accessible-raccoon-107.mypinata.cloud/ipfs/QmXahNKuC1ji1j9qCoEaopp8DVooWeUAnwBYSV1GpQtSb5",
+    //         tokenUri : "https://indigo-accessible-raccoon-107.mypinata.cloud/ipfs/QmTjTtDbkhgDHQ7MVvpZnFWNwX1Lm8MsMis9CPjGeSr1Wz"
+    //     },
+    //     where: {
+    //         collectionId : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
+    //     }
+    // })
 
-    const updateProject = await prisma.project.update({
-      data: {
-        banner: "https://ug-assets-dev.s3.ap-southeast-1.amazonaws.com/9e9db6ba-6d04-4507-a3e2-a3b7b8ec3141-bitgetWallet.png",
-        logo: "https://ug-assets-dev.s3.ap-southeast-1.amazonaws.com/9e9db6ba-6d04-4507-a3e2-a3b7b8ec3141-bitgetWallet.png",
-        organization : "U2U Network x Bitget Wallet"
-      },
-      where: {
-        id : "2d7e9dcb-aa1a-4c9e-ba95-b4a5b94d0536"
-      }
-    })
+    // const updateProject = await prisma.project.update({
+    //   data: {
+    //     banner: "https://ug-assets-dev.s3.ap-southeast-1.amazonaws.com/9e9db6ba-6d04-4507-a3e2-a3b7b8ec3141-bitgetWallet.png",
+    //     logo: "https://ug-assets-dev.s3.ap-southeast-1.amazonaws.com/9e9db6ba-6d04-4507-a3e2-a3b7b8ec3141-bitgetWallet.png",
+    //     organization : "U2U Network x Bitget Wallet"
+    //   },
+    //   where: {
+    //     id : "2d7e9dcb-aa1a-4c9e-ba95-b4a5b94d0536"
+    //   }
+    // })
 
     const updateCollection = await prisma.collection.update({
       data: {
-        avatar: "https://ug-assets-dev.s3.ap-southeast-1.amazonaws.com/9e9db6ba-6d04-4507-a3e2-a3b7b8ec3141-bitgetWallet.png",
+        coverImage: "https://ug-assets-dev.s3.ap-southeast-1.amazonaws.com/dcc53225-d6c9-48d9-a80e-b40f2bf26696-u2ubitgetwallet.png"
       },
       where: {
         id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
       }
     })
-    console.log("🚀 ~ main ~ updateCollection:", updateCollection)
-    console.log("🚀 ~ main ~ updateProject:", updateProject)
     // console.log("🚀 ~ main ~ updateNFT:", updateNFT)
     // const updateProjectRound = await prisma.projectRound.update({
     //     data: {
