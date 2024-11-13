@@ -133,7 +133,7 @@ async function main() {
 
     // })
 
-    const listNFT = await prisma.nFT.findMany();
+    const listNFT = await prisma.collection.findMany();
     console.log("🚀 ~ main ~ listNFT:", listNFT)
     // const updateProjectRound = await prisma.projectRound.update({
     //     data: {
