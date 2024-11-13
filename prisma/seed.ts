@@ -139,14 +139,14 @@ async function main() {
     //   }
     // })
 
-    const updateCollection = await prisma.collection.update({
-      data: {
-        coverImage: "https://ug-assets-dev.s3.ap-southeast-1.amazonaws.com/dcc53225-d6c9-48d9-a80e-b40f2bf26696-u2ubitgetwallet.png"
-      },
-      where: {
-        id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
-      }
-    })
+    // const updateCollection = await prisma.collection.update({
+    //   data: {
+    //     shortUrl: "u2uxbitgetwallet"
+    //   },
+    //   where: {
+    //     id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
+    //   }
+    // })
     // console.log("🚀 ~ main ~ updateNFT:", updateNFT)
     // const updateProjectRound = await prisma.projectRound.update({
     //     data: {

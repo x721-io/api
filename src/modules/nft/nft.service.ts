@@ -358,8 +358,8 @@ export class NftService {
 
           const nfts = await this.prisma.nFT.findMany({
             ...(!filter.owner && {
-              skip: (filter.page - 1) * filter.limit,
-              take: filter.limit,
+              skip: (filter.page - 1) * Math.floor(filter.limit / 2),
+              take: Math.floor(filter.limit / 2),
             }),
             where: whereCondition,
             orderBy: orderByProperties,
@@ -377,11 +377,12 @@ export class NftService {
               traits: true,
             },
           });
+          // console.log('🚀 ~ NftService ~ findAll ~ nfts:', nfts);
           const Nftformat = await this.nftHepler.handleFormatNFTResponse(nfts);
           const hasNext =
             (await PaginationCommon.hasNextPage(
               filter.page,
-              filter.limit,
+              Math.floor(filter.limit / 2),
               'nFT',
               whereCondition,
             )) || hasNextNftOwner;
@@ -470,8 +471,8 @@ export class NftService {
 
           const nfts = await this.prisma.nFT.findMany({
             ...(!filter.owner && {
-              skip: (filter.page - 1) * filter.limit,
-              take: filter.limit,
+              skip: (filter.page - 1) * Math.floor(filter.limit / 2),
+              take: Math.floor(filter.limit / 2),
             }),
             where: whereCondition1,
             orderBy: orderByProperties,
@@ -493,7 +494,7 @@ export class NftService {
           const hasNext =
             (await PaginationCommon.hasNextPage(
               filter.page,
-              filter.limit,
+              Math.floor(filter.limit / 2),
               'nFT',
               whereCondition1,
             )) || hasNextNftOwner;
