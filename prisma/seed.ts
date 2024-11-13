@@ -147,14 +147,14 @@ async function main() {
     // })
     // console.log("🚀 ~ main ~ updateProjectRound:", updateProjectRound)
 
-    const updateCollection = await prisma.collection.update({
-        data: {
-            isU2U: false
-        },
-        where: {
-            id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
-        }
-    })
+    // const updateCollection = await prisma.collection.update({
+    //     data: {
+    //         isU2U: false
+    //     },
+    //     where: {
+    //         id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
+    //     }
+    // })
 
 
     const updateSet1155 = await prisma.syncMasterData.update({
@@ -174,11 +174,11 @@ async function main() {
         type: 'ERC721'
       }
     })
-    console.log("🚀 ~ main ~ updateSet721:", updateSet721)
-    console.log("🚀 ~ main ~ updateSet1155:", updateSet1155)
-    // const select = await prisma.marketplaceStatus.findMany();
-    // const select1 = await prisma.syncMasterData.findMany();
-    console.log("🚀 ~ main ~ updateCollection:", updateCollection)
+    // console.log("🚀 ~ main ~ updateSet721:", updateSet721)
+    // console.log("🚀 ~ main ~ updateSet1155:", updateSet1155)
+    // // const select = await prisma.marketplaceStatus.findMany();
+    // // const select1 = await prisma.syncMasterData.findMany();
+    // console.log("🚀 ~ main ~ updateCollection:", updateCollection)
 
 
 
