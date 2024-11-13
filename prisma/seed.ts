@@ -132,9 +132,6 @@ async function main() {
     //     }
 
     // })
-
-    const listNFT = await prisma.collection.findMany();
-    console.log("🚀 ~ main ~ listNFT:", listNFT)
     // const updateProjectRound = await prisma.projectRound.update({
     //     data: {
     //         // address : "0xd987584bda5e1bf12fc5b64dbfe5060c60bc0738",
@@ -150,37 +147,39 @@ async function main() {
     // })
     // console.log("🚀 ~ main ~ updateProjectRound:", updateProjectRound)
 
-    // const updateCollection = await prisma.collection.update({
-    //     data: {
-    //         shortUrl: "u2uxbitget"
-    //     },
-    //     where: {
-    //         id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
-    //     }
-    // })
-    // console.log("🚀 ~ main ~ updateCollection:", updateCollection)
+    const updateCollection = await prisma.collection.update({
+        data: {
+            isU2U: false
+        },
+        where: {
+            id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
+        }
+    })
 
 
-    // const updateSet1155 = await prisma.syncMasterData.update({
-    //   data: {
-    //     timestamp : 0
-    //   },
-    //   where: {
-    //     type: 'ERC1155'
-    //   }
-    // })
+    const updateSet1155 = await prisma.syncMasterData.update({
+      data: {
+        timestamp : 0
+      },
+      where: {
+        type: 'ERC1155'
+      }
+    })
 
-    // const updateSet721 = await prisma.syncMasterData.update({
-    //   data: {
-    //     timestamp : 0
-    //   },
-    //   where: {
-    //     type: 'ERC721'
-    //   }
-    // })
-
+    const updateSet721 = await prisma.syncMasterData.update({
+      data: {
+        timestamp : 0
+      },
+      where: {
+        type: 'ERC721'
+      }
+    })
+    console.log("🚀 ~ main ~ updateSet721:", updateSet721)
+    console.log("🚀 ~ main ~ updateSet1155:", updateSet1155)
     // const select = await prisma.marketplaceStatus.findMany();
     // const select1 = await prisma.syncMasterData.findMany();
+    console.log("🚀 ~ main ~ updateCollection:", updateCollection)
+
 
 
 
