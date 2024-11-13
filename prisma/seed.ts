@@ -159,25 +159,28 @@ async function main() {
     // console.log("🚀 ~ main ~ updateCollection:", updateCollection)
 
 
-    const updateSet1155 = await prisma.syncMasterData.update({
-      data: {
-        timestamp : 0
-      },
-      where: {
-        type: 'ERC1155'
-      }
-    })
+    // const updateSet1155 = await prisma.syncMasterData.update({
+    //   data: {
+    //     timestamp : 0
+    //   },
+    //   where: {
+    //     type: 'ERC1155'
+    //   }
+    // })
 
-    const updateSet721 = await prisma.syncMasterData.update({
-      data: {
-        timestamp : 0
-      },
-      where: {
-        type: 'ERC721'
-      }
-    })
-    console.log("🚀 ~ main ~ updateSet721:", updateSet721)
-    console.log("🚀 ~ main ~ updateSet1155:", updateSet1155)
+    // const updateSet721 = await prisma.syncMasterData.update({
+    //   data: {
+    //     timestamp : 0
+    //   },
+    //   where: {
+    //     type: 'ERC721'
+    //   }
+    // })
+
+    const select = await prisma.marketplaceStatus.findMany();
+    const select1 = await prisma.syncMasterData.findMany();
+
+    console.log("🚀 ~ main ~ updateSet721:", select, select1)
 
 
     // console.log("🚀 ~ main ~ updateNFT:", updateNFT)
