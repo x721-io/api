@@ -148,15 +148,37 @@ async function main() {
     // })
     // console.log("🚀 ~ main ~ updateProjectRound:", updateProjectRound)
 
-    const updateCollection = await prisma.collection.update({
-        data: {
-            shortUrl: "u2uxbitget"
-        },
-        where: {
-            id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
-        }
+    // const updateCollection = await prisma.collection.update({
+    //     data: {
+    //         shortUrl: "u2uxbitget"
+    //     },
+    //     where: {
+    //         id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
+    //     }
+    // })
+    // console.log("🚀 ~ main ~ updateCollection:", updateCollection)
+
+
+    const updateSet1155 = await prisma.syncMasterData.update({
+      data: {
+        timestamp : 0
+      },
+      where: {
+        type: 'ERC1155'
+      }
     })
-    console.log("🚀 ~ main ~ updateCollection:", updateCollection)
+
+    const updateSet721 = await prisma.syncMasterData.update({
+      data: {
+        timestamp : 0
+      },
+      where: {
+        type: 'ERC721'
+      }
+    })
+    console.log("🚀 ~ main ~ updateSet721:", updateSet721)
+    console.log("🚀 ~ main ~ updateSet1155:", updateSet1155)
+
 
     // console.log("🚀 ~ main ~ updateNFT:", updateNFT)
 
