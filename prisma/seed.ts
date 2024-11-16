@@ -111,7 +111,7 @@ async function main() {
 
     // const updateProjectCollection = await prisma.collection.update({
     //     data: {
-    //         projectId: "2d7e9dcb-aa1a-4c9e-ba95-b4a5b94d0536"
+    //         isVerified: true
     //     },
     //     where: {
     //         id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
@@ -171,6 +171,17 @@ async function main() {
     //         id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
     //     }
     // })
+
+    // const updatecreator = await prisma.user.update({
+    //   data: {
+    //     accountStatus: true,
+    //   },
+    //   where: {
+    //     id : "43dbe7f6-273e-4a0e-89c8-6a819b5e7f18"
+    //   }
+    // })
+
+    // console.log("🚀 ~ main ~ updateProjectCollection:", updateProjectCollection)
 
 
     const updateSet1155 = await prisma.syncMasterData.update({

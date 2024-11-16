@@ -347,19 +347,20 @@ export class NftService {
             },
           };
         } else {
-          const orderByProperties: Prisma.NFTOrderByWithRelationAndSearchRelevanceInput =
-            {};
+          const orderByProperties: Prisma.NFTOrderByWithRelationAndSearchRelevanceInput[] =
+            [];
 
           if (filter.orderBy == 'time') {
-            orderByProperties.createdAt = filter.order;
+            orderByProperties.push({ createdAt: filter.order });
           } else {
-            orderByProperties.metricPoint = 'desc';
+            orderByProperties.push({ metricPoint: 'desc' });
+            orderByProperties.push({ createdAt: 'desc' });
           }
 
           const nfts = await this.prisma.nFT.findMany({
             ...(!filter.owner && {
-              skip: (filter.page - 1) * Math.floor(filter.limit / 2),
-              take: Math.floor(filter.limit / 2),
+              skip: (filter.page - 1) * filter.limit,
+              take: filter.limit,
             }),
             where: whereCondition,
             orderBy: orderByProperties,
@@ -377,7 +378,6 @@ export class NftService {
               traits: true,
             },
           });
-          // console.log('🚀 ~ NftService ~ findAll ~ nfts:', nfts);
           const Nftformat = await this.nftHepler.handleFormatNFTResponse(nfts);
           const hasNext =
             (await PaginationCommon.hasNextPage(
@@ -460,19 +460,20 @@ export class NftService {
             },
           };
         } else {
-          const orderByProperties: Prisma.NFTOrderByWithRelationAndSearchRelevanceInput =
-            {};
+          const orderByProperties: Prisma.NFTOrderByWithRelationAndSearchRelevanceInput[] =
+            [];
 
           if (filter.orderBy == 'time') {
-            orderByProperties.createdAt = filter.order;
+            orderByProperties.push({ createdAt: filter.order });
           } else {
-            orderByProperties.metricPoint = 'desc';
+            orderByProperties.push({ metricPoint: 'desc' });
+            orderByProperties.push({ createdAt: 'desc' });
           }
 
           const nfts = await this.prisma.nFT.findMany({
             ...(!filter.owner && {
-              skip: (filter.page - 1) * Math.floor(filter.limit / 2),
-              take: Math.floor(filter.limit / 2),
+              skip: (filter.page - 1) * filter.limit,
+              take: filter.limit,
             }),
             where: whereCondition1,
             orderBy: orderByProperties,
@@ -830,6 +831,7 @@ export class NftService {
         // const ownerAndSupplyInfo = await this.getCurrentOwners(nft);
         // owners = ownerAndSupplyInfo.owners;
       }
+
       // @ts-ignore
       nft.owners = owners;
       // const sellInfo = await this.eventService.findEvents({
@@ -867,6 +869,19 @@ export class NftService {
         // sellInfo: sellInfo,
         // bidInfo: bidInfo,
       };
+      if (collection?.flagExtend == true && !returnNft?.creator) {
+        const creator = await this.prisma.userCollection.findFirst({
+          where: {
+            collectionId: collection.id,
+          },
+          include: {
+            user: {
+              select: creatorSelect,
+            },
+          },
+        });
+        returnNft.creator = creator?.user || null;
+      }
       return returnNft;
     } catch (error) {
       console.error(error);
