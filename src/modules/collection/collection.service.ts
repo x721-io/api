@@ -294,15 +294,14 @@ export class CollectionService {
         },
       };
     }
-    const orderByProperties: Prisma.CollectionOrderByWithRelationAndSearchRelevanceInput =
-      {};
-    if (input.orderBy == 'time') {
-      orderByProperties.createdAt = input.order;
-    } else if (input.orderBy == 'price') {
-      orderByProperties.floorPrice = input.order;
+    const orderByProperties: Prisma.CollectionOrderByWithRelationAndSearchRelevanceInput[] =
+      [];
+    if (input.orderBy == 'price') {
+      orderByProperties.push({ floorPrice: input.order });
     } else {
-      orderByProperties.metricPoint = input.order;
+      orderByProperties.push({ createdAt: input.order });
     }
+    orderByProperties.push({ metricPoint: input.order });
 
     const collections = await this.prisma.collection.findMany({
       where: whereCondition,
@@ -488,6 +487,7 @@ export class CollectionService {
     id: string,
     input: GetCollectionByUserDto,
   ): Promise<PagingResponse<CollectionEntity>> {
+    console.log('🚀 ~ id:', id);
     try {
       let isUuid = true;
       if (!isValidUUID(id)) {
@@ -496,7 +496,11 @@ export class CollectionService {
       const userWithCollection = await this.prisma.userCollection.findMany({
         where: {
           user: {
-            ...(isUuid ? { id } : { OR: [{ signer: id }, { shortLink: id }] }),
+            ...(isUuid
+              ? { id }
+              : {
+                  OR: [{ signer: id?.toLowerCase() }, { shortLink: id }],
+                }),
           },
           collection: {
             status: TX_STATUS.SUCCESS,
