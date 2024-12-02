@@ -111,39 +111,101 @@ async function main() {
 
     // const updateProjectCollection = await prisma.collection.update({
     //     data: {
-    //         projectId: "2d7e9dcb-aa1a-4c9e-ba95-b4a5b94d0536"
+    //         isVerified: true
     //     },
     //     where: {
     //         id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
     //     }
     // })
 
-    // const updateNFT = await prisma.nFT.update({
+    // const updateNFT = await prisma.nFT.updateMany({
     //     data: {
-    //         name : "U2U Network x Bitget Wallet #1",
-    //         image : "https://indigo-accessible-raccoon-107.mypinata.cloud/ipfs/QmP5rVzqDnHsNdSF611HBL59fxuzdXEFZ3dWfV5rxvjRuJ",
-    //         tokenUri : "https://indigo-accessible-raccoon-107.mypinata.cloud/ipfs/Qme8PkZo8EW7UsBB4EUW85neYq7fYtWGJBEzZEdAheHrjF"
+    //         image : "https://indigo-accessible-raccoon-107.mypinata.cloud/ipfs/QmXahNKuC1ji1j9qCoEaopp8DVooWeUAnwBYSV1GpQtSb5",
+    //         tokenUri : "https://indigo-accessible-raccoon-107.mypinata.cloud/ipfs/QmTjTtDbkhgDHQ7MVvpZnFWNwX1Lm8MsMis9CPjGeSr1Wz"
     //     },
     //     where: {
-    //         id_collectionId: {
-    //             id: "1",
-    //             collectionId : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
-    //         }
+    //         collectionId : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
     //     }
-
     // })
 
-    const updateCollection = await prisma.collection.update({
-        data: {
-            shortUrl: "/u2uxbitget"
-        },
-        where: {
-            id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
-        }
-    })
-    console.log("🚀 ~ main ~ updateCollection:", updateCollection)
+    // const updateProject = await prisma.project.update({
+    //   data: {
+    //     banner: "https://ug-assets-dev.s3.ap-southeast-1.amazonaws.com/9e9db6ba-6d04-4507-a3e2-a3b7b8ec3141-bitgetWallet.png",
+    //     logo: "https://ug-assets-dev.s3.ap-southeast-1.amazonaws.com/9e9db6ba-6d04-4507-a3e2-a3b7b8ec3141-bitgetWallet.png",
+    //     organization : "U2U Network x Bitget Wallet"
+    //   },
+    //   where: {
+    //     id : "2d7e9dcb-aa1a-4c9e-ba95-b4a5b94d0536"
+    //   }
+    // })
 
+    // const updateCollection = await prisma.collection.update({
+    //   data: {
+    //     shortUrl: "u2uxbitgetwallet"
+    //   },
+    //   where: {
+    //     id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
+    //   }
+    // })
     // console.log("🚀 ~ main ~ updateNFT:", updateNFT)
+    // const updateProjectRound = await prisma.projectRound.update({
+    //     data: {
+    //         // address : "0xd987584bda5e1bf12fc5b64dbfe5060c60bc0738",
+    //         // price: "0"
+    //         end: new Date("2025-2-8 5:00:00.000"),
+    //     },
+    //     where: {
+    //         projectId_roundId:{
+    //             projectId : "2d7e9dcb-aa1a-4c9e-ba95-b4a5b94d0536",
+    //             roundId : 3,
+    //         }
+    //     }
+    // })
+    // console.log("🚀 ~ main ~ updateProjectRound:", updateProjectRound)
+
+    // const updateCollection = await prisma.collection.update({
+    //     data: {
+    //         isU2U: false
+    //     },
+    //     where: {
+    //         id : "f35961f7-4a6a-4a39-b048-948e7636ccfd"
+    //     }
+    // })
+
+    // const updatecreator = await prisma.user.update({
+    //   data: {
+    //     accountStatus: true,
+    //   },
+    //   where: {
+    //     id : "43dbe7f6-273e-4a0e-89c8-6a819b5e7f18"
+    //   }
+    // })
+
+    // console.log("🚀 ~ main ~ updateProjectCollection:", updateProjectCollection)
+
+
+    const updateSet1155 = await prisma.syncMasterData.update({
+      data: {
+        timestamp : 0
+      },
+      where: {
+        type: 'ERC1155'
+      }
+    })
+
+    const updateSet721 = await prisma.syncMasterData.update({
+      data: {
+        timestamp : 0
+      },
+      where: {
+        type: 'ERC721'
+      }
+    })
+    // console.log("🚀 ~ main ~ updateSet721:", updateSet721)
+    // console.log("🚀 ~ main ~ updateSet1155:", updateSet1155)
+    // // const select = await prisma.marketplaceStatus.findMany();
+    // // const select1 = await prisma.syncMasterData.findMany();
+    // console.log("🚀 ~ main ~ updateCollection:", updateCollection)
 
     // https://indigo-accessible-raccoon-107.mypinata.cloud/ipfs/QmP5rVzqDnHsNdSF611HBL59fxuzdXEFZ3dWfV5rxvjRuJ
     // console.log("🚀 ~ main ~ updateProjectCollection:", updateProjectCollection)

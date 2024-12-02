@@ -172,7 +172,7 @@ export class CollectionService {
 
     const [statusCollection, contractOwner] = await Promise.all([
       this.collectionData.getCollectionCount(collectionAddress),
-      this.collectionData.getContractInforV2(collectionAddress),
+      this.collectionData.getContractInfor(collectionAddress),
       // this.getVolumeCollection(collectionAddress),
     ]);
 
@@ -182,8 +182,8 @@ export class CollectionService {
         volumn: statusCollection.erc721Contract?.volume || 0,
         totalOwner: !!flagExtend
           ? totalOwnerExternal
-          : // : contractOwner?.contract?.count || 0,
-            contractOwner?.token_holders_count || 0,
+          : contractOwner?.contract?.count || 0,
+        // contractOwner?.token_holders_count || 0,
         // totalOwner: !!flagExtend
         //   ? totalOwnerExternal
         //   : statusCollection.erc721Contract?.holderCount || 0,
@@ -198,8 +198,8 @@ export class CollectionService {
         volumn: statusCollection.erc1155Contract?.volume || 0,
         totalOwner: !!flagExtend
           ? totalOwnerExternal
-          : // : contractOwner?.contract?.count || 0,
-            contractOwner?.token_holders_count || 0,
+          : contractOwner?.contract?.count || 0,
+        // contractOwner?.token_holders_count || 0,
         totalNft: !!flagExtend
           ? totalNftExternal
           : statusCollection.erc1155Contract?.count || 0,
@@ -294,15 +294,14 @@ export class CollectionService {
         },
       };
     }
-    const orderByProperties: Prisma.CollectionOrderByWithRelationAndSearchRelevanceInput =
-      {};
-    if (input.orderBy == 'time') {
-      orderByProperties.createdAt = input.order;
-    } else if (input.orderBy == 'price') {
-      orderByProperties.floorPrice = input.order;
+    const orderByProperties: Prisma.CollectionOrderByWithRelationAndSearchRelevanceInput[] =
+      [];
+    if (input.orderBy == 'price') {
+      orderByProperties.push({ floorPrice: input.order });
     } else {
-      orderByProperties.metricPoint = input.order;
+      orderByProperties.push({ createdAt: input.order });
     }
+    orderByProperties.push({ metricPoint: input.order });
 
     const collections = await this.prisma.collection.findMany({
       where: whereCondition,
@@ -409,7 +408,6 @@ export class CollectionService {
         totalRoyalties,
         listRoyalties: royalties,
       };
-
       return {
         collection: collectionReponse,
         traitAvailable: traitsAvailable,
@@ -488,6 +486,7 @@ export class CollectionService {
     id: string,
     input: GetCollectionByUserDto,
   ): Promise<PagingResponse<CollectionEntity>> {
+    console.log('🚀 ~ id:', id);
     try {
       let isUuid = true;
       if (!isValidUUID(id)) {
@@ -496,7 +495,11 @@ export class CollectionService {
       const userWithCollection = await this.prisma.userCollection.findMany({
         where: {
           user: {
-            ...(isUuid ? { id } : { OR: [{ signer: id }, { shortLink: id }] }),
+            ...(isUuid
+              ? { id }
+              : {
+                  OR: [{ signer: id?.toLowerCase() }, { shortLink: id }],
+                }),
           },
           collection: {
             status: TX_STATUS.SUCCESS,
