@@ -379,3 +379,31 @@ model AnalysisCollection {
   createdAt        DateTime         @default(now()) @db.Date
   collection       Collection       @relation(fields: [collectionId], references: [id])
 }
+model Platform {
+  id          String             @id @default(uuid()) @db.Uuid
+  platform    String
+  name        String
+  avatar      String?
+  banner      String?
+  description String?
+  creator     String
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime?          @updatedAt
+  templates   OverviewTemplate[] @relation("PlatformToTemplates")
+}
+
+model OverviewTemplate {
+  id          String    @id @default(uuid()) @db.Uuid
+  platformId  String    @db.Uuid
+  name        String
+  avatar      String?
+  banner      String?
+  description String?
+  sections    Json?
+  isActive    Boolean
+  creator     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime? @updatedAt
+  Platform    Platform  @relation("PlatformToTemplates", fields: [platformId], references: [id])
+}
+
