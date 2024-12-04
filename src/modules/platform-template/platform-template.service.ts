@@ -12,6 +12,8 @@ import { logger } from '../../commons';
 import { PrismaService } from '../../prisma/prisma.service';
 import OtherCommon from 'src/commons/Other.common';
 
+const MESSAGE_OK = 'ok';
+
 @Injectable()
 export class PlatformTemplateService {
   constructor(private readonly prisma: PrismaService) {}
@@ -127,7 +129,7 @@ export class PlatformTemplateService {
         },
       });
 
-      return 'ok';
+      return MESSAGE_OK;
     } catch (error) {
       logger.error(error);
       throw new HttpException(

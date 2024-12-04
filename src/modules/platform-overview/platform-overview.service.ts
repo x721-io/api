@@ -17,6 +17,8 @@ import { User } from '@prisma/client';
 import PaginationCommon from '../../commons/HasNext.common';
 import OtherCommon from 'src/commons/Other.common';
 
+const MESSAGE_OK = 'ok';
+
 @Injectable()
 export class PlatformOverviewService {
   constructor(private readonly prisma: PrismaService) {}
@@ -220,7 +222,7 @@ export class PlatformOverviewService {
         },
       });
 
-      return 'ok';
+      return MESSAGE_OK;
     } catch (error) {
       logger.error(error);
       throw new HttpException(
