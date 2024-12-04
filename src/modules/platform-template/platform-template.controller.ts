@@ -31,11 +31,6 @@ export class PlatformTemplateController {
     return this.platformTemplateService.create(createPlatformTemplateDto, user);
   }
 
-  // @Get()
-  // findAll() {
-  //   return this.platformTemplateService.findAll();
-  // }
-
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.platformTemplateService.findOne(id);

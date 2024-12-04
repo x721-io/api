@@ -14,6 +14,7 @@ import { UpdatePlatformOverviewDto } from './dto/update-platform-overview.dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { logger } from '../../commons';
 import { User } from '@prisma/client';
+import PaginationCommon from '../../commons/HasNext.common';
 
 @Injectable()
 export class PlatformOverviewService {
@@ -43,16 +44,10 @@ export class PlatformOverviewService {
     }
   }
 
-  async findAll(filter: PlatformOverviewFilter) {
+  async findAll(
+    filter: PlatformOverviewFilter,
+  ): Promise<PagingResponseHasNext<any>> {
     try {
-      const parsedLimit = parseInt(filter.limit || '20', 10); // Default limit is 20
-      const parsedPage = parseInt(filter.page || '1', 10); // Default page is 1
-
-      // Ensure valid numbers
-      if (isNaN(parsedLimit) || isNaN(parsedPage)) {
-        throw new Error('Invalid limit or page parameter');
-      }
-
       let whereQuery: any = {};
       if (filter.platform && filter.platform.length > 0) {
         whereQuery = {
@@ -70,9 +65,9 @@ export class PlatformOverviewService {
         };
       }
 
-      return await this.prisma.platform.findMany({
-        skip: (parsedPage - 1) * parsedLimit,
-        take: parsedLimit,
+      const listPlatform = await this.prisma.platform.findMany({
+        skip: (filter.page - 1) * filter.limit,
+        take: filter.limit,
         where: whereQuery,
         include: {
           templates: {
@@ -86,6 +81,22 @@ export class PlatformOverviewService {
           createdAt: 'desc',
         },
       });
+
+      const hasNext = await PaginationCommon.hasNextPage(
+        filter.page,
+        filter.limit,
+        'platform',
+        whereQuery,
+      );
+
+      return {
+        data: listPlatform,
+        paging: {
+          limit: filter.limit,
+          page: filter.page,
+          hasNext: hasNext,
+        },
+      };
     } catch (error) {
       logger.error(error);
       throw new HttpException(

@@ -60,10 +60,6 @@ export class PlatformTemplateService {
     }
   }
 
-  // findAll() {
-  //   return `This action returns all platformTemplate`;
-  // }
-
   async findOne(id: string) {
     return this.prisma.overviewTemplate.findFirst({
       where: {

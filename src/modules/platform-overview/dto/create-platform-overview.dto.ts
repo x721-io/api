@@ -1,3 +1,5 @@
+import { OffsetPaginationDto } from '../../../commons/definitions/OffsetPagination.input';
+
 export class CreatePlatformOverviewDto {
   platform: string;
   name: string;
@@ -6,9 +8,7 @@ export class CreatePlatformOverviewDto {
   description?: string;
 }
 
-export class PlatformOverviewFilter {
+export class PlatformOverviewFilter extends OffsetPaginationDto{
   platform?: string;
   templateStatus?: string;
-  limit?: string;
-  page?: string;
 }
