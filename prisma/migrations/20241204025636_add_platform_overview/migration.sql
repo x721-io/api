@@ -1,6 +1,7 @@
 -- CreateTable
 CREATE TABLE "Platform" (
     "id" UUID NOT NULL,
+    "nameSlug" TEXT NOT NULL,
     "platform" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "avatar" TEXT,
@@ -29,6 +30,12 @@ CREATE TABLE "OverviewTemplate" (
 
     CONSTRAINT "OverviewTemplate_pkey" PRIMARY KEY ("id")
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Platform_nameSlug_key" ON "Platform"("nameSlug");
+
+-- CreateIndex
+CREATE INDEX "Platform_nameSlug_idx" ON "Platform"("nameSlug");
 
 -- AddForeignKey
 ALTER TABLE "OverviewTemplate" ADD CONSTRAINT "OverviewTemplate_platformId_fkey" FOREIGN KEY ("platformId") REFERENCES "Platform"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

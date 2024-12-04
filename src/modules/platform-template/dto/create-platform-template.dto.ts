@@ -1,5 +1,5 @@
 export class CreatePlatformTemplateDto {
-  platformId: string;
+  nameSlug: string;
   name: string;
   avatar?: string;
   banner?: string;

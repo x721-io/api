@@ -15,6 +15,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { logger } from '../../commons';
 import { User } from '@prisma/client';
 import PaginationCommon from '../../commons/HasNext.common';
+import OtherCommon from 'src/commons/Other.common';
 
 @Injectable()
 export class PlatformOverviewService {
@@ -25,9 +26,23 @@ export class PlatformOverviewService {
     user: User,
   ) {
     try {
+      const existPlatform = await this.prisma.platform.findFirst({
+        where: {
+          nameSlug: OtherCommon.stringToSlugSearch(
+            createPlatformOverviewDto.nameSlug,
+          ),
+        },
+      });
+      if (!!existPlatform) {
+        throw new BadRequestException('Slug name already exists');
+      }
+
       return await this.prisma.platform.create({
         data: {
           platform: createPlatformOverviewDto.platform,
+          nameSlug: OtherCommon.stringToSlugSearch(
+            createPlatformOverviewDto.nameSlug,
+          ),
           creator: user.id,
           name: createPlatformOverviewDto.name,
           avatar: createPlatformOverviewDto.avatar,
@@ -56,11 +71,10 @@ export class PlatformOverviewService {
       }
 
       let templateQuery: boolean | any = true;
-      if (filter.templateStatus && filter.templateStatus.length > 0) {
+      if (filter.templateStatus !== undefined) {
         templateQuery = {
           where: {
-            isActive:
-              filter.templateStatus === 'true' || filter.templateStatus === 't',
+            isActive: filter.templateStatus,
           },
         };
       }
@@ -106,7 +120,7 @@ export class PlatformOverviewService {
     }
   }
 
-  async findOne(id: string, filter: PlatformOverviewFilter) {
+  async findOne(nameSlug: string, filter: PlatformOverviewFilter) {
     let whereQuery: any = {};
     if (filter.platform && filter.platform.length > 0) {
       whereQuery = {
@@ -115,18 +129,17 @@ export class PlatformOverviewService {
     }
 
     let templateQuery: boolean | any = true;
-    if (filter.templateStatus && filter.templateStatus.length > 0) {
+    if (filter.templateStatus !== null) {
       templateQuery = {
         where: {
-          isActive:
-            filter.templateStatus === 'true' || filter.templateStatus === 't',
+          isActive: filter.templateStatus,
         },
       };
     }
 
     return this.prisma.platform.findFirst({
       where: {
-        id: id,
+        nameSlug: OtherCommon.stringToSlugSearch(nameSlug),
         ...whereQuery,
       },
       include: {
@@ -141,14 +154,14 @@ export class PlatformOverviewService {
   }
 
   async update(
-    id: string,
+    nameSlug: string,
     updatePlatformOverviewDto: UpdatePlatformOverviewDto,
     user: User,
   ) {
     try {
       const platform = await this.prisma.platform.findFirst({
         where: {
-          id: id,
+          nameSlug: OtherCommon.stringToSlugSearch(nameSlug),
         },
       });
 
@@ -161,7 +174,7 @@ export class PlatformOverviewService {
 
       await this.prisma.platform.update({
         where: {
-          id: id,
+          nameSlug: OtherCommon.stringToSlugSearch(nameSlug),
         },
         data: {
           name: updatePlatformOverviewDto.name,
@@ -180,11 +193,11 @@ export class PlatformOverviewService {
     }
   }
 
-  async remove(id: string, user: User) {
+  async remove(nameSlug: string, user: User) {
     try {
       const platform = await this.prisma.platform.findFirst({
         where: {
-          id: id,
+          nameSlug: OtherCommon.stringToSlugSearch(nameSlug),
         },
       });
 
@@ -197,13 +210,13 @@ export class PlatformOverviewService {
 
       await this.prisma.overviewTemplate.deleteMany({
         where: {
-          platformId: id,
+          platformId: platform.id,
         },
       });
 
-      await this.prisma.overviewTemplate.delete({
+      await this.prisma.platform.delete({
         where: {
-          id: id,
+          id: platform.id,
         },
       });
 

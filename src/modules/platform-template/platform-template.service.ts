@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ForbiddenException,
   HttpException,
   HttpStatus,
@@ -11,8 +10,7 @@ import { UpdatePlatformTemplateDto } from './dto/update-platform-template.dto';
 import { User } from '@prisma/client';
 import { logger } from '../../commons';
 import { PrismaService } from '../../prisma/prisma.service';
-import { validate as isValidUUID } from 'uuid';
-import { GetCurrentUser } from '../../decorators/get-current-user.decorator';
+import OtherCommon from 'src/commons/Other.common';
 
 @Injectable()
 export class PlatformTemplateService {
@@ -23,12 +21,11 @@ export class PlatformTemplateService {
     user: User,
   ) {
     try {
-      if (!isValidUUID(createPlatformTemplateDto.platformId)) {
-        throw new BadRequestException('Invalid UUID format');
-      }
       const platform = await this.prisma.platform.findFirst({
         where: {
-          id: createPlatformTemplateDto.platformId,
+          nameSlug: OtherCommon.stringToSlugSearch(
+            createPlatformTemplateDto.nameSlug,
+          ),
         },
       });
       if (!platform) {
@@ -46,7 +43,7 @@ export class PlatformTemplateService {
           isActive: createPlatformTemplateDto.isActive,
           Platform: {
             connect: {
-              id: createPlatformTemplateDto.platformId,
+              id: platform.id,
             },
           },
         },

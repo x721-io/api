@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   UseGuards,
@@ -40,28 +39,31 @@ export class PlatformOverviewController {
     return this.platformOverviewService.findAll(filter);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string, @Query() filter: PlatformOverviewFilter) {
-    return this.platformOverviewService.findOne(id, filter);
+  @Get(':nameSlug')
+  findOne(
+    @Param('nameSlug') nameSlug: string,
+    @Query() filter: PlatformOverviewFilter,
+  ) {
+    return this.platformOverviewService.findOne(nameSlug, filter);
   }
 
-  @Put(':id')
+  @Put(':nameSlug')
   @UseGuards(AuthenticationGuard)
   update(
-    @Param('id') id: string,
+    @Param('nameSlug') nameSlug: string,
     @Body() updatePlatformOverviewDto: UpdatePlatformOverviewDto,
     @GetCurrentUser() user: User,
   ) {
     return this.platformOverviewService.update(
-      id,
+      nameSlug,
       updatePlatformOverviewDto,
       user,
     );
   }
 
-  @Delete(':id')
+  @Delete(':nameSlug')
   @UseGuards(AuthenticationGuard)
-  remove(@Param('id') id: string, @GetCurrentUser() user: User) {
-    return this.platformOverviewService.remove(id, user);
+  remove(@Param('nameSlug') nameSlug: string, @GetCurrentUser() user: User) {
+    return this.platformOverviewService.remove(nameSlug, user);
   }
 }
