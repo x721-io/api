@@ -17,7 +17,11 @@ import {
 } from '../dto/marketplace.dto';
 import { CMSOptionService } from '../service/option-cms.service';
 import { GetSummaryDto } from '../dto/cms.dto';
-import { CreateCollectionExternalDto } from '../dto/create-collection-external.dto';
+import {
+  CreateCollectionExternalDto,
+  WebhookCollectionDto,
+} from '../dto/create-collection-external.dto';
+import { KeyGuard } from 'src/modules/auth/guards/key.guard';
 
 @Controller('cms')
 export class CMSController {
@@ -99,5 +103,11 @@ export class CMSController {
   @UseGuards(AuthRoleGuard, RoleGuard)
   createCollection(@Body() body: CreateCollectionExternalDto) {
     return this.cmsService.createCollectionExternal(body);
+  }
+
+  @Post('/webhook-collection')
+  @UseGuards(KeyGuard)
+  webhookCreate(@Body() input: WebhookCollectionDto) {
+    return this.cmsService.webhookCreateCollection(input);
   }
 }

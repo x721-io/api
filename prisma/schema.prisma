@@ -129,7 +129,10 @@ model Collection {
   lastTimeSync   Int?               @default(0)
   metricPoint    BigInt?            @default(0)
   metricDetail   Json?              @default("{\"Verified\":0,\"Volume\":{\"key\":\"volume_lv0\",\"value\":\"0\",\"point\":0,\"total\":0},\"TotalUniqueOwner\":{\"key\":\"owner_lv0\",\"value\":\"0\",\"point\":0,\"total\":0},\"TotalItems\":{\"key\":\"item_lv0\",\"value\":0,\"point\":0,\"total\":0},\"Followers\":{\"key\":\"follower_lv0\",\"value\":0,\"point\":0,\"total\":0}}")
+  metadataJson   Json?
+  gameId         String?
   source         String?
+  categoryG      Json?
   AnalysisCollection  AnalysisCollection[]
   @@index([address], type: Hash)
 }
@@ -408,4 +411,3 @@ model OverviewTemplate {
   updatedAt   DateTime? @updatedAt
   Platform    Platform  @relation("PlatformToTemplates", fields: [platformId], references: [id])
 }
-
