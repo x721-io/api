@@ -133,6 +133,8 @@ model Collection {
   metricPoint    BigInt?            @default(0)
   metricDetail   Json?              @default("{\"Verified\":0,\"Volume\":{\"key\":\"volume_lv0\",\"value\":\"0\",\"point\":0,\"total\":0},\"TotalUniqueOwner\":{\"key\":\"owner_lv0\",\"value\":\"0\",\"point\":0,\"total\":0},\"TotalItems\":{\"key\":\"item_lv0\",\"value\":0,\"point\":0,\"total\":0},\"Followers\":{\"key\":\"follower_lv0\",\"value\":0,\"point\":0,\"total\":0}}")
   source         String?
+  vol            Float            @default(0)
+  volumeWei      String           @default("0")
   AnalysisCollection  AnalysisCollection[]
   @@index([address], type: Hash)
 }
@@ -373,6 +375,7 @@ model AnalysisCollection {
   address          String  
   type             CONTRACT_TYPE
   volume           Decimal          @default(0) @db.Decimal(78, 0)
+  vol              Float            @default(0)
   volumeWei        String           @default("0")
   floorPrice       BigInt           @default(0)
   floor            Float            @default(0)

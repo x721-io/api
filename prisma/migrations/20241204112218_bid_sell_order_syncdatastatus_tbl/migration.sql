@@ -15,10 +15,27 @@ CREATE TYPE "ORDERTYPE" AS ENUM ('BID', 'BULK', 'SINGLE');
 CREATE TYPE "SYNCDATASTATUS" AS ENUM ('ERC1155', 'ERC721', 'ORDER');
 
 -- AlterTable
-ALTER TABLE "SyncMasterData" DROP CONSTRAINT "SyncMasterData_pkey",
-DROP COLUMN "type",
-ADD COLUMN     "type" "SYNCDATASTATUS" NOT NULL,
-ADD CONSTRAINT "SyncMasterData_pkey" PRIMARY KEY ("type");
+ALTER TABLE "AnalysisCollection" ADD COLUMN "vol" DOUBLE PRECISION NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "Collection" ADD COLUMN "vol" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "volumeWei" TEXT NOT NULL DEFAULT '0';
+
+-- Drop table SyncMasterData old
+
+DROP TABLE IF EXISTS "SyncMasterData" CASCADE;
+
+-- Create New Table SyncMasterData and new Enum change primary key
+CREATE TABLE "SyncMasterData" (
+  "timestamp" INT DEFAULT 0,
+  "type" "SYNCDATASTATUS" NOT NULL,
+  "syncDataStatus" BOOLEAN DEFAULT TRUE,
+  CONSTRAINT "SyncMasterData_pkey" PRIMARY KEY ("type")
+);
+
+ALTER TABLE "SyncMasterData" ALTER COLUMN "timestamp" SET NOT NULL,
+ALTER COLUMN "syncDataStatus" SET NOT NULL;
+
 
 -- CreateTable
 CREATE TABLE "Order" (

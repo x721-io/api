@@ -8,7 +8,7 @@ import {
   Order,
   ORDERSTATUS,
   ORDERTYPE,
-  TX_STATUS
+  TX_STATUS,
 } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
