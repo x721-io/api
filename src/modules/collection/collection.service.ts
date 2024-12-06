@@ -151,6 +151,7 @@ export class CollectionService {
     collectionAddress: string,
     type: CONTRACT_TYPE,
     flagExtend = false,
+    volumeWei: string,
   ): Promise<CollectionGeneral> {
     if (!collectionAddress) {
       return {
@@ -178,7 +179,8 @@ export class CollectionService {
 
     if (type === 'ERC721') {
       return {
-        volumn: statusCollection.erc721Contract?.volume || 0,
+        // volumn: statusCollection.erc721Contract?.volume || 0,
+        volumn: volumeWei || `0`,
         totalOwner: !!flagExtend
           ? totalOwnerExternal
           : contractOwner?.contract?.count || 0,
@@ -188,7 +190,8 @@ export class CollectionService {
       };
     } else {
       return {
-        volumn: statusCollection.erc1155Contract?.volume || 0,
+        // volumn: statusCollection.erc1155Contract?.volume || 0,
+        volumn: volumeWei || `0`,
         totalOwner: !!flagExtend
           ? totalOwnerExternal
           : contractOwner?.contract?.count || 0,
@@ -325,6 +328,7 @@ export class CollectionService {
           item.address,
           item.type,
           item.flagExtend,
+          item.volumeWei,
         );
         return { ...item, ...generalInfo };
       }),
@@ -386,7 +390,12 @@ export class CollectionService {
       // Parallelize async operations
       const [traitsAvailable, generalInfo, royalties] = await Promise.all([
         this.traitService.findUniqueTraitsInCollection(collectionId),
-        this.getGeneralCollectionData(address, type, collection.flagExtend),
+        this.getGeneralCollectionData(
+          address,
+          type,
+          collection.flagExtend,
+          collection.volumeWei,
+        ),
         this.collectionPriceService.FetchRoyaltiesFromGraph(address),
       ]);
       const totalRoyalties = royalties.reduce(
@@ -552,6 +561,7 @@ export class CollectionService {
           item?.address,
           item?.type,
           item?.flagExtend,
+          item?.volumeWei,
         );
         return { ...item, ...generalInfo };
       });
