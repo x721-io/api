@@ -35,7 +35,12 @@ import { GraphQlcallerService } from 'src/modules/graph-qlcaller/graph-qlcaller.
 import { EventType } from 'src/generated/graphql';
 import { ethers } from 'ethers';
 import SecureUtil from '../../../commons/Secure.common';
-import { CreateCollectionExternalDto } from '../dto/create-collection-external.dto';
+import {
+  CreateCollectionExternalDto,
+  Game,
+  WebhookCollectionDto,
+} from '../dto/create-collection-external.dto';
+import { UserService } from 'src/modules/user/user.service';
 interface CountTransactionDto {
   start: number;
   end: number;
@@ -56,11 +61,9 @@ interface SummmaryAllResponse {
 @Injectable()
 export class CMSService {
   constructor(
-    private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
-    private jwtService: JwtService,
-    private readonly collectionData: GetCollectionMarketData, // private readonly collectionPriceService: CollectionPriceService,
     private readonly GraphqlService: GraphQlcallerService,
+    private userService: UserService,
   ) {}
 
   async findAll(filter: GetAllAccountDto): Promise<PagingResponseHasNext<any>> {
@@ -777,6 +780,60 @@ export class CMSService {
       await this.prisma.userCollection.create({
         data: {
           userId: input.userId,
+          collectionId: collection.id,
+        },
+      });
+      return collection;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async webhookCreateCollection(input: WebhookCollectionDto): Promise<any> {
+    try {
+      const checkExist = await this.prisma.collection.findFirst({
+        where: {
+          OR: [
+            { txCreationHash: input.txCreationHash },
+            { name: input.name },
+            { shortUrl: input.shortUrl },
+          ],
+        },
+      });
+      if (checkExist) {
+        throw new Error(
+          'Transaction hash or name or Short URL are already exists',
+        );
+      }
+      const checkUser = await this.userService.fetchOrCreateUser(
+        input.creatorAddress,
+      );
+
+      const metaJson = input.meta as unknown as Prisma.JsonObject;
+      const collection = await this.prisma.collection.create({
+        data: {
+          txCreationHash: input.txCreationHash,
+          name: input.name,
+          symbol: input.symbol,
+          description: input.description,
+          status: TX_STATUS.SUCCESS,
+          type: input.type,
+          ...(input.shortUrl && { shortUrl: input.shortUrl }),
+          coverImage: input.coverImage,
+          metadata: input.metadata,
+          avatar: input.avatar,
+          flagExtend: input.flagExternal,
+          subgraphUrl: input.subgraphUrl,
+          ...(input.categoryId && { categoryId: Number(input.categoryId) }),
+          address: input?.address,
+          metadataJson: metaJson,
+          gameId: input.gameId,
+          source: input?.source,
+        },
+      });
+      await this.prisma.userCollection.create({
+        data: {
+          userId: checkUser.id,
           collectionId: collection.id,
         },
       });
