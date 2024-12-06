@@ -1,4 +1,4 @@
-import { TX_STATUS, UserNFT } from '@prisma/client';
+import { TX_STATUS } from '@prisma/client';
 import { TraitEntity } from '../entities/trait.entity';
 
 export class NftDto {
