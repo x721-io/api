@@ -11,6 +11,8 @@ import { CollectionPriceService } from '../collection/collectionPrice.service';
 import { GetCollectionMarketData } from '../graph-qlcaller/getCollectionMarketData.service';
 import { NFTHepler } from './helper/nft-helper.service';
 import { UserService } from '../user/user.service';
+import { LayerService } from './layerg.service';
+import { LayerController } from './layerg.controller';
 
 @Module({
   providers: [
@@ -26,7 +28,8 @@ import { UserService } from '../user/user.service';
     NFTHepler,
     UserService,
     ActivityService,
+    LayerService,
   ],
-  controllers: [NftController],
+  controllers: [NftController, LayerController],
 })
 export class NftModule {}
