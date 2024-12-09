@@ -1,5 +1,4 @@
 import { sellStatus } from 'src/constants/enums/SellStatus.enum';
-import { response } from 'express';
 import { Erc1155Balance } from './../../generated/graphql';
 import { CreateNftDto } from './dto/create-nft.dto';
 import {
@@ -49,6 +48,12 @@ import { NFTHepler } from './helper/nft-helper.service';
 import { CreationMode } from 'src/constants/enums/Creation.enum';
 import { ethers } from 'ethers';
 import { UserService } from '../user/user.service';
+import { SourceType } from 'src/constants/enums/Source.enum';
+import axios from 'axios';
+import {
+  LayerGNFTDetail721,
+  LayerGNFTDetail1155,
+} from './dto/layerg-nft-detail.dto';
 
 @Injectable()
 export class NftService {
@@ -521,7 +526,7 @@ export class NftService {
     page,
     limit,
   ) {
-    const collection = await this.prisma.collection.findUnique({
+    const collection = await this.prisma.collection.findFirst({
       where: {
         address: collectionAddress.toLowerCase(),
       },
@@ -558,10 +563,17 @@ export class NftService {
     }
     let owners: any, totalSupply: any;
     if (collection.flagExtend == true) {
-      ({ owners, totalSupply } = await this.getCurrentOwnersExtend(
-        collection.subgraphUrl,
-        nft,
-      ));
+      if (collection.source === SourceType.LAYERG) {
+        ({ owners, totalSupply } = await this.getCurrentOwnersLayerG(
+          `${collection.subgraphUrl}/${nft.id}`,
+          nft,
+        ));
+      } else {
+        ({ owners, totalSupply } = await this.getCurrentOwnersExtend(
+          collection.subgraphUrl,
+          nft,
+        ));
+      }
     } else {
       ({ owners, totalSupply } = await this.getCurrentOwnersInternal(nft));
     }
@@ -620,6 +632,96 @@ export class NftService {
       owners,
       totalSupply,
     };
+  }
+
+  async getCurrentOwnersLayerG(
+    url: string,
+    nft: NftEntity,
+  ): Promise<{ owners: OwnerOutputDto[]; totalSupply: string }> {
+    let owners: OwnerOutputDto[] = [];
+    let totalSupply = '0';
+    console.log(url);
+    if (nft.collection.type === 'ERC1155') {
+      const response = await axios.get<LayerGNFTDetail1155>(url, {
+        headers: {
+          'X-API-KEY': process.env.LAYERG_API_KEY,
+        },
+      });
+      const { asset } = response.data;
+
+      totalSupply = asset.totalSupply;
+      const ownerAddresses = asset.assetOwners
+        .map((owner) => owner.owner)
+        .filter((i) => !!i);
+
+      const ownersFromLocal = await this.prisma.user.findMany({
+        where: {
+          signer: { in: ownerAddresses, mode: 'insensitive' },
+        },
+        select: creatorSelect,
+      });
+
+      owners = asset.assetOwners.map((assetOwner) => {
+        const localOwner = ownersFromLocal.find(
+          (local) => local.publicKey === assetOwner.owner,
+        );
+        if (localOwner) {
+          return {
+            ...localOwner,
+            publicKey: localOwner?.publicKey ?? localOwner?.signer,
+            username: localOwner?.username ?? localOwner?.signer,
+            quantity: assetOwner.balance || '0',
+          };
+        } else {
+          // Return fallback owner details for those not found locally
+          return {
+            signer: assetOwner.owner || '',
+            quantity: assetOwner.balance || '0',
+          };
+        }
+      });
+
+      if (owners.length === 0) {
+        const fallbackOwners = asset.assetOwners.map((assetOwner) => ({
+          signer: assetOwner.owner || '',
+          quantity: assetOwner.balance,
+        }));
+        return {
+          owners: fallbackOwners,
+          totalSupply,
+        };
+      }
+    } else {
+      const response = await axios.get<LayerGNFTDetail721>(url, {
+        headers: {
+          'X-API-KEY': process.env.LAYERG_API_KEY,
+        },
+      });
+      const { asset } = response.data;
+
+      totalSupply = '1';
+      const ownerId = asset.owner;
+
+      owners = await this.prisma.user.findMany({
+        where: {
+          signer: { equals: ownerId, mode: 'insensitive' },
+        },
+        select: creatorSelect,
+      });
+
+      if (owners.length === 0) {
+        return {
+          owners: [
+            {
+              signer: ownerId || '',
+            },
+          ],
+          totalSupply,
+        };
+      }
+    }
+
+    return { owners, totalSupply };
   }
 
   async getCurrentOwnersExtend(
