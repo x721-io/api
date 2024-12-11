@@ -15,7 +15,7 @@ CREATE TYPE "ORDERTYPE" AS ENUM ('BID', 'BULK', 'SINGLE');
 CREATE TYPE "SYNCDATASTATUS" AS ENUM ('ERC1155', 'ERC721', 'ORDER');
 
 -- AlterTable
-ALTER TABLE "AnalysisCollection" ADD COLUMN "vol" DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE "AnalysisCollection" ADD COLUMN     "vol" DOUBLE PRECISION NOT NULL DEFAULT 0;
 
 -- AlterTable
 ALTER TABLE "Collection" ADD COLUMN "vol" DOUBLE PRECISION NOT NULL DEFAULT 0,
@@ -35,8 +35,6 @@ CREATE TABLE "SyncMasterData" (
 
 ALTER TABLE "SyncMasterData" ALTER COLUMN "timestamp" SET NOT NULL,
 ALTER COLUMN "syncDataStatus" SET NOT NULL;
-
-
 -- CreateTable
 CREATE TABLE "Order" (
     "index" INTEGER NOT NULL DEFAULT 1,
@@ -73,8 +71,26 @@ CREATE TABLE "Order" (
     CONSTRAINT "Order_pkey" PRIMARY KEY ("sig","index")
 );
 
+-- CreateTable
+CREATE TABLE "OrderHistory" (
+    "id" UUID NOT NULL,
+    "takerId" UUID,
+    "takeAssetType" INTEGER NOT NULL,
+    "takeAssetAddress" TEXT NOT NULL,
+    "takeAssetValue" TEXT NOT NULL,
+    "takeAssetId" TEXT NOT NULL,
+    "nonce" TEXT,
+    "index" INTEGER NOT NULL DEFAULT 1,
+    "sig" TEXT NOT NULL,
+
+    CONSTRAINT "OrderHistory_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE INDEX "Order_sig_index_idx" ON "Order"("sig", "index");
+
+-- CreateIndex
+CREATE INDEX "OrderHistory_sig_index_nonce_idx" ON "OrderHistory"("sig", "index", "nonce");
 
 -- AddForeignKey
 ALTER TABLE "Order" ADD CONSTRAINT "Order_makerId_fkey" FOREIGN KEY ("makerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -84,3 +100,6 @@ ALTER TABLE "Order" ADD CONSTRAINT "Order_takerId_fkey" FOREIGN KEY ("takerId") 
 
 -- AddForeignKey
 ALTER TABLE "Order" ADD CONSTRAINT "order_by_id_fk" FOREIGN KEY ("tokenId", "collectionId") REFERENCES "NFT"("id", "collectionId") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderHistory" ADD CONSTRAINT "OrderHistory_sig_index_fkey" FOREIGN KEY ("sig", "index") REFERENCES "Order"("sig", "index") ON DELETE RESTRICT ON UPDATE CASCADE;

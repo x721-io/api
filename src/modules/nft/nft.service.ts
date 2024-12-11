@@ -593,7 +593,6 @@ export class NftService {
       page: page,
       limit: limit,
     });
-
     const bidInfo = await this.eventService.findOrder({
       contractAddress: nft.collection.address,
       nftId: nft.id,

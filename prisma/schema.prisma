@@ -420,8 +420,23 @@ model Order {
   Maker                 User             @relation(fields: [makerId], references: [id], name: "UserMaker")
   Taker                 User?            @relation(fields: [takerId], references: [id], name: "UserTaker")
   nftById               NFT              @relation("Order_byId", fields: [tokenId, collectionId], references: [id, collectionId], map: "order_by_id_fk") 
+  orderHistory          OrderHistory[]       
   @@id([sig, index])
   @@index([sig, index])
+}
+
+model OrderHistory {
+  id                    String           @id @default(uuid()) @db.Uuid
+  takerId               String?           @db.Uuid
+  takeAssetType         Int
+  takeAssetAddress      String           //  U2U Native address , Collection Address
+  takeAssetValue        String           
+  takeAssetId           String           
+  nonce                 String?
+  index                 Int              @default(1) 
+  sig                   String  
+  orderBySig            Order            @relation(fields: [sig, index], references: [sig, index])
+  @@index([sig, index, nonce])
 }
 
 

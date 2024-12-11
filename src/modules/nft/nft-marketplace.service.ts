@@ -234,7 +234,7 @@ export class MarketplaceService {
     const date = new Date(input.createAt);
     const timestampConvert = date.getTime();
     const format = {
-      // ...input,
+      ...input,
       id: input.id,
       index: input.index,
       sig: input.sig,
