@@ -105,6 +105,7 @@ export class LayerService {
             isVerified: true,
             floorPrice: true,
             floor: true,
+            avatar: true,
           },
         },
         traits: true,
