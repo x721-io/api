@@ -526,11 +526,18 @@ export class NftService {
     page,
     limit,
   ) {
-    const collection = await this.prisma.collection.findFirst({
+    let collection = await this.prisma.collection.findUnique({
       where: {
         address: collectionAddress.toLowerCase(),
       },
     });
+    if (!collection) {
+      collection = await this.prisma.collection.findUnique({
+        where: {
+          address: collectionAddress,
+        },
+      });
+    }
     if (!collection) {
       throw new NotFoundException('No collection was found');
     }
