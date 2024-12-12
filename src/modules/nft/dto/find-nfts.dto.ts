@@ -1,12 +1,4 @@
-import {
-  IsOptional,
-  IsString,
-  IsInt,
-  IsBoolean,
-  Min,
-  Max,
-  ValidateNested,
-} from 'class-validator';
+import { IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { OffsetPaginationDto } from 'src/commons/definitions/OffsetPagination.input';
@@ -74,6 +66,14 @@ export class CollectionFilterDto {
 }
 
 export class FindNftsDto extends OffsetPaginationDto {
+  @ApiProperty({
+    required: false,
+    description: 'Filter by NFT name',
+  })
+  @IsOptional()
+  @IsString()
+  nftName?: string;
+
   @ApiProperty({
     required: false,
     type: CollectionFilterDto,

@@ -11,6 +11,7 @@ export class LayerService {
   async findNFTs(params: {
     page?: number;
     limit?: number;
+    nftName?: string;
     where?: {
       collection?: {
         metadata?: {
@@ -27,8 +28,7 @@ export class LayerService {
       createdAt?: 'asc' | 'desc';
     };
   }): Promise<PagingResponseHasNext<NftDto>> {
-    const { page, limit, where, orderBy } = params;
-
+    const { page, limit, where, orderBy, nftName } = params;
     // Build the where clause for collection filtering
     const whereClause: Prisma.NFTWhereInput = {
       isActive: true,
@@ -81,6 +81,12 @@ export class LayerService {
       if (address) {
         whereClause.collection.address = address;
       }
+    }
+    if (nftName) {
+      whereClause.nameSlug = {
+        contains: OtherCommon.stringToSlug(nftName),
+        mode: 'insensitive',
+      };
     }
 
     // Get total count for pagination
