@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { NftDto } from './dto/nft.dto';
 import OtherCommon from 'src/commons/Other.common';
+import { SourceType } from 'src/constants/enums/Source.enum';
 
 @Injectable()
 export class LayerService {
@@ -32,7 +33,9 @@ export class LayerService {
     // Build the where clause for collection filtering
     const whereClause: Prisma.NFTWhereInput = {
       isActive: true,
-      collection: {},
+      collection: {
+        source: SourceType.LAYERG,
+      },
     };
 
     // Add collection filters if provided
