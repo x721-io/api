@@ -886,17 +886,23 @@ export class NftService {
   }
 
   async findOne(id: string, collectionAddress: string): Promise<NftDto> {
-    try {
-      const collection = await this.prisma.collection.findUnique({
+    let collection = await this.prisma.collection.findUnique({
+      where: {
+        address: collectionAddress.toLowerCase(),
+      },
+    });
+    if (!collection) {
+      collection = await this.prisma.collection.findUnique({
         where: {
-          address: collectionAddress.toLowerCase(),
+          address: collectionAddress,
         },
       });
+    }
+    if (!collection) {
+      throw new NotFoundException('No collection was found');
+    }
 
-      if (!collection) {
-        throw new NotFoundException('No collection was found');
-      }
-
+    try {
       const nftCondition: Prisma.NFTWhereInput = {};
       nftCondition.OR = [];
 
