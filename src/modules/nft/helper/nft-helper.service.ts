@@ -84,6 +84,36 @@ export class NFTHepler {
     );
   }
 
+  async handleFormatNFTResponseOrder(nfts: any[]) {
+    return Promise.all(
+      nfts.map(async (item) => {
+        if (item?.OrderByTokenId && item?.OrderByTokenId.length > 0) {
+          const { price, orderStatus, orderType, quantity, quoteToken } =
+            item.OrderByTokenId.reduce(
+              (minItem, currentItem) =>
+                currentItem.priceNum < minItem.priceNum ? currentItem : minItem,
+              item.OrderByTokenId[0],
+            );
+          const quoteTokenData = await this.getQuoteTokens(quoteToken);
+          delete item.OrderByTokenId;
+          return {
+            ...item,
+            price: price,
+            orderStatus: orderStatus,
+            orderType: orderType,
+            quantity,
+            quoteToken,
+            derivedETH: quoteTokenData?.derivedETH || 0,
+            derivedUSD: quoteTokenData?.derivedUSD || 0,
+          };
+        } else {
+          delete item.OrderByTokenId;
+          return item;
+        }
+      }),
+    );
+  }
+
   async getQuoteTokens(address: string) {
     try {
       if (!address) {
