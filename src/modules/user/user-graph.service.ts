@@ -59,11 +59,11 @@ interface ERC1155Balance {
   value: string;
 }
 
-export interface Result {
-  // user : USER;
-  // ERC721tokens: (ERC721Token)[];
-  // ERC1155balances: ERC1155Balance[];
-}
+// export interface Result {
+// user : USER;
+// ERC721tokens: (ERC721Token)[];
+// ERC1155balances: ERC1155Balance[];
+// }
 
 @Injectable()
 export class UserServiceExtend {
@@ -322,6 +322,7 @@ export class UserServiceExtend {
                   categoryId: true,
                   createdAt: true,
                   flagExtend: true,
+                  volumeWei: true,
                   category: {
                     select: {
                       id: true,
@@ -343,9 +344,10 @@ export class UserServiceExtend {
           const { collection } = item;
           const generalInfo =
             await this.collectionService.getGeneralCollectionData(
-              collection.address,
-              collection.type,
-              collection.flagExtend,
+              collection?.address,
+              collection?.type,
+              collection?.flagExtend,
+              collection?.volumeWei,
             );
           return { ...collection, ...generalInfo };
         }),

@@ -10,7 +10,7 @@ import { QueryTraitDto } from './query-trait.dto';
 import { sellStatus } from 'src/constants/enums/SellStatus.enum';
 import { OffsetPaginationDto } from 'src/commons/definitions/OffsetPagination.input';
 import { SellStatus } from 'src/generated/graphql';
-import { CONTRACT_TYPE } from '@prisma/client';
+import { CONTRACT_TYPE, ORDERSTATUS, ORDERTYPE } from '@prisma/client';
 import { SourceType } from 'src/constants/enums/Source.enum';
 
 export class GetAllNftDto extends OffsetPaginationDto {
@@ -62,4 +62,12 @@ export class GetAllNftDto extends OffsetPaginationDto {
   @IsOptional()
   @IsEnum(SourceType)
   source?: SourceType;
+
+  @IsOptional()
+  @IsEnum(ORDERSTATUS)
+  orderStatus: ORDERSTATUS;
+
+  @IsOptional()
+  @IsEnum(ORDERTYPE)
+  orderType: ORDERTYPE;
 }

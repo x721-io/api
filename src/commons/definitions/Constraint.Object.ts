@@ -27,6 +27,7 @@ export const CollectionSelect: Prisma.CollectionSelect = {
   avatar: true,
   isActive: true,
   isU2U: true,
+  metadataJson: true,
   category: {
     select: {
       id: true,
@@ -229,4 +230,32 @@ export const userFollow: Prisma.UserSelect = {
   verifyEmail: true,
   signer: true,
   shortLink: true,
+};
+
+export const orderSelect: Prisma.OrderSelect = {
+  price: true,
+  priceNum: true,
+  netPrice: true,
+  netPriceNum: true,
+  quantity: true,
+  quoteToken: true,
+  orderStatus: true,
+  orderType: true,
+  index: true,
+  sig: true,
+  filledQty: true,
+  start: true,
+  end: true,
+};
+
+export const orderNFTSelect: Prisma.OrderSelect = {
+  price: true,
+  quantity: true,
+  quoteToken: true,
+  orderStatus: true,
+  orderType: true,
+  index: true,
+  sig: true,
+  start: true,
+  end: true,
 };

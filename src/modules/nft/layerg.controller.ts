@@ -14,18 +14,33 @@ export class LayerController {
     description: 'Retrieve NFTs with collection-based filtering and pagination',
   })
   async findNFTs(@Query() findNftsDto: FindNftsDto) {
-    const { page, limit, collection, orderBy, nftName } = findNftsDto;
-
+    const {
+      page,
+      limit,
+      collection,
+      orderBy,
+      nftName,
+      priceMax,
+      priceMin,
+      orderStatus,
+      orderType,
+      quoteToken,
+      order,
+    } = findNftsDto;
     return this.layerService.findNFTs({
       page,
       limit,
       nftName,
+      priceMin,
+      priceMax,
+      orderStatus,
+      orderType,
+      quoteToken,
+      orderBy,
       where: {
         collection,
       },
-      orderBy: {
-        createdAt: orderBy,
-      },
+      order: order,
     });
   }
 }

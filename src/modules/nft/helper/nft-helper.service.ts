@@ -1,7 +1,16 @@
+import { start } from 'repl';
 import { createHash } from 'crypto';
 import { encode } from 'punycode';
 import { ApiCallerService } from 'src/modules/api-caller/api-caller.service';
-import { Prisma, User, MarketplaceStatus, TX_STATUS } from '@prisma/client';
+import {
+  Prisma,
+  User,
+  MarketplaceStatus,
+  Order,
+  ORDERSTATUS,
+  ORDERTYPE,
+  TX_STATUS,
+} from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
   Injectable,
@@ -15,6 +24,7 @@ import { GetAllNftDto } from '../dto/get-all-nft.dto';
 import {
   creatorSelect,
   nftSelect,
+  orderNFTSelect,
 } from 'src/commons/definitions/Constraint.Object';
 import PaginationCommon from 'src/commons/HasNext.common';
 import { GraphQlcallerService } from 'src/modules/graph-qlcaller/graph-qlcaller.service';
@@ -22,6 +32,11 @@ import { OrderDirection } from 'src/generated/graphql';
 import { validate as isValidUUID } from 'uuid';
 
 interface NFTMarketplaceResponse {
+  result: NftDto[];
+  hasNext: boolean;
+}
+
+interface NFTOrderResponse {
   result: NftDto[];
   hasNext: boolean;
 }
@@ -70,6 +85,63 @@ export class NFTHepler {
       }),
     );
   }
+
+  async handleFormatNFTResponseOrder(nfts: any[]) {
+    return Promise.all(
+      nfts.map(async (item) => {
+        if (item?.OrderByTokenId && item?.OrderByTokenId.length > 0) {
+          const sellInfo = item?.OrderByTokenId.reduce(
+            (minItem, currentItem) =>
+              currentItem.priceNum < minItem.priceNum ? currentItem : minItem,
+            item?.OrderByTokenId[0],
+          );
+
+          // Get Bid Info Prices Highest Already Open
+          const bidInfo = await this.prisma.order.findFirst({
+            where: {
+              sig: item?.sig,
+              index: item?.index,
+              orderStatus: ORDERSTATUS.OPEN,
+              orderType: {
+                in: [ORDERTYPE.BID],
+              },
+              start: {
+                lte: Math.floor(Date.now() / 1000),
+              },
+              end: {
+                gte: Math.floor(Date.now() / 1000),
+              },
+            },
+            orderBy: {
+              priceNum: 'desc',
+            },
+            select: orderNFTSelect,
+          });
+
+          const quoteTokenData = await this.getQuoteTokens(bidInfo?.quoteToken);
+          delete item.OrderByTokenId;
+          return {
+            ...item,
+            // price: price,
+            // orderStatus: orderStatus,
+            // orderType: orderType,
+            // quantity,
+            // quoteToken,
+            // end: end,
+            // start: start,
+            sellInfo: sellInfo || null,
+            bidInfo: bidInfo || null,
+            derivedETH: quoteTokenData?.derivedETH || 0,
+            derivedUSD: quoteTokenData?.derivedUSD || 0,
+          };
+        } else {
+          delete item.OrderByTokenId;
+          return item;
+        }
+      }),
+    );
+  }
+
   async getQuoteTokens(address: string) {
     try {
       if (!address) {
@@ -99,6 +171,24 @@ export class NFTHepler {
         sellStatus: item?.event,
         quantity: item?.quantity,
         askId: item?.askId,
+        quoteToken: item?.quoteToken,
+      };
+    });
+  }
+
+  formatDataNFTOrderForSort(arr: any[]): NftDto[] {
+    return arr.map((item) => {
+      const { nftById } = item;
+      return {
+        ...nftById,
+        quantity: item?.quantity,
+        price: item?.price,
+        orderStatus: item?.orderStatus,
+        orderType: item?.orderType,
+        sig: item?.sig,
+        index: item?.index,
+        start: item?.start,
+        end: item?.end,
         quoteToken: item?.quoteToken,
       };
     });
@@ -167,6 +257,25 @@ export class NFTHepler {
     return this.formatDataNFTForSort(uniqueItems);
   }
 
+  getSmallestPricesOrder(arr: Order[]): any[] {
+    const uniqueCombinationMap = {};
+    arr.forEach((item) => {
+      const { tokenId, collectionId, quoteToken, price } = item;
+      const key = `${tokenId}-${collectionId}-${quoteToken}`;
+      if (key in uniqueCombinationMap) {
+        if (price < uniqueCombinationMap[key].price) {
+          uniqueCombinationMap[key] = { price, item };
+        }
+      } else {
+        uniqueCombinationMap[key] = { price, item };
+      }
+    });
+    const uniqueItems = Object.values(uniqueCombinationMap).map(
+      ({ item }) => item,
+    );
+    return this.formatDataNFTOrderForSort(uniqueItems);
+  }
+
   generateWhereMarketPlaceStatus(
     filter: GetAllNftDto,
   ): Prisma.MarketplaceStatusWhereInput {
@@ -192,6 +301,43 @@ export class NFTHepler {
     }
 
     return whereMarketPlaceStatus;
+  }
+
+  generateWhereOrder(filter: GetAllNftDto): Prisma.OrderWhereInput {
+    const priceFilter: Prisma.FloatFilter = {};
+    const currentDate = Math.floor(Date.now() / 1000);
+    const whereOrder: Prisma.OrderWhereInput = {
+      start: {
+        lte: currentDate,
+      },
+      end: {
+        gte: currentDate,
+      },
+      orderStatus: ORDERSTATUS.OPEN,
+      orderType: { in: ['BULK', 'SINGLE'] },
+    };
+    whereOrder.AND = [];
+
+    if (filter.quoteToken !== undefined) {
+      whereOrder.AND.push({
+        quoteToken:
+          (filter.quoteToken
+            ? filter.quoteToken.toLowerCase()
+            : process.env.NATIVE_U2U) ?? process.env.NATIVE_U2U,
+      });
+    }
+
+    if (filter.priceMin !== undefined || filter.priceMax !== undefined) {
+      if (filter.priceMin !== undefined) {
+        priceFilter.gte = this.weiToEther(filter.priceMin);
+      }
+      if (filter.priceMax !== undefined) {
+        priceFilter.lte = this.weiToEther(filter.priceMax);
+      }
+      whereOrder.AND.push({ priceNum: priceFilter });
+    }
+
+    return whereOrder;
   }
 
   sortERC1155balances(dataArray, inputOrder = 'asc') {
@@ -455,5 +601,81 @@ export class NFTHepler {
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
+  }
+  async getListNFTWithOrder(
+    filter: GetAllNftDto,
+    whereOrder: Prisma.OrderWhereInput,
+  ): Promise<NFTOrderResponse> {
+    const order = await this.prisma.order.findMany({
+      where: whereOrder,
+      skip: (filter.page - 1) * filter.limit,
+      take: filter.limit,
+      orderBy: [
+        {
+          price: filter.order,
+        },
+      ],
+      include: {
+        nftById: {
+          select: nftSelect,
+        },
+      },
+    });
+    const result = this.getSmallestPricesOrder(order);
+
+    const listFormat = await Promise.all(
+      result.map(async (item) => {
+        const quoteTokenData = await this.getQuoteTokens(item.quoteToken);
+
+        const sellInfo = {
+          price: item?.price,
+          quantity: item?.quantity,
+          quoteToken: item?.quoteToken,
+          orderStatus: item?.orderStatus,
+          orderType: item?.orderType,
+          index: item?.orderType,
+          sig: item?.sig,
+          start: item?.start,
+          end: item?.end,
+        };
+
+        // Get Bid Info Prices Highest Already Open
+        const bidInfo = await this.prisma.order.findFirst({
+          where: {
+            sig: item?.sig,
+            index: item?.index,
+            orderStatus: ORDERSTATUS.OPEN,
+            orderType: {
+              in: [ORDERTYPE.BID],
+            },
+            start: {
+              lte: Math.floor(Date.now() / 1000),
+            },
+            end: {
+              gte: Math.floor(Date.now() / 1000),
+            },
+          },
+          orderBy: {
+            priceNum: 'desc',
+          },
+          select: orderNFTSelect,
+        });
+
+        return {
+          ...item,
+          bidInfo: bidInfo,
+          sellInfo: sellInfo,
+          derivedETH: quoteTokenData?.derivedETH || 0,
+          derivedUSD: quoteTokenData?.derivedUSD || 0,
+        };
+      }),
+    );
+    const hasNext = await PaginationCommon.hasNextPage(
+      filter.page,
+      filter.limit,
+      'order',
+      whereOrder,
+    );
+    return { result: listFormat, hasNext: hasNext };
   }
 }
