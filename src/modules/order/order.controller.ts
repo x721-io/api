@@ -41,15 +41,14 @@ export class OrderController {
   pendingOrder(@Body() input: ActionOrderDto, @GetCurrentUser() user: User) {
     return this.orderService.actionOrder(input, user);
   }
-
-  @Post('/generate-bulk-data')
-  @UseGuards(AuthenticationGuard)
-  generateBulkData(
-    @Body() createOrderBulkDto: CreateBulkDto,
-    @GetCurrentUser() user: User,
-  ) {
-    return this.orderService.generateMerkleTree(createOrderBulkDto, user);
-  }
+  // @Post('/generate-bulk-data')
+  // @UseGuards(AuthenticationGuard)
+  // generateBulkData(
+  //   @Body() createOrderBulkDto: CreateBulkDto,
+  //   @GetCurrentUser() user: User,
+  // ) {
+  //   return this.orderService.generateMerkleTree(createOrderBulkDto, user);
+  // }
 
   @Post('/bulk')
   @UseGuards(AuthenticationGuard)

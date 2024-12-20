@@ -30,7 +30,7 @@ import { ethers } from 'ethers';
 import { ActionOrderDto, VerifyOrderDto } from './dto/get-order.dto';
 import { abi as exchangeABI } from 'abis/Exchange.json';
 import { validate as isValidUUID } from 'uuid';
-import { encodeAbiParameters, keccak256 } from 'viem';
+// import { encodeAbiParameters, keccak256 } from 'viem';
 import { MerkleTree } from 'src/commons/MerkleTree.common';
 import { NftEntity } from '../nft/entities/nft.entity';
 
@@ -150,56 +150,56 @@ export class OrderService {
     }
   }
 
-  async generateMerkleTree(input: CreateBulkDto, user: User) {
-    try {
-      const endcodeOrder = input?.orders.map((ele, index) => {
-        return keccak256(
-          encodeAbiParameters(
-            [
-              { name: 'index', type: 'uint16' },
-              { name: 'maker', type: 'address' },
-              { name: 'makeAssetAddress', type: 'address' },
-              { name: 'makeAssetId', type: 'uint256' },
-              { name: 'makeAssetValue', type: 'uint256' },
-              { name: 'makeAssetType', type: 'uint256' },
-              { name: 'taker', type: 'address' },
-              { name: 'takeAssetAddress', type: 'address' },
-              { name: 'takeAssetId', type: 'uint256' },
-              { name: 'takeAssetValue', type: 'uint256' },
-              { name: 'takeAssetType', type: 'uint256' },
-            ],
-            [
-              index,
-              user.publicKey as any,
-              ele.makeAssetAddress as any,
-              BigInt(ele.makeAssetId),
-              BigInt(ele.makeAssetValue),
-              BigInt(ele.makeAssetType),
-              ele.taker as any,
-              ele.takeAssetAddress as any,
-              BigInt(ele.takeAssetId),
-              ele.takeAssetValue as any,
-              BigInt(ele.takeAssetType),
-            ],
-          ),
-        );
-      });
+  // async generateMerkleTree(input: CreateBulkDto, user: User) {
+  //   try {
+  //     const endcodeOrder = input?.orders.map((ele, index) => {
+  //       return keccak256(
+  //         encodeAbiParameters(
+  //           [
+  //             { name: 'index', type: 'uint16' },
+  //             { name: 'maker', type: 'address' },
+  //             { name: 'makeAssetAddress', type: 'address' },
+  //             { name: 'makeAssetId', type: 'uint256' },
+  //             { name: 'makeAssetValue', type: 'uint256' },
+  //             { name: 'makeAssetType', type: 'uint256' },
+  //             { name: 'taker', type: 'address' },
+  //             { name: 'takeAssetAddress', type: 'address' },
+  //             { name: 'takeAssetId', type: 'uint256' },
+  //             { name: 'takeAssetValue', type: 'uint256' },
+  //             { name: 'takeAssetType', type: 'uint256' },
+  //           ],
+  //           [
+  //             index,
+  //             user.publicKey as any,
+  //             ele.makeAssetAddress as any,
+  //             BigInt(ele.makeAssetId),
+  //             BigInt(ele.makeAssetValue),
+  //             BigInt(ele.makeAssetType),
+  //             ele.taker as any,
+  //             ele.takeAssetAddress as any,
+  //             BigInt(ele.takeAssetId),
+  //             ele.takeAssetValue as any,
+  //             BigInt(ele.takeAssetType),
+  //           ],
+  //         ),
+  //       );
+  //     });
 
-      const merkeleTree = new MerkleTree(endcodeOrder);
-      merkeleTree.generateTree();
+  //     const merkeleTree = new MerkleTree(endcodeOrder);
+  //     merkeleTree.generateTree();
 
-      return {
-        root: merkeleTree?.root,
-        proof: merkeleTree?.proof,
-      };
-    } catch (error) {
-      const statusCode = error?.response?.statusCode || HttpStatus.BAD_REQUEST;
-      throw new HttpException(
-        `Generate Merkle Tree: ${error.message}`,
-        statusCode,
-      );
-    }
-  }
+  //     return {
+  //       root: merkeleTree?.root,
+  //       proof: merkeleTree?.proof,
+  //     };
+  //   } catch (error) {
+  //     const statusCode = error?.response?.statusCode || HttpStatus.BAD_REQUEST;
+  //     throw new HttpException(
+  //       `Generate Merkle Tree: ${error.message}`,
+  //       statusCode,
+  //     );
+  //   }
+  // }
 
   async createBulk(input: CreateBulkDto, user: User) {
     try {
