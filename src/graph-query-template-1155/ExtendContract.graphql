@@ -15,12 +15,3 @@ query getBalances1155($tokenId: ID!) {
       }
   }
 }
-
-query getOwner1155($tokenId: ID!, $address: String!) {
-    userBalances(where: { and : [
-      {token_: { id: $tokenId } balance_gt : 0 },
-      {owner: $address }
-    ]}) {
-    id
-  }
-}
