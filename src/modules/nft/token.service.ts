@@ -60,11 +60,11 @@ export class TokenService {
     if (isValidAddress.type === CONTRACT_TYPE.ERC1155) {
       const nftsFromSubgraph =
         await this.tokenCountService.getCollectionCount(collectionAddress);
-      total = nftsFromSubgraph?.erc1155Contract?.count;
+      total = nftsFromSubgraph.erc1155Contract.count;
     } else {
       const nftsFromSubgraph =
         await this.tokenCountService.getCollectionCount(collectionAddress);
-      total = nftsFromSubgraph?.erc721Contract?.count;
+      total = nftsFromSubgraph.erc721Contract.count;
     }
     // const baseId = collectionAddress + current.toString();
     // const hash = createHash('sha256')
