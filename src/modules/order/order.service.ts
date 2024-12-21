@@ -21,6 +21,7 @@ import {
 import OrderHeplerCommon from './helper/order.helper.service';
 import { UserService } from '../user/user.service';
 import {
+  collectionSelect,
   CollectionSelect,
   creatorSelect,
   nftSelect,
@@ -33,12 +34,15 @@ import { validate as isValidUUID } from 'uuid';
 import { encodeAbiParameters, keccak256 } from 'viem';
 import { MerkleTree } from 'src/commons/MerkleTree.common';
 import { NftEntity } from '../nft/entities/nft.entity';
+import { SourceType } from 'src/constants/enums/Source.enum';
+import { NftService } from '../nft/nft.service';
 
 @Injectable()
 export class OrderService {
   constructor(
     private prisma: PrismaService,
     private userService: UserService,
+    private nftService: NftService,
   ) {}
   private readonly endpoint = process.env.SUBGRAPH_URL;
   private client = this.getGraphqlClient();
@@ -383,6 +387,7 @@ export class OrderService {
         order.collectionId,
         order.tokenId,
         signer,
+        // order?.makerId,
       );
 
       return { checkOwner, order };
@@ -394,10 +399,35 @@ export class OrderService {
 
   async checkNftOwner(collectionId: string, tokenId: string, signer: string) {
     try {
+      // Retrieve NFT and collection details
       const { collection, nft } = await this.findNFTAndCollection(
         collectionId,
         tokenId,
       );
+
+      if (!collection || !nft) {
+        throw new HttpException(
+          'Collection or NFT not found',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      const isLayerG =
+        collection.flagExtend === true &&
+        collection.source === SourceType.LAYERG;
+
+      if (isLayerG) {
+        const { owners = [] } = await this.nftService.getCurrentOwnersLayerG(
+          `${collection.subgraphUrl}/${nft.id}`,
+          nft as NftEntity,
+        );
+
+        const checkOwner = !!owners.find(
+          (user) => user?.signer?.toLowerCase() === signer?.toLowerCase(),
+        );
+
+        return { checkOwner, collection, nft };
+      }
 
       const checkOwner = await this.findOwnerNFT(
         signer,
@@ -490,6 +520,7 @@ export class OrderService {
       if (!collection) {
         throw new NotFoundException();
       }
+
       const nft = await this.prisma.nFT.findFirst({
         where: {
           OR: [
@@ -498,6 +529,11 @@ export class OrderService {
               AND: [{ u2uId: tokenId }, { collectionId: collection.id }],
             },
           ],
+        },
+        include: {
+          collection: {
+            select: collectionSelect,
+          },
         },
       });
       if (!nft) {
@@ -536,16 +572,6 @@ export class OrderService {
         );
         return { check: true, collection, nft };
       }
-      // const address =
-      //   orderType === ORDERTYPE.SINGLE || orderType === ORDERTYPE.BULK
-      //     ? makerAddress
-      //     : takerAddress;
-      // const { checkOwner, collection, nft } = await this.checkNftOwner(
-      //   collectionId,
-      //   tokenId,
-      //   address,
-      // );
-      // return { check: checkOwner, collection, nft };
     } catch (error) {
       const statusCode = error?.response?.statusCode || HttpStatus.BAD_REQUEST;
       throw new HttpException(
