@@ -682,8 +682,8 @@ export class NftService {
   ): Promise<{ owners: OwnerOutputDto[]; totalSupply: string }> {
     let owners: OwnerOutputDto[] = [];
     let totalSupply = '0';
-    console.log(url);
-    if (nft.collection.type === 'ERC1155') {
+
+    if (nft?.collection?.type === 'ERC1155') {
       const response = await axios.get<LayerGNFTDetail1155>(url, {
         headers: {
           'X-API-KEY': process.env.LAYERG_API_KEY,
