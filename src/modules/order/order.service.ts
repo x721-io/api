@@ -121,9 +121,15 @@ export class OrderService {
         collectionId: collection.id,
         price: input.price,
         quantity: parseInt(quanity),
-        priceNum: OrderHeplerCommon.weiToEther(input.price),
+        priceNum: OrderHeplerCommon.weiToEtherQuoteToken(
+          input.price,
+          quoteToken.toLowerCase(),
+        ),
         netPrice: input.netPrice,
-        netPriceNum: OrderHeplerCommon.weiToEther(input.netPrice),
+        netPriceNum: OrderHeplerCommon.weiToEtherQuoteToken(
+          input.netPrice,
+          quoteToken.toLowerCase(),
+        ),
         quoteToken: quoteToken.toLowerCase(),
         index: input.index,
         proof: input.proof,
