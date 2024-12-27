@@ -124,7 +124,7 @@ export class OrderService {
         priceNum: OrderHeplerCommon.weiToEther(input.price),
         netPrice: input.netPrice,
         netPriceNum: OrderHeplerCommon.weiToEther(input.netPrice),
-        quoteToken: quoteToken,
+        quoteToken: quoteToken.toLowerCase(),
         index: input.index,
         proof: input.proof,
         root: input.root,
