@@ -45,7 +45,10 @@ import {
   orderSelect,
   orderNFTSelect,
 } from '../../commons/definitions/Constraint.Object';
-import { GetGeneralInforDto } from './dto/get-general-infor.dto';
+import {
+  GetGeneralInforAllDto,
+  GetGeneralInforDto,
+} from './dto/get-general-infor.dto';
 import { GeneralInfor } from 'src/constants/enums/GeneralInfor.enum';
 import PaginationCommon from 'src/commons/HasNext.common';
 import { NFTHepler } from './helper/nft-helper.service';
@@ -268,9 +271,9 @@ export class NftService {
         });
       }
       if (filter.source) {
-        whereConditionInternal.AND.push({
-          source: filter.source,
-        });
+        const collectionCondition: Prisma.CollectionWhereInput = {};
+        collectionCondition.source = filter.source;
+        whereConditionInternal.AND.push({ collection: collectionCondition });
       }
 
       if (filter.collectionAddress || filter.type) {
@@ -1107,6 +1110,14 @@ export class NftService {
   async getGeneralInfor(filter: GetGeneralInforDto) {
     try {
       switch (filter.mode) {
+        case GeneralInfor.LAYERG:
+          const { data: dataResponseFlatForm } =
+            await this.nftHepler.requestNFTLayerG({
+              page: 1,
+              limit: 1,
+              owner: filter.owner.toLowerCase(),
+            });
+          return dataResponseFlatForm?.totalItems || 0;
         // // Get Owner NFT
         case GeneralInfor.OWNER:
           // const { nftIdFromOwner = [] } =
@@ -1115,7 +1126,6 @@ export class NftService {
           //     page: 1,
           //     limit: 1000,
           //   });
-
           // return nftIdFromOwner?.length || 0;
           const { erc721Tokens = [], erc1155Balances = [] } =
             await this.GraphqlService.getNFTExternalFromOwner(
@@ -1188,7 +1198,6 @@ export class NftService {
           });
           return totalOwnerCreator;
         case GeneralInfor.ONSALES:
-          // ======= 1 : Get from Marketplace Status
           const user = await this.prisma.user.findUnique({
             where: {
               signer: filter.owner.toLowerCase(),
@@ -1296,6 +1305,172 @@ export class NftService {
           ? error?.response?.statusCode
           : HttpStatus.BAD_REQUEST,
       );
+    }
+  }
+
+  async getGeneralInforAll(filter: GetGeneralInforAllDto) {
+    try {
+      const [
+        countLayerG,
+        countOwner,
+        countOnSales,
+        countCreator,
+        countCollection,
+      ] = await Promise.allSettled([
+        // Get Count Owner NFT on LayerG flatform
+        this.getCountLayerG(filter?.owner),
+        // Get Count Owner NFT on X721
+        this.getCountOwner(filter?.owner),
+        // Get Count NFT Owner On Sales
+        this.getCountOnSales(filter?.owner),
+        // Get Count NFT Created By User
+        this.prisma.userNFT.count({
+          where: {
+            user: {
+              signer: filter.owner.toLowerCase(),
+            },
+            nft: {
+              status: TX_STATUS.SUCCESS,
+            },
+          },
+        }),
+        // Get Count Collection Created By User
+        this.getCountCollection(filter?.owner),
+      ]);
+      return {
+        countLayerG: (countLayerG as unknown as any).value || 0,
+        countOwner: (countOwner as unknown as any).value || 0,
+        countOnSales: (countOnSales as unknown as any).value || 0,
+        countCreator: (countCreator as unknown as any).value || 0,
+        countCollection: (countCollection as unknown as any).value || 0,
+      };
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getCountLayerG(ownerInput: string) {
+    try {
+      const { data: dataResponseFlatForm } =
+        await this.nftHepler.requestNFTLayerG({
+          page: 1,
+          limit: 1,
+          owner: ownerInput.toLowerCase(),
+        });
+      return dataResponseFlatForm?.totalItems || 0;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getCountOwner(ownerInput: string) {
+    try {
+      const { erc721Tokens = [], erc1155Balances = [] } =
+        await this.GraphqlService.getNFTExternalFromOwner(
+          ownerInput.toLowerCase(),
+          'desc' as OrderDirection,
+          1,
+          1000,
+        );
+      const { account } = await this.GraphqlService.getNFTFromOwner(
+        ownerInput.toLowerCase(),
+        'desc' as OrderDirection,
+        1,
+        1000,
+      );
+      // const { ERC721tokens = [], ERC1155balances = [] } = account;
+      let internal721Filter = [];
+      let internal1155Filter = [];
+      if (account) {
+        internal721Filter = await this.nftHepler.filterExistingNFTs(
+          account?.ERC721tokens,
+          (item) => item?.tokenId,
+          (item) => item?.contract?.id,
+          false,
+        );
+        internal1155Filter = await this.nftHepler.filterExistingNFTs(
+          account?.ERC1155balances,
+          (item) => item?.token?.tokenId,
+          (item) => item?.token?.contract?.id,
+          false,
+        );
+      }
+      const external721Filter = await this.nftHepler.filterExistingNFTs(
+        erc721Tokens,
+        (item) => item?.tokenID,
+        (item) => item?.contract,
+        true,
+      );
+      const external1155Filter = await this.nftHepler.filterExistingNFTs(
+        erc1155Balances,
+        (item) => item?.token?.tokenID,
+        (item) => item?.token?.contract,
+        true,
+      );
+      const countERC1155 = this.nftHepler.reduceData1155([
+        ...internal1155Filter,
+        ...external1155Filter,
+      ]);
+      const countERC721 = this.nftHepler.reduceData721([
+        ...internal721Filter,
+        ...external721Filter,
+      ]);
+      const countHolding =
+        (countERC721.length || 0) + (countERC1155.length || 0);
+      return countHolding;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getCountOnSales(ownerInput: string) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: {
+          signer: ownerInput.toLowerCase(),
+        },
+      });
+      if (!user) {
+        return 0;
+      }
+      const listSales = await this.prisma.order.count({
+        where: {
+          orderStatus: ORDERSTATUS.OPEN,
+          orderType: {
+            in: ['BULK', 'SINGLE'],
+          },
+          makerId: user.id,
+        },
+      });
+      return listSales;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getCountCollection(ownerInput: string) {
+    try {
+      let isUuid = true;
+      if (!isValidUUID(ownerInput)) {
+        isUuid = false;
+      }
+      const totalCollection = await this.prisma.userCollection.count({
+        where: {
+          user: {
+            ...(isUuid
+              ? { id: ownerInput }
+              : {
+                  OR: [{ signer: ownerInput.toLowerCase() }],
+                }),
+          },
+          collection: {
+            status: TX_STATUS.SUCCESS,
+          },
+        },
+      });
+      return totalCollection;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
 }

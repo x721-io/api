@@ -30,6 +30,8 @@ import PaginationCommon from 'src/commons/HasNext.common';
 import { GraphQlcallerService } from 'src/modules/graph-qlcaller/graph-qlcaller.service';
 import { OrderDirection } from 'src/generated/graphql';
 import { validate as isValidUUID } from 'uuid';
+import axios from 'axios';
+import { SourceType } from 'src/constants/enums/Source.enum';
 
 interface NFTMarketplaceResponse {
   result: NftDto[];
@@ -39,6 +41,26 @@ interface NFTMarketplaceResponse {
 interface NFTOrderResponse {
   result: NftDto[];
   hasNext: boolean;
+}
+
+interface itemNFTLayerG {
+  userId: number;
+  id: number;
+  title: string;
+  completed: boolean;
+}
+
+interface DataLayerG {
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
+  data: itemNFTLayerG[];
+}
+
+interface ResponseLayerG {
+  message: string;
+  data: DataLayerG;
 }
 
 @Injectable()
@@ -388,6 +410,27 @@ export class NFTHepler {
       let nftIdFromOwner = [];
       let nftCollectionFromOwner = [];
       let hasNextNftOwner = false;
+
+      if (filter?.source == SourceType.LAYERG) {
+        const { data: dataResponseFlatForm } =
+          await this.requestNFTLayerG(filter);
+        if (dataResponseFlatForm?.data?.length > 0) {
+          const layerGFilter = await this.filterExistingNFTsLayerG(
+            dataResponseFlatForm?.data,
+            (item) => item?.tokenId, // Directly using tokenId
+            (item) => item?.assetId.split(':')[1],
+            true,
+          );
+          nftIdFromOwner = layerGFilter.map((item) => item.tokenId);
+          nftCollectionFromOwner = layerGFilter.map((item) => item.contract);
+          hasNextNftOwner = filter.page < dataResponseFlatForm?.totalPages;
+        }
+        return {
+          nftIdFromOwner,
+          nftCollectionFromOwner,
+          hasNextNftOwner,
+        };
+      }
       const resultOwnerExternal =
         await this.GraphqlService.getNFTExternalFromOwner(
           filter.owner.toLowerCase(),
@@ -520,6 +563,7 @@ export class NFTHepler {
     getTokenId: (item: any) => string,
     getContractId: (item: any) => string,
     external?: boolean,
+    layerG?: false,
   ) {
     if (items && items.length <= 0) {
       return [];
@@ -531,7 +575,43 @@ export class NFTHepler {
           getContractId(item),
           external,
         );
-        return { item, exists };
+        return !layerG
+          ? { item, exists }
+          : {
+              item: {
+                ...item,
+                contract: item?.assetId.split(':')[1].toLowerCase(),
+              },
+              exists,
+            };
+      }),
+    );
+    return existsItems.filter(({ exists }) => exists).map(({ item }) => item);
+  }
+
+  async filterExistingNFTsLayerG(
+    items: any[],
+    getTokenId: (item: any) => string,
+    getContractId: (item: any) => string,
+    external?: boolean,
+  ) {
+    if (items && items.length <= 0) {
+      return [];
+    }
+    const existsItems = await Promise.all(
+      items.map(async (item) => {
+        const exists = await this.checkExistNFT(
+          getTokenId(item),
+          getContractId(item),
+          external,
+        );
+        return {
+          item: {
+            ...item,
+            contract: item?.assetId.split(':')[1].toLowerCase(),
+          },
+          exists,
+        };
       }),
     );
     return existsItems.filter(({ exists }) => exists).map(({ item }) => item);
@@ -546,9 +626,9 @@ export class NFTHepler {
       const whereCondition: Prisma.CollectionWhereInput = {};
       whereCondition.AND = [];
       if (isValidUUID(addressCollection)) {
-        whereCondition.AND.push({ id: addressCollection });
+        whereCondition.AND.push({ id: addressCollection?.toLowerCase() });
       } else {
-        whereCondition.AND.push({ address: addressCollection });
+        whereCondition.AND.push({ address: addressCollection?.toLowerCase() });
       }
       if (external == true || external == false) {
         whereCondition.AND.push({ flagExtend: external });
@@ -677,5 +757,32 @@ export class NFTHepler {
       whereOrder,
     );
     return { result: listFormat, hasNext: hasNext };
+  }
+
+  convertToQueryParams(baseUrl, params) {
+    const queryString = new URLSearchParams(params).toString();
+    return `${baseUrl}?${queryString}`;
+  }
+
+  async requestNFTLayerG(filter: GetAllNftDto | any) {
+    try {
+      const url = this.convertToQueryParams(
+        process.env.LAYERG_CRAWLER_API_URL,
+        {
+          page: filter.page,
+          limit: filter.limit,
+          owner: filter.owner,
+        },
+      );
+      const { data: responseFlatForm } = await axios.get<ResponseLayerG>(url, {
+        headers: {
+          'X-API-KEY': process.env.LAYERG_API_KEY,
+        },
+      });
+
+      return responseFlatForm;
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
   }
 }

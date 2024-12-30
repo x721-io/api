@@ -23,7 +23,10 @@ import { GetAllNftDto } from './dto/get-all-nft.dto';
 import { MarketplaceService } from './nft-marketplace.service';
 import { GetEventBase } from './dto/event-base.dto';
 import { GetActivityBase } from './dto/activity-nft.dto';
-import { GetGeneralInforDto } from './dto/get-general-infor.dto';
+import {
+  GetGeneralInforAllDto,
+  GetGeneralInforDto,
+} from './dto/get-general-infor.dto';
 @Controller('nft')
 export class NftController {
   constructor(
@@ -102,6 +105,12 @@ export class NftController {
   getGeneralInfor(@Body() query: GetGeneralInforDto) {
     return this.nftService.getGeneralInfor(query);
   }
+
+  @Post('/general-infor')
+  getGeneralInforAll(@Body() query: GetGeneralInforAllDto) {
+    return this.nftService.getGeneralInforAll(query);
+  }
+
   @Get('/history-prices')
   getHistoryPrices(
     @Query('id') id: string,
