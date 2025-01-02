@@ -1,5 +1,6 @@
 import { InputType } from '@nestjs/graphql';
 import { ORDERSTATUS, ORDERTYPE } from '@prisma/client';
+import { Type } from 'class-transformer';
 import {
   IsEnum,
   IsNotEmpty,
@@ -7,6 +8,8 @@ import {
   IsString,
   IsUUID,
   IsNumber,
+  ArrayNotEmpty,
+  ValidateNested,
 } from 'class-validator';
 import { makeTakeType } from 'src/constants/enums/order.enum';
 
@@ -19,6 +22,14 @@ export class VerifyOrderDto {
   @IsNumber()
   @IsNotEmpty()
   index: number;
+}
+
+@InputType()
+export class VerifyOrdersDto {
+  @ArrayNotEmpty()
+  @ValidateNested({ each: true })
+  @Type(() => VerifyOrderDto)
+  orders: VerifyOrderDto[];
 }
 
 export class ActionOrderDto {

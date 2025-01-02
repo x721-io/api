@@ -28,7 +28,11 @@ import {
   userSelect,
 } from 'src/commons/definitions/Constraint.Object';
 import { ethers } from 'ethers';
-import { ActionOrderDto, VerifyOrderDto } from './dto/get-order.dto';
+import {
+  ActionOrderDto,
+  VerifyOrderDto,
+  VerifyOrdersDto,
+} from './dto/get-order.dto';
 import { abi as exchangeABI } from 'abis/Exchange.json';
 import { validate as isValidUUID } from 'uuid';
 import { encodeAbiParameters, keccak256 } from 'viem';
@@ -326,6 +330,36 @@ export class OrderService {
         throw new Error('Owner NFT invalid');
       }
       return order;
+    } catch (error) {
+      throw new HttpException(
+        `Error verifying order: ${error.message}`,
+        error?.response?.statusCode
+          ? error?.response?.statusCode
+          : HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  async verifyOrders(input: VerifyOrdersDto, user: User) {
+    try {
+      const orders = await Promise.all(
+        input?.orders?.map(async (item) => {
+          try {
+            const { checkOwner, order } = await this.validateOrderAndOwner(
+              item,
+              user.signer,
+            );
+            if (!checkOwner) {
+              // throw new Error('Owner NFT invalid');
+              return { ...order, isSuccess: false };
+            }
+            return { ...order, isSuccess: true };
+          } catch (error) {
+            return { ...item, isSuccess: false };
+          }
+        }),
+      );
+      return orders;
     } catch (error) {
       throw new HttpException(
         `Error verifying order: ${error.message}`,
