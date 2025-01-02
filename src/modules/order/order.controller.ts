@@ -15,7 +15,11 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { AuthenticationGuard } from '../auth/guards/auth.guard';
 import { GetCurrentUser } from 'src/decorators/get-current-user.decorator';
 import { User } from '@prisma/client';
-import { ActionOrderDto, VerifyOrderDto } from './dto/get-order.dto';
+import {
+  ActionOrderDto,
+  VerifyOrderDto,
+  VerifyOrdersDto,
+} from './dto/get-order.dto';
 
 @Controller('order')
 export class OrderController {
@@ -34,6 +38,12 @@ export class OrderController {
   @UseGuards(AuthenticationGuard)
   verifyOrder(@Body() input: VerifyOrderDto, @GetCurrentUser() user: User) {
     return this.orderService.verifyOrder(input, user);
+  }
+
+  @Post('/verify-list')
+  @UseGuards(AuthenticationGuard)
+  verifyOrders(@Body() input: VerifyOrdersDto, @GetCurrentUser() user: User) {
+    return this.orderService.verifyOrders(input, user);
   }
 
   @Post('/pending')
