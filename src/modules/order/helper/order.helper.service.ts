@@ -116,11 +116,13 @@ class OrderHeplerCommon {
 
   weiToEtherQuoteToken(price, quoteToken) {
     const wu2u = process.env.QUOTE_TOKEN_WU2U?.toLowerCase();
-    const pusdt = process.env.QUOTE_TOKEN_PU2U?.toLowerCase();
+    const pusdt = process.env.QUOTE_TOKEN_PUSDT?.toLowerCase();
+    const native = process.env.NATIVE_U2U?.toLowerCase();
 
     const multipliers = {
       [wu2u]: 10 ** 18, // Dynamically assign process.env values as keys
       [pusdt]: 10 ** 6,
+      [native]: 10 ** 18,
     };
     // Default to 1 if the quoteToken is not in the multipliers object
     const multiplier = multipliers[quoteToken] || 1;
