@@ -1,4 +1,4 @@
-export interface LayerGNFTDetail1155 {
+export interface PlatFormNFTDetail1155 {
   asset: Asset;
   status: string;
   type: string;
@@ -20,7 +20,7 @@ export interface AssetOwner {
   updatedAt: string;
 }
 
-export interface LayerGNFTDetail721 {
+export interface PlatFormNFTDetail721 {
   asset: Asset;
   status: string;
   type: string;

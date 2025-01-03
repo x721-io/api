@@ -40,13 +40,14 @@ import { MerkleTree } from 'src/commons/MerkleTree.common';
 import { NftEntity } from '../nft/entities/nft.entity';
 import { SourceType } from 'src/constants/enums/Source.enum';
 import { NftService } from '../nft/nft.service';
+import { NFTHepler } from '../nft/helper/nft-helper.service';
 
 @Injectable()
 export class OrderService {
   constructor(
     private prisma: PrismaService,
-    private userService: UserService,
     private nftService: NftService,
+    private nftHepler: NFTHepler,
   ) {}
   private readonly endpoint = process.env.SUBGRAPH_URL;
   private client = this.getGraphqlClient();
@@ -234,92 +235,6 @@ export class OrderService {
     }
   }
 
-  // ower: address owner
-  // address: address collection
-  // tokenId: NFT ID
-  async findOwnerNFT(
-    owner: string,
-    address: string,
-    tokenId: string,
-    flagExtend: boolean,
-    subgraphUrl: string,
-    type: CONTRACT_TYPE,
-    u2uId: string,
-  ) {
-    try {
-      if (flagExtend == true) {
-        const checkOwner = await this.getOwnerExternal(
-          subgraphUrl,
-          tokenId,
-          owner,
-          type,
-        );
-        return checkOwner;
-      } else {
-        const checkOwner = await this.getOwnerInternal(
-          u2uId ? u2uId : tokenId,
-          address,
-          owner,
-          type,
-        );
-        return checkOwner;
-      }
-    } catch (error) {
-      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
-    }
-  }
-
-  async getOwnerExternal(
-    subgraphUri: string,
-    tokenId: string,
-    owner: string,
-    type: CONTRACT_TYPE,
-  ) {
-    let nftInfoWithOwner;
-    if (type === CONTRACT_TYPE.ERC1155) {
-      nftInfoWithOwner = await OrderHeplerCommon.ownerExternal(
-        subgraphUri,
-        CONTRACT_TYPE.ERC1155,
-        tokenId,
-        owner,
-      );
-      return nftInfoWithOwner?.userBalances?.length > 0 ? true : false;
-    } else {
-      nftInfoWithOwner = await OrderHeplerCommon.ownerExternal(
-        subgraphUri,
-        CONTRACT_TYPE.ERC721,
-        tokenId,
-        owner,
-      );
-
-      return nftInfoWithOwner?.items?.[0]?.owner?.id ? true : false;
-    }
-  }
-
-  async getOwnerInternal(
-    tokenId: string,
-    contract: string,
-    owner: string,
-    type: CONTRACT_TYPE,
-  ) {
-    let nftInfoWithOwner;
-    if (type === CONTRACT_TYPE.ERC1155) {
-      nftInfoWithOwner = await OrderHeplerCommon.ownersInternal1155(
-        contract,
-        tokenId,
-        owner,
-      );
-      return nftInfoWithOwner?.erc1155Balances?.length > 0 ? true : false;
-    } else {
-      nftInfoWithOwner = await OrderHeplerCommon.ownersInternal721(
-        tokenId,
-        contract,
-        owner,
-      );
-      return nftInfoWithOwner?.erc721Tokens?.length > 0 ? true : false;
-    }
-  }
-
   async verifyOrder(input: VerifyOrderDto, user: User) {
     try {
       const { checkOwner, order } = await this.validateOrderAndOwner(
@@ -423,7 +338,7 @@ export class OrderService {
         throw new NotFoundException('Order not found');
       }
 
-      const checkOwner = await this.checkNftOwner(
+      const checkOwner = await this.nftHepler.checkNftOwner(
         order.collectionId,
         order.tokenId,
         signer,
@@ -434,55 +349,6 @@ export class OrderService {
     } catch (error) {
       const statusCode = error?.response?.statusCode || HttpStatus.BAD_REQUEST;
       throw new HttpException(`Check order: ${error.message}`, statusCode);
-    }
-  }
-
-  async checkNftOwner(collectionId: string, tokenId: string, signer: string) {
-    try {
-      // Retrieve NFT and collection details
-      const { collection, nft } = await this.findNFTAndCollection(
-        collectionId,
-        tokenId,
-      );
-
-      if (!collection || !nft) {
-        throw new HttpException(
-          'Collection or NFT not found',
-          HttpStatus.NOT_FOUND,
-        );
-      }
-
-      const isLayerG =
-        collection.flagExtend === true &&
-        collection.source === SourceType.LAYERG;
-
-      if (isLayerG) {
-        const { owners = [] } = await this.nftService.getCurrentOwnersLayerG(
-          `${collection.subgraphUrl}/${nft.id}`,
-          nft as NftEntity,
-        );
-
-        const checkOwner = !!owners.find(
-          (user) => user?.signer?.toLowerCase() === signer?.toLowerCase(),
-        );
-
-        return { checkOwner, collection, nft };
-      }
-
-      const checkOwner = await this.findOwnerNFT(
-        signer,
-        collection.address,
-        nft.id,
-        collection.flagExtend,
-        collection.subgraphUrl,
-        collection.type,
-        nft.u2uId,
-      );
-
-      return { checkOwner, collection, nft };
-    } catch (error) {
-      const statusCode = error?.response?.statusCode || HttpStatus.BAD_REQUEST;
-      throw new HttpException(`Check NFT Owner: ${error.message}`, statusCode);
     }
   }
 
@@ -549,46 +415,6 @@ export class OrderService {
     }
   }
 
-  async findNFTAndCollection(collectionId: string, tokenId: string) {
-    try {
-      const whereInput: Prisma.CollectionWhereInput = isValidUUID(collectionId)
-        ? { id: collectionId } // It's a valid UUID, so match against the id field
-        : { address: collectionId };
-      const collection = await this.prisma.collection.findFirst({
-        where: whereInput,
-      });
-      if (!collection) {
-        throw new NotFoundException();
-      }
-
-      const nft = await this.prisma.nFT.findFirst({
-        where: {
-          OR: [
-            { AND: [{ id: tokenId }, { collectionId: collection.id }] },
-            {
-              AND: [{ u2uId: tokenId }, { collectionId: collection.id }],
-            },
-          ],
-        },
-        include: {
-          collection: {
-            select: collectionSelect,
-          },
-        },
-      });
-      if (!nft) {
-        throw new NotFoundException();
-      }
-      return { collection, nft };
-    } catch (error) {
-      const statusCode = error?.response?.statusCode || HttpStatus.BAD_REQUEST;
-      throw new HttpException(
-        `Error findNFTAndCollection order: ${error.message}`,
-        statusCode,
-      );
-    }
-  }
-
   async validateNftOwnership(
     collectionId: string,
     makerAddress: string,
@@ -598,14 +424,15 @@ export class OrderService {
   ) {
     try {
       if (orderType === ORDERTYPE.SINGLE || orderType === ORDERTYPE.BULK) {
-        const { checkOwner, collection, nft } = await this.checkNftOwner(
-          collectionId,
-          tokenId,
-          makerAddress,
-        );
+        const { checkOwner, collection, nft } =
+          await this.nftHepler.checkNftOwner(
+            collectionId,
+            tokenId,
+            makerAddress,
+          );
         return { check: checkOwner, collection, nft };
       } else {
-        const { collection, nft } = await this.checkNftOwner(
+        const { collection, nft } = await this.nftHepler.checkNftOwner(
           collectionId,
           tokenId,
           takerAddress,

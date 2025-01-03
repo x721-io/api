@@ -44,6 +44,7 @@ import {
   nftOwnerShip,
   orderSelect,
   orderNFTSelect,
+  collectionSelect,
 } from '../../commons/definitions/Constraint.Object';
 import {
   GetGeneralInforAllDto,
@@ -57,10 +58,6 @@ import { ethers } from 'ethers';
 import { UserService } from '../user/user.service';
 import { SourceType } from 'src/constants/enums/Source.enum';
 import axios from 'axios';
-import {
-  LayerGNFTDetail721,
-  LayerGNFTDetail1155,
-} from './dto/layerg-nft-detail.dto';
 
 @Injectable()
 export class NftService {
@@ -559,40 +556,24 @@ export class NftService {
     page: number,
     limit: number,
   ) {
-    let collection = await this.prisma.collection.findUnique({
-      where: {
-        address: collectionAddress.toLowerCase(),
-      },
-    });
-    if (!collection) {
-      collection = await this.prisma.collection.findUnique({
-        where: {
-          address: collectionAddress,
-        },
-      });
-    }
+    const collection =
+      (await this.prisma.collection.findUnique({
+        where: { address: collectionAddress.toLowerCase() },
+      })) ||
+      (await this.prisma.collection.findUnique({
+        where: { address: collectionAddress },
+      }));
     if (!collection) {
       throw new NotFoundException('No collection was found');
     }
-    const nft: NftEntity = await this.prisma.nFT.findUnique({
-      where: {
-        id_collectionId: {
-          id: nftId,
-          collectionId: collection.id,
-        },
-      },
+    // Fetch NFT details
+    const nft = await this.prisma.nFT.findUnique({
+      where: { id_collectionId: { id: nftId, collectionId: collection.id } },
       include: {
-        creator: {
-          select: creatorSelect,
-        },
+        creator: { select: creatorSelect },
         collection: {
           include: {
-            category: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
+            category: { select: { id: true, name: true } },
           },
         },
         traits: true,
@@ -601,172 +582,100 @@ export class NftService {
     if (!nft) {
       throw new NotFoundException();
     }
-    let owners: any, totalSupply: any;
-    if (collection.flagExtend == true) {
-      if (collection.source === SourceType.LAYERG) {
-        ({ owners, totalSupply } = await this.getCurrentOwnersLayerG(
-          `${collection.subgraphUrl}/${nft.id}`,
-          nft,
-        ));
-      } else {
-        ({ owners, totalSupply } = await this.getCurrentOwnersExtend(
-          collection.subgraphUrl,
-          nft,
-        ));
-      }
-    } else {
-      ({ owners, totalSupply } = await this.getCurrentOwnersInternal(nft));
-    }
-    const sellInfo = await this.eventService.findOrder({
-      contractAddress: nft.collection.address,
-      nftId: nft.id,
-      status: ORDERSTATUS.OPEN,
-      event: [ORDERTYPE.BULK, ORDERTYPE.SINGLE],
-      page: page,
-      limit: limit,
-    });
-    const bidInfo = await this.eventService.findOrder({
-      contractAddress: nft.collection.address,
-      nftId: nft.id,
-      status: ORDERSTATUS.OPEN,
-      event: [ORDERTYPE.BID],
-      page: page,
-      limit: limit,
-    });
+    // Get current owners and total supply based on collection type
+    const ownerInfo = collection.flagExtend
+      ? Object.values(SourceType).includes(collection?.source as unknown as any)
+        ? await this.nftHepler.getCurrentOwnersFlatForm(
+            `${collection.subgraphUrl}/${nft.id}`,
+            nft,
+          )
+        : await this.getCurrentOwnersExtend(collection.subgraphUrl, nft)
+      : await this.getCurrentOwnersInternal(nft);
 
-    const bidderAddress = bidInfo.map((bidder) => bidder?.Taker?.signer);
+    const { owners, totalSupply } = ownerInfo;
 
-    const bidderInfo = await this.prisma.user.findMany({
-      where: {
-        signer: {
-          in: bidderAddress,
-        },
-      },
-      select: userSelect,
-    });
+    // Fetch sell and bid info
+    const [sellInfo, bidInfo] = await Promise.all([
+      this.eventService.findOrder({
+        contractAddress: nft.collection.address,
+        nftId: nft.id,
+        status: ORDERSTATUS.OPEN,
+        event: [ORDERTYPE.BULK, ORDERTYPE.SINGLE],
+        page,
+        limit,
+      }),
+      this.eventService.findOrder({
+        contractAddress: nft.collection.address,
+        nftId: nft.id,
+        status: ORDERSTATUS.OPEN,
+        event: [ORDERTYPE.BID],
+        page,
+        limit,
+      }),
+    ]);
 
-    const sellerAddress = bidInfo
-      .concat(sellInfo)
-      .map((seller) => seller.Maker.signer);
+    // Get unique bidder and seller addresses
+    const bidderAddress = bidInfo.map((bid) => bid?.Taker?.signer);
+    const sellerAddress = [
+      ...new Set(sellInfo.concat(bidInfo).map((sell) => sell.Maker?.signer)),
+    ].filter(Boolean);
 
-    const sellerInfo = await this.prisma.user.findMany({
-      where: {
-        signer: {
-          in: sellerAddress.filter((i) => i !== null),
-        },
-      },
-      select: userSelect,
-    });
+    // Fetch bidder and seller information
+    const [bidderInfo, sellerInfo] = await Promise.all([
+      this.prisma.user.findMany({
+        where: { signer: { in: bidderAddress } },
+        select: userSelect,
+      }),
+      this.prisma.user.findMany({
+        where: { signer: { in: sellerAddress } },
+        select: userSelect,
+      }),
+    ]);
 
-    const mergedBidder = bidInfo.map((item) => {
+    // Merge bidder info
+    const mergedBidder = bidInfo.map((bid) => {
       const match = bidderInfo.find(
-        (item1) => item1.signer == item?.Taker?.signer,
+        (user) => user.signer === bid?.Taker?.signer,
       );
-      return match ? { ...item, to: match as OwnerOutputDto } : item;
+      return match ? { ...bid, to: match } : bid;
     });
 
-    const mergedSeller = sellInfo.map((item) => {
+    // Merge seller info
+    let listSells = [];
+    const mergedSeller = sellInfo.map((sell) => {
       const match = sellerInfo.find(
-        (item1) => item1?.signer == item?.Maker?.signer,
+        (user) => user.signer === sell?.Maker?.signer,
       );
-      return match ? { ...item, Maker: match as OwnerOutputDto } : item;
+      return match ? { ...sell, Maker: match } : sell;
     });
+
+    // Handle LAYERG-specific logic
+    if (collection.source === SourceType.LAYERG) {
+      listSells = await Promise.all(
+        mergedSeller.map(async (sell) => {
+          const { checkOwner } = await this.nftHepler.checkNftOwner(
+            collection.address,
+            nft.id,
+            sell.Maker.signer,
+          );
+          if (!checkOwner) {
+            await this.nftHepler.handleRemoveOrder(sell.sig, sell.index);
+            return null;
+          }
+          return sell;
+        }),
+      );
+      listSells = listSells.filter(Boolean);
+    } else {
+      listSells = mergedSeller;
+    }
+
     return {
       bidInfo: mergedBidder,
-      sellInfo: mergedSeller,
+      sellInfo: listSells,
       owners,
       totalSupply,
     };
-  }
-
-  async getCurrentOwnersLayerG(
-    url: string,
-    nft: NftEntity,
-  ): Promise<{ owners: OwnerOutputDto[]; totalSupply: string }> {
-    let owners: OwnerOutputDto[] = [];
-    let totalSupply = '0';
-
-    if (nft?.collection?.type === 'ERC1155') {
-      const response = await axios.get<LayerGNFTDetail1155>(url, {
-        headers: {
-          'X-API-KEY': process.env.LAYERG_API_KEY,
-        },
-      });
-      const { asset } = response.data;
-
-      totalSupply = asset.totalSupply;
-      const ownerAddresses = asset.assetOwners
-        .map((owner) => owner.owner)
-        .filter((i) => !!i);
-
-      const ownersFromLocal = await this.prisma.user.findMany({
-        where: {
-          signer: { in: ownerAddresses, mode: 'insensitive' },
-        },
-        select: creatorSelect,
-      });
-
-      owners = asset.assetOwners.map((assetOwner) => {
-        const localOwner = ownersFromLocal.find(
-          (local) => local.publicKey === assetOwner.owner,
-        );
-        if (localOwner) {
-          return {
-            ...localOwner,
-            publicKey: localOwner?.publicKey ?? localOwner?.signer,
-            username: localOwner?.username ?? localOwner?.signer,
-            quantity: assetOwner.balance || '0',
-          };
-        } else {
-          // Return fallback owner details for those not found locally
-          return {
-            signer: assetOwner.owner || '',
-            quantity: assetOwner.balance || '0',
-          };
-        }
-      });
-
-      if (owners.length === 0) {
-        const fallbackOwners = asset.assetOwners.map((assetOwner) => ({
-          signer: assetOwner.owner || '',
-          quantity: assetOwner.balance,
-        }));
-        return {
-          owners: fallbackOwners,
-          totalSupply,
-        };
-      }
-    } else {
-      const response = await axios.get<LayerGNFTDetail721>(url, {
-        headers: {
-          'X-API-KEY': process.env.LAYERG_API_KEY,
-        },
-      });
-      const { asset } = response.data;
-
-      totalSupply = '1';
-      const ownerId = asset.owner;
-
-      owners = await this.prisma.user.findMany({
-        where: {
-          signer: { equals: ownerId, mode: 'insensitive' },
-        },
-        select: creatorSelect,
-      });
-
-      if (owners.length === 0) {
-        return {
-          owners: [
-            {
-              signer: ownerId || '',
-            },
-          ],
-          totalSupply,
-        };
-      }
-    }
-
-    return { owners, totalSupply };
   }
 
   async getCurrentOwnersExtend(

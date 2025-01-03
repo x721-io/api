@@ -28,6 +28,7 @@ export const CollectionSelect: Prisma.CollectionSelect = {
   isActive: true,
   isU2U: true,
   metadataJson: true,
+  source: true,
   category: {
     select: {
       id: true,
@@ -258,4 +259,10 @@ export const orderNFTSelect: Prisma.OrderSelect = {
   sig: true,
   start: true,
   end: true,
+  Taker: {
+    select: userSelect,
+  },
+  Maker: {
+    select: userSelect,
+  },
 };

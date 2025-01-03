@@ -10,6 +10,7 @@ import {
   ORDERSTATUS,
   ORDERTYPE,
   TX_STATUS,
+  CONTRACT_TYPE,
 } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
@@ -22,6 +23,7 @@ import {
 import { NftDto } from '../dto/nft.dto';
 import { GetAllNftDto } from '../dto/get-all-nft.dto';
 import {
+  collectionSelect,
   creatorSelect,
   nftSelect,
   orderNFTSelect,
@@ -32,6 +34,14 @@ import { OrderDirection } from 'src/generated/graphql';
 import { validate as isValidUUID } from 'uuid';
 import axios from 'axios';
 import { SourceType } from 'src/constants/enums/Source.enum';
+import { OrderService } from 'src/modules/order/order.service';
+import { NftEntity } from '../entities/nft.entity';
+import OrderHeplerCommon from '../../order/helper/order.helper.service';
+import {
+  PlatFormNFTDetail1155,
+  PlatFormNFTDetail721,
+} from '../dto/platform-nft-detail.dto';
+import { OwnerOutputDto } from 'src/modules/user/dto/owners.dto';
 
 interface NFTMarketplaceResponse {
   result: NftDto[];
@@ -112,12 +122,24 @@ export class NFTHepler {
     return Promise.all(
       nfts.map(async (item) => {
         if (item?.OrderByTokenId && item?.OrderByTokenId.length > 0) {
-          const sellInfo = item?.OrderByTokenId.reduce(
+          let sellInfo = item?.OrderByTokenId.reduce(
             (minItem, currentItem) =>
               currentItem.priceNum < minItem.priceNum ? currentItem : minItem,
             item?.OrderByTokenId[0],
           );
 
+          // Check Owner LayerG IF Owner not Maker Remove Order Sell
+          if (Object.values(SourceType).includes(item?.collection?.source)) {
+            const { checkOwner } = await this.checkNftOwner(
+              item?.collection?.id,
+              item?.id,
+              sellInfo?.Maker?.signer,
+            );
+            if (!checkOwner) {
+              await this.handleRemoveOrder(sellInfo?.sig, sellInfo?.index),
+                (sellInfo = {});
+            }
+          }
           // Get Bid Info Prices Highest Already Open
           const bidInfo = await this.prisma.order.findFirst({
             where: {
@@ -783,6 +805,306 @@ export class NFTHepler {
       return responseFlatForm;
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async checkNftOwner(collectionId: string, tokenId: string, signer: string) {
+    try {
+      // Retrieve NFT and collection details
+      const { collection, nft } = await this.findNFTAndCollection(
+        collectionId,
+        tokenId,
+      );
+
+      if (!collection || !nft) {
+        throw new HttpException(
+          'Collection or NFT not found',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      const isOther =
+        collection.flagExtend === true &&
+        // IF source in SourceType
+        Object.values(SourceType).includes(
+          collection?.source as unknown as any,
+        );
+
+      if (isOther) {
+        const { owners = [] } = await this.getCurrentOwnersFlatForm(
+          `${collection.subgraphUrl}/${nft.id}`,
+          nft as NftEntity,
+        );
+
+        const checkOwner = !!owners.find(
+          (user) => user?.signer?.toLowerCase() === signer?.toLowerCase(),
+        );
+
+        return { checkOwner, collection, nft };
+      }
+
+      const checkOwner = await this.findOwnerNFT(
+        signer,
+        collection.address,
+        nft.id,
+        collection.flagExtend,
+        collection.subgraphUrl,
+        collection.type,
+        nft.u2uId,
+      );
+
+      return { checkOwner, collection, nft };
+    } catch (error) {
+      const statusCode = error?.response?.statusCode || HttpStatus.BAD_REQUEST;
+      throw new HttpException(`Check NFT Owner: ${error.message}`, statusCode);
+    }
+  }
+
+  // ower: address owner
+  // address: address collection
+  // tokenId: NFT ID
+  async findOwnerNFT(
+    owner: string,
+    address: string,
+    tokenId: string,
+    flagExtend: boolean,
+    subgraphUrl: string,
+    type: CONTRACT_TYPE,
+    u2uId: string,
+  ) {
+    try {
+      if (flagExtend == true) {
+        const checkOwner = await this.getOwnerExternal(
+          subgraphUrl,
+          tokenId,
+          owner,
+          type,
+        );
+        return checkOwner;
+      } else {
+        const checkOwner = await this.getOwnerInternal(
+          u2uId ? u2uId : tokenId,
+          address,
+          owner,
+          type,
+        );
+        return checkOwner;
+      }
+    } catch (error) {
+      throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async findNFTAndCollection(collectionId: string, tokenId: string) {
+    try {
+      const whereInput: Prisma.CollectionWhereInput = isValidUUID(collectionId)
+        ? { id: collectionId } // It's a valid UUID, so match against the id field
+        : { address: collectionId };
+      const collection = await this.prisma.collection.findFirst({
+        where: whereInput,
+      });
+      if (!collection) {
+        throw new NotFoundException();
+      }
+
+      const nft = await this.prisma.nFT.findFirst({
+        where: {
+          OR: [
+            { AND: [{ id: tokenId }, { collectionId: collection.id }] },
+            {
+              AND: [{ u2uId: tokenId }, { collectionId: collection.id }],
+            },
+          ],
+        },
+        include: {
+          collection: {
+            select: collectionSelect,
+          },
+        },
+      });
+      if (!nft) {
+        throw new NotFoundException();
+      }
+      return { collection, nft };
+    } catch (error) {
+      const statusCode = error?.response?.statusCode || HttpStatus.BAD_REQUEST;
+      throw new HttpException(
+        `Error findNFTAndCollection order: ${error.message}`,
+        statusCode,
+      );
+    }
+  }
+
+  async getOwnerInternal(
+    tokenId: string,
+    contract: string,
+    owner: string,
+    type: CONTRACT_TYPE,
+  ) {
+    let nftInfoWithOwner;
+    if (type === CONTRACT_TYPE.ERC1155) {
+      nftInfoWithOwner = await OrderHeplerCommon.ownersInternal1155(
+        contract,
+        tokenId,
+        owner,
+      );
+      return nftInfoWithOwner?.erc1155Balances?.length > 0 ? true : false;
+    } else {
+      nftInfoWithOwner = await OrderHeplerCommon.ownersInternal721(
+        tokenId,
+        contract,
+        owner,
+      );
+      return nftInfoWithOwner?.erc721Tokens?.length > 0 ? true : false;
+    }
+  }
+
+  async getOwnerExternal(
+    subgraphUri: string,
+    tokenId: string,
+    owner: string,
+    type: CONTRACT_TYPE,
+  ) {
+    let nftInfoWithOwner;
+    if (type === CONTRACT_TYPE.ERC1155) {
+      nftInfoWithOwner = await OrderHeplerCommon.ownerExternal(
+        subgraphUri,
+        CONTRACT_TYPE.ERC1155,
+        tokenId,
+        owner,
+      );
+      return nftInfoWithOwner?.userBalances?.length > 0 ? true : false;
+    } else {
+      nftInfoWithOwner = await OrderHeplerCommon.ownerExternal(
+        subgraphUri,
+        CONTRACT_TYPE.ERC721,
+        tokenId,
+        owner,
+      );
+
+      return nftInfoWithOwner?.items?.[0]?.owner?.id ? true : false;
+    }
+  }
+
+  async getCurrentOwnersFlatForm(
+    url: string,
+    nft: NftEntity,
+  ): Promise<{ owners: OwnerOutputDto[]; totalSupply: string }> {
+    let owners: OwnerOutputDto[] = [];
+    let totalSupply = '0';
+
+    if (nft?.collection?.type === 'ERC1155') {
+      const response = await axios.get<PlatFormNFTDetail1155>(url, {
+        headers: {
+          'X-API-KEY': process.env.LAYERG_API_KEY,
+        },
+      });
+      const { asset } = response.data;
+
+      totalSupply = asset.totalSupply;
+      const ownerAddresses = asset.assetOwners
+        .map((owner) => owner.owner)
+        .filter((i) => !!i);
+
+      const ownersFromLocal = await this.prisma.user.findMany({
+        where: {
+          signer: { in: ownerAddresses, mode: 'insensitive' },
+        },
+        select: creatorSelect,
+      });
+
+      owners = asset.assetOwners.map((assetOwner) => {
+        const localOwner = ownersFromLocal.find(
+          (local) => local.publicKey === assetOwner.owner,
+        );
+        if (localOwner) {
+          return {
+            ...localOwner,
+            publicKey: localOwner?.publicKey ?? localOwner?.signer,
+            username: localOwner?.username ?? localOwner?.signer,
+            quantity: assetOwner.balance || '0',
+          };
+        } else {
+          // Return fallback owner details for those not found locally
+          return {
+            signer: assetOwner.owner || '',
+            quantity: assetOwner.balance || '0',
+          };
+        }
+      });
+
+      if (owners.length === 0) {
+        const fallbackOwners = asset.assetOwners.map((assetOwner) => ({
+          signer: assetOwner.owner || '',
+          quantity: assetOwner.balance,
+        }));
+        return {
+          owners: fallbackOwners,
+          totalSupply,
+        };
+      }
+    } else {
+      const response = await axios.get<PlatFormNFTDetail721>(url, {
+        headers: {
+          'X-API-KEY': process.env.LAYERG_API_KEY,
+        },
+      });
+      const { asset } = response.data;
+
+      totalSupply = '1';
+      const ownerId = asset.owner;
+
+      owners = await this.prisma.user.findMany({
+        where: {
+          signer: { equals: ownerId, mode: 'insensitive' },
+        },
+        select: creatorSelect,
+      });
+
+      if (owners.length === 0) {
+        return {
+          owners: [
+            {
+              signer: ownerId || '',
+            },
+          ],
+          totalSupply,
+        };
+      }
+    }
+
+    return { owners, totalSupply };
+  }
+
+  async handleRemoveOrder(sig: string, index: number) {
+    try {
+      const checkExists = await this.prisma.order.findUnique({
+        where: {
+          sig_index: {
+            sig: sig,
+            index: index,
+          },
+        },
+      });
+      if (checkExists) {
+        await this.prisma.order.update({
+          data: {
+            orderStatus: ORDERSTATUS.CANCELLED,
+          },
+          where: {
+            sig_index: {
+              sig: sig,
+              index: index,
+            },
+          },
+        });
+      }
+    } catch (error) {
+      const statusCode = error?.response?.statusCode || HttpStatus.BAD_REQUEST;
+      throw new HttpException(
+        `Error handleRemoveOrder order: ${error.message}`,
+        statusCode,
+      );
     }
   }
 }
