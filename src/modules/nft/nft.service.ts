@@ -21,7 +21,7 @@ import {
 } from '@nestjs/common';
 import { validate as isValidUUID } from 'uuid';
 import { Redis } from 'src/database';
-import { GetAllNftDto } from './dto/get-all-nft.dto';
+import { GetAllNftDto, GetSweepOrdersDto } from './dto/get-all-nft.dto';
 import { GraphQlcallerService } from '../graph-qlcaller/graph-qlcaller.service';
 import { MarketplaceService } from './nft-marketplace.service';
 import { SellStatus, OrderDirection } from 'src/generated/graphql';
@@ -1380,6 +1380,115 @@ export class NftService {
       return totalCollection;
     } catch (error) {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getSweepOrders(
+    filter: GetSweepOrdersDto,
+    user: User,
+  ): Promise<PagingResponseHasNext<NftDto>> {
+    try {
+      // TODO: if price and status are included, then use subgraph as main source and use other to eliminate
+      const whereCondition: Prisma.NFTWhereInput = {};
+      whereCondition.AND = [];
+
+      whereCondition.AND.push({
+        status: TX_STATUS.SUCCESS,
+      });
+
+      whereCondition.AND.push({
+        isActive: true,
+      });
+      if (filter.source) {
+        const collectionCondition: Prisma.CollectionWhereInput = {};
+        collectionCondition.source = filter.source;
+        whereCondition.AND.push({ collection: collectionCondition });
+      }
+
+      if (filter.collectionAddress || filter.type) {
+        const collectionCondition: Prisma.CollectionWhereInput = {};
+
+        if (filter.collectionAddress) {
+          collectionCondition.address = filter.collectionAddress;
+        }
+
+        if (filter.type) {
+          collectionCondition.type = filter.type;
+        }
+
+        whereCondition.AND.push({ collection: collectionCondition });
+      }
+
+      if (filter.name) {
+        whereCondition.AND.push({
+          nameSlug: {
+            contains: OtherCommon.stringToSlugSearch(filter.name),
+            mode: 'insensitive',
+          },
+        });
+      }
+
+      if (Number(filter.priceMin) > Number(filter.priceMax)) {
+        // If priceMin is higher than priceMax, return an empty array
+        return {
+          data: [],
+          paging: {
+            hasNext: false,
+            limit: filter.limit,
+            page: filter.page,
+          },
+        };
+      }
+
+      const whereOrder: Prisma.OrderWhereInput =
+        this.nftHepler.generateWhereOrder(filter, user);
+      const whereCondition1: Prisma.NFTWhereInput = {
+        AND: [whereCondition],
+      };
+      // Ensure that MarketplaceByTokenId is initialized
+      if (!whereCondition1.OrderByTokenId) {
+        whereCondition1.OrderByTokenId = { some: {} };
+      }
+
+      if (filter.priceMin !== undefined || filter.priceMax !== undefined) {
+        whereCondition1.OrderByTokenId.some.priceNum = {};
+        if (filter.priceMin !== undefined) {
+          whereCondition1.OrderByTokenId.some.priceNum.gte = Number(
+            OtherCommon.weiToEther(filter.priceMin),
+          );
+        }
+        if (filter.priceMax !== undefined) {
+          whereCondition1.OrderByTokenId.some.priceNum.lte = Number(
+            OtherCommon.weiToEther(filter.priceMax),
+          );
+        }
+      }
+      if (filter.quoteToken !== undefined) {
+        whereCondition1.OrderByTokenId.some.quoteToken =
+          (filter.quoteToken
+            ? filter.quoteToken.toLowerCase()
+            : process.env.NATIVE_U2U) ?? process.env.NATIVE_U2U;
+      }
+      whereOrder.nftById = whereCondition1;
+      const { result, hasNext } = await this.nftHepler.formatSweepOrders(
+        filter,
+        whereOrder,
+      );
+      return {
+        data: result,
+        paging: {
+          hasNext: hasNext,
+          limit: filter.limit,
+          page: filter.page,
+        },
+      };
+    } catch (error) {
+      throw new HttpException(
+        `Error find order: ${error.message}`,
+        error?.response?.statusCode
+          ? error?.response?.statusCode
+          : HttpStatus.BAD_REQUEST,
+      );
     }
   }
 }

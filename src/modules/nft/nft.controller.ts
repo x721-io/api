@@ -19,7 +19,7 @@ import { NftService } from './nft.service';
 import { AuthenticationGuard } from '../auth/guards/auth.guard';
 import { GetTokenIdDto } from './dto/get-token-id.dto';
 import { TokenService } from './token.service';
-import { GetAllNftDto } from './dto/get-all-nft.dto';
+import { GetAllNftDto, GetSweepOrdersDto } from './dto/get-all-nft.dto';
 import { MarketplaceService } from './nft-marketplace.service';
 import { GetEventBase } from './dto/event-base.dto';
 import { GetActivityBase } from './dto/activity-nft.dto';
@@ -27,6 +27,7 @@ import {
   GetGeneralInforAllDto,
   GetGeneralInforDto,
 } from './dto/get-general-infor.dto';
+import { AuthenticationCustomizeGuard } from '../auth/guards/authCustomize.guard';
 @Controller('nft')
 export class NftController {
   constructor(
@@ -117,5 +118,13 @@ export class NftController {
     @Query('collection') collection: string,
   ) {
     return this.nftService.getHistoryPrices(id, collection);
+  }
+  @Get('/sweep-orders')
+  @UseGuards(AuthenticationCustomizeGuard)
+  getSweepOrders(
+    @Query() query: GetSweepOrdersDto,
+    @GetCurrentUser() user: User,
+  ) {
+    return this.nftService.getSweepOrders(query, user);
   }
 }

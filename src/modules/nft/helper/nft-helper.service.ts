@@ -21,12 +21,13 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { NftDto } from '../dto/nft.dto';
-import { GetAllNftDto } from '../dto/get-all-nft.dto';
+import { GetAllNftDto, GetSweepOrdersDto } from '../dto/get-all-nft.dto';
 import {
   collectionSelect,
   creatorSelect,
   nftSelect,
   orderNFTSelect,
+  userSelect,
 } from 'src/commons/definitions/Constraint.Object';
 import PaginationCommon from 'src/commons/HasNext.common';
 import { GraphQlcallerService } from 'src/modules/graph-qlcaller/graph-qlcaller.service';
@@ -347,7 +348,10 @@ export class NFTHepler {
     return whereMarketPlaceStatus;
   }
 
-  generateWhereOrder(filter: GetAllNftDto): Prisma.OrderWhereInput {
+  generateWhereOrder(
+    filter: GetAllNftDto | GetSweepOrdersDto,
+    currentUser?: User,
+  ): Prisma.OrderWhereInput {
     const priceFilter: Prisma.FloatFilter = {};
     const currentDate = Math.floor(Date.now() / 1000);
     const whereOrder: Prisma.OrderWhereInput = {
@@ -381,6 +385,14 @@ export class NFTHepler {
       whereOrder.AND.push({ priceNum: priceFilter });
     }
 
+    if (currentUser) {
+      const currentUserId = currentUser?.id;
+      whereOrder.AND.push({
+        makerId: {
+          not: currentUserId,
+        },
+      });
+    }
     return whereOrder;
   }
 
@@ -1107,4 +1119,69 @@ export class NFTHepler {
       );
     }
   }
+
+  ///Get List NFT Order Sweep Floor
+  async formatSweepOrders(
+    filter: GetSweepOrdersDto,
+    whereOrder: Prisma.OrderWhereInput,
+  ): Promise<NFTOrderResponse> {
+    const order = await this.prisma.order.findMany({
+      where: whereOrder,
+      skip: (filter.page - 1) * filter.limit,
+      take: filter.limit,
+      orderBy: [
+        {
+          price: filter.order,
+        },
+        {
+          quantity: 'desc',
+        },
+        {
+          createAt: 'desc',
+        },
+      ],
+      include: {
+        nftById: {
+          select: nftSelect,
+        },
+        Maker: {
+          select: userSelect,
+        },
+      },
+    });
+    const listFormat = await Promise.all(
+      order.map(async (item) => {
+        const quoteTokenData = await this.getQuoteTokens(item.quoteToken);
+        const { nftById } = item;
+        const sellInfo = {
+          price: item?.price,
+          quantity: item?.quantity,
+          quoteToken: item?.quoteToken,
+          orderStatus: item?.orderStatus,
+          orderType: item?.orderType,
+          index: item?.orderType,
+          sig: item?.sig,
+          start: item?.start,
+          end: item?.end,
+          filledQty: item?.filledQty,
+          maker: item?.Maker || null,
+        };
+        return {
+          ...nftById,
+          // id: item?.nftById?.id,
+          sellInfo: sellInfo,
+          derivedETH: quoteTokenData?.derivedETH || 0,
+          derivedUSD: quoteTokenData?.derivedUSD || 0,
+        };
+      }),
+    );
+    const hasNext = await PaginationCommon.hasNextPage(
+      filter.page,
+      filter.limit,
+      'order',
+      whereOrder,
+    );
+    return { result: listFormat as NftDto[], hasNext: hasNext };
+  }
+  /// End Get List NFT Order Sweep Floor
 }
