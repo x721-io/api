@@ -5,6 +5,7 @@ import {
   IsString,
   IsIn,
   IsEthereumAddress,
+  IsNotEmpty,
 } from 'class-validator';
 import { QueryTraitDto } from './query-trait.dto';
 import { sellStatus } from 'src/constants/enums/SellStatus.enum';
@@ -70,4 +71,47 @@ export class GetAllNftDto extends OffsetPaginationDto {
   @IsOptional()
   @IsEnum(ORDERTYPE)
   orderType: ORDERTYPE;
+}
+
+export class GetSweepOrdersDto extends OffsetPaginationDto {
+  @IsOptional()
+  @IsString()
+  priceMax: number;
+
+  @IsOptional()
+  @IsString()
+  priceMin: number;
+
+  @IsNotEmpty()
+  @IsEthereumAddress()
+  collectionAddress: string;
+
+  @IsOptional()
+  @IsEnum(SourceType)
+  source?: SourceType;
+
+  @IsOptional()
+  @IsEnum(ORDERSTATUS)
+  orderStatus: ORDERSTATUS;
+
+  @IsOptional()
+  @IsEnum(ORDERTYPE)
+  orderType: ORDERTYPE;
+
+  @IsOptional()
+  owner: string;
+
+  @IsOptional()
+  quoteToken: string;
+
+  @IsOptional()
+  @IsEnum(CONTRACT_TYPE)
+  type: CONTRACT_TYPE;
+
+  @IsOptional()
+  @IsIn(['time', 'price', 'all'])
+  orderBy?: 'time' | 'price' | 'all' = 'all';
+
+  @IsOptional()
+  name: string;
 }
