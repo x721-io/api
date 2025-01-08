@@ -22,3 +22,17 @@ export class GetActivityBase extends OffsetPaginationDto {
   @IsEnum(CONTRACT_TYPE)
   type?: CONTRACT_TYPE;
 }
+
+export class GetHistoryOrderDto {
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @IsOptional()
+  @IsString()
+  collection?: string;
+
+  @IsString()
+  @IsOptional()
+  quoteToken?: string;
+}

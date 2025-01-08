@@ -22,7 +22,7 @@ import { TokenService } from './token.service';
 import { GetAllNftDto, GetSweepOrdersDto } from './dto/get-all-nft.dto';
 import { MarketplaceService } from './nft-marketplace.service';
 import { GetEventBase } from './dto/event-base.dto';
-import { GetActivityBase } from './dto/activity-nft.dto';
+import { GetActivityBase, GetHistoryOrderDto } from './dto/activity-nft.dto';
 import {
   GetGeneralInforAllDto,
   GetGeneralInforDto,
@@ -113,11 +113,8 @@ export class NftController {
   }
 
   @Get('/history-prices')
-  getHistoryPrices(
-    @Query('id') id: string,
-    @Query('collection') collection: string,
-  ) {
-    return this.nftService.getHistoryPrices(id, collection);
+  getHistoryPrices(@Query() query: GetHistoryOrderDto) {
+    return this.nftService.getHistoryPrices(query);
   }
   @Get('/sweep-orders')
   @UseGuards(AuthenticationCustomizeGuard)
