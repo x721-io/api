@@ -29,7 +29,7 @@ import { ZERO_ADDR } from 'src/constants/web3Const/messages';
 import { OwnerOutputDto } from '../user/dto/owners.dto';
 import { ValidatorService } from '../validator/validator.service';
 import { GraphQLClient } from 'graphql-request';
-import { GetActivityBase } from './dto/activity-nft.dto';
+import { GetActivityBase, GetHistoryOrderDto } from './dto/activity-nft.dto';
 import { ActivityService } from './activity.service';
 import { NftEntity } from './entities/nft.entity';
 import { CollectionPriceService } from '../collection/collectionPrice.service';
@@ -1153,14 +1153,14 @@ export class NftService {
       throw new HttpException(`${error.message}`, HttpStatus.BAD_REQUEST);
     }
   }
-  async getHistoryPrices(tokenId: string, collectionAddress: string) {
+  async getHistoryPrices(query: GetHistoryOrderDto) {
     try {
-      if (!tokenId || !collectionAddress) {
+      if (!query.id || !query.collection) {
         throw new Error('Invalid Input');
       }
       const collection = await this.prisma.collection.findUnique({
         where: {
-          address: collectionAddress.toLowerCase(),
+          address: query?.collection?.toLowerCase(),
         },
       });
 
@@ -1172,10 +1172,10 @@ export class NftService {
       nftCondition.OR = [];
 
       const nftOrConditionId: Prisma.NFTWhereInput = {
-        AND: [{ id: tokenId, collectionId: collection.id }],
+        AND: [{ id: query?.id, collectionId: collection.id }],
       };
       const nftOrConditionu2uId: Prisma.NFTWhereInput = {
-        AND: [{ u2uId: tokenId, collectionId: collection.id }],
+        AND: [{ u2uId: query?.id, collectionId: collection.id }],
       };
 
       nftCondition.OR.push(nftOrConditionId, nftOrConditionu2uId);
@@ -1191,7 +1191,8 @@ export class NftService {
         where: {
           orderBySig: {
             collectionId: collection.id,
-            tokenId: tokenId,
+            tokenId: nft?.id,
+            quoteToken: query?.quoteToken || process.env.NATIVE_U2U,
           },
         },
         orderBy: {
@@ -1203,6 +1204,11 @@ export class NftService {
           },
           To: {
             select: userSelect,
+          },
+          orderBySig: {
+            select: {
+              quoteToken: true,
+            },
           },
         },
       });
