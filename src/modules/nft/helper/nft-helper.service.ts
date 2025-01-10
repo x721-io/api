@@ -1159,7 +1159,7 @@ export class NFTHepler {
           quoteToken: item?.quoteToken,
           orderStatus: item?.orderStatus,
           orderType: item?.orderType,
-          index: item?.orderType,
+          index: item?.index,
           sig: item?.sig,
           start: item?.start,
           end: item?.end,
