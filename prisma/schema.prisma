@@ -44,6 +44,7 @@ model User {
   metricDetail     Json?            @default("{\"Verified\":0,\"Followers\":{\"key\":\"follower_lv0\",\"value\":0,\"point\":0,\"total\":0},\"CollectionMetric\":0,\"VolumeIndividual\":0}")
   takes            Order[]          @relation(name: "UserTaker")
   makes            Order[]          @relation(name: "UserMaker")
+  makeOffer        Offer[]          @relation(name: "UserMakerOffer")
   orderFrom        OrderHistory[]   @relation(name: "OrderFrom")
   orderTo          OrderHistory[]   @relation(name: "OrderTo")
 }
@@ -419,8 +420,11 @@ model OverviewTemplate {
   updatedAt   DateTime? @updatedAt
   Platform    Platform  @relation("PlatformToTemplates", fields: [platformId], references: [id])
 }
+
+
 model Order {
-  index                 Int              @default(1) 
+  index                 Int              @default(1)
+  idxOffer              Int?             @default(1)   // Available if Order From Offer 
   sig                   String          
   makerId               String           @db.Uuid
   makeAssetType         Int
@@ -456,11 +460,13 @@ model Order {
   orderHistory          OrderHistory[]       
   @@id([sig, index])
   @@index([sig, index])
+  @@index([sig, idxOffer])
 }
 
 model OrderHistory {
   id                    String           @id @default(uuid()) @db.Uuid
   index                 Int              @default(1) 
+  idxOffer              Int?             @default(1)  // Available if Order From Offer 
   sig                   String  
   nonce                 String?
   fromId                String           @db.Uuid
@@ -473,8 +479,44 @@ model OrderHistory {
   From                  User             @relation(fields: [fromId], references: [id], name: "OrderFrom")
   To                    User             @relation(fields: [toId], references: [id], name: "OrderTo")
   @@index([sig, index, nonce])
+  @@index([sig, idxOffer, nonce])
 }
 
+model Offer {
+  index                 Int              @default(1)
+  idxOffer              Int?             @default(1)   // Available if Order From Offer 
+  sig                   String          
+  makerId               String           @db.Uuid
+  makeAssetType         Int
+  makeAssetAddress      String           //  U2U Native address , Collection Address
+  makeAssetValue        String
+  makeAssetId           String           //  U2U native => 0 , Order NFT => NFT ID
+  takeAssetType         Int
+  takeAssetAddress      String           //  U2U Native address , Collection Address
+  takeAssetValue        String           
+  takeAssetId           String?           //  U2U native => 0 , Order NFT => NFT ID
+  salt                  String           
+  start                 Int              @default(0)
+  end                   Int              @default(0)
+  offerStatus           ORDERSTATUS      @default(OPEN)
+  offerType             ORDERTYPE
+  root                  String           @default("0x0000000000000000000000000000000000000000000000000000000000000000")
+  proof                 String[]         @default([])
+  tokenId               String?          @db.VarChar(255)
+  collectionId          String           @db.Uuid 
+  quantity              Int              @default(1)
+  price                 String           @default("0")
+  priceNum              Float            @default(0)
+  netPrice              String           @default("0")
+  netPriceNum           Float            @default(0)
+  createAt              DateTime         @default(now())
+  updatedAt             DateTime?        @updatedAt         
+  quoteToken            String            
+  filledQty             Int              @default(0)   // Quanity filled order
+  Maker                 User             @relation(fields: [makerId], references: [id], name: "UserMakerOffer")
+  @@id([sig, index])
+  @@index([sig, index])
+}
 
 enum ORDERSTATUS {
   OPEN
@@ -487,4 +529,5 @@ enum ORDERTYPE {
   BID
   BULK   // SELL MULTIPLE
   SINGLE // SELL 1 
+  BID_COLLECTION
 }

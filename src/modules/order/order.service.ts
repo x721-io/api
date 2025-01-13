@@ -1,12 +1,18 @@
 import { id } from './../../../node_modules/aws-sdk/clients/datapipeline.d';
 import { response } from 'express';
 import {
+  BadRequestException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateBulkDto, CreateSingleDto } from './dto/create-order.dto';
+import {
+  CreateBulkDto,
+  CreateOfferDto,
+  CreateSingleDto,
+} from './dto/create-order.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GraphQLClient } from 'graphql-request';
 import { getSdk } from 'src/generated/graphql';
@@ -25,11 +31,14 @@ import {
   CollectionSelect,
   creatorSelect,
   nftSelect,
+  OfferSelect,
   userSelect,
 } from 'src/commons/definitions/Constraint.Object';
 import { ethers } from 'ethers';
 import {
   ActionOrderDto,
+  GetListOfferDto,
+  VerifyOfferDto,
   VerifyOrderDto,
   VerifyOrdersDto,
 } from './dto/get-order.dto';
@@ -443,6 +452,249 @@ export class OrderService {
       const statusCode = error?.response?.statusCode || HttpStatus.BAD_REQUEST;
       throw new HttpException(
         `Error validateNftOwnership: ${error.message}`,
+        statusCode,
+      );
+    }
+  }
+
+  async createOffer(input: CreateOfferDto, user: User) {
+    try {
+      const quoteToken = input.makeAssetAddress;
+      const quanity = input.takeAssetValue;
+      const whereInput: Prisma.CollectionWhereInput = isValidUUID(
+        input.takeAssetAddress,
+      )
+        ? { id: input.takeAssetAddress } // It's a valid UUID, so match against the id field
+        : { address: input.takeAssetAddress };
+      const collection = await this.prisma.collection.findFirst({
+        where: whereInput,
+      });
+      if (!collection) {
+        throw new NotFoundException();
+      }
+      const checkExists = await this.prisma.offer.findUnique({
+        where: {
+          sig_index: {
+            sig: input?.sig,
+            index: input?.index,
+          },
+        },
+      });
+
+      if (checkExists) {
+        throw new Error('Offer already exists');
+      }
+
+      const dataInput: Prisma.OfferUncheckedCreateInput = {
+        sig: input.sig,
+        makerId: user.id,
+        index: input?.index,
+        makeAssetType: input.makeAssetType,
+        makeAssetAddress: input.makeAssetAddress,
+        makeAssetValue: input.makeAssetValue,
+        makeAssetId: input.makeAssetId,
+        takeAssetType: input.takeAssetType,
+        takeAssetAddress: input.takeAssetAddress,
+        takeAssetValue: input.takeAssetValue,
+        takeAssetId: input.takeAssetId,
+        salt: input.salt,
+        start: parseInt(`${input.start}`),
+        end: parseInt(`${input.end}`),
+        offerType: input.offerType, //
+        collectionId: collection.id,
+        price: input.price,
+        quantity: parseInt(quanity),
+        priceNum: OrderHeplerCommon.weiToEtherQuoteToken(
+          input.price,
+          quoteToken.toLowerCase(),
+        ),
+        netPrice: input.netPrice,
+        netPriceNum: OrderHeplerCommon.weiToEtherQuoteToken(
+          input.netPrice,
+          quoteToken.toLowerCase(),
+        ),
+        quoteToken: quoteToken.toLowerCase(),
+      };
+      const newOffer = await this.prisma.offer.create({
+        data: dataInput,
+        include: {
+          Maker: {
+            select: userSelect,
+          },
+        },
+      });
+      return newOffer;
+    } catch (error) {
+      console.log(error);
+      const statusCode = error?.response?.statusCode || HttpStatus.BAD_REQUEST;
+      throw new HttpException(
+        `Create Offer Failed: ${error.message}`,
+        statusCode,
+      );
+    }
+  }
+
+  async getListOffer(
+    filter: GetListOfferDto,
+    user: User,
+  ): Promise<PagingResponseHasNext<any>> {
+    try {
+      const whereInput: Prisma.OfferWhereInput = {};
+      whereInput.AND = [];
+      if (filter?.collection) {
+        const whereCheckExist: Prisma.CollectionWhereInput = isValidUUID(
+          filter.collection,
+        )
+          ? { id: filter.collection } // It's a valid UUID, so match against the id field
+          : { address: filter.collection };
+        const collection = await this.prisma.collection.findFirst({
+          where: whereCheckExist,
+        });
+        if (!collection) {
+          throw new NotFoundException();
+        }
+
+        whereInput.AND.push({
+          collectionId: collection?.id,
+        });
+      }
+
+      if (filter?.search) {
+        const whereUser: Prisma.UserWhereInput = {
+          OR: [
+            {
+              username: {
+                equals: filter.search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              signer: {
+                equals: filter.search,
+                mode: 'insensitive',
+              },
+            },
+          ],
+          username: {
+            not: null,
+          },
+          isActive: true,
+        };
+        whereInput.Maker = whereUser;
+      }
+
+      const listOffer = await this.prisma.offer.findMany({
+        where: whereInput,
+        select: OfferSelect,
+      });
+
+      return {
+        data: listOffer,
+        paging: {
+          hasNext: false,
+          limit: filter.limit,
+          page: filter.page,
+        },
+      };
+    } catch (error) {
+      console.log(error);
+      const statusCode = error?.response?.statusCode || HttpStatus.BAD_REQUEST;
+      throw new HttpException(
+        `Get List Offer Failed: ${error.message}`,
+        statusCode,
+      );
+    }
+  }
+
+  async getDetailOffer(input: VerifyOfferDto) {
+    try {
+      // Convert input.index to a number
+      const index = Number(input?.index);
+
+      // Check if index is a valid number
+      if (isNaN(index)) {
+        throw new BadRequestException('Index must be a valid number');
+      }
+
+      const currentDate = Math.floor(Date.now() / 1000);
+      const checkExists = await this.prisma.offer.findFirst({
+        where: {
+          // sig: input?.sig,
+          // index: index,
+          AND: [
+            { index: index },
+            { sig: input.sig },
+            { offerStatus: ORDERSTATUS.OPEN },
+            {
+              start: {
+                lte: currentDate,
+              },
+              end: {
+                gte: currentDate,
+              },
+            },
+          ],
+        },
+        select: OfferSelect,
+      });
+      if (!checkExists) {
+        throw new NotFoundException();
+      }
+
+      return checkExists;
+    } catch (error) {
+      console.log(error);
+      const statusCode = error?.response?.statusCode || HttpStatus.BAD_REQUEST;
+      throw new HttpException(
+        `Get Detail Offer Failed: ${error.message}`,
+        statusCode,
+      );
+    }
+  }
+
+  async verifyOffer(input: VerifyOfferDto, user: User) {
+    try {
+      // Convert input.index to a number
+      const index = Number(input?.index);
+
+      // Check if index is a valid number
+      if (isNaN(index)) {
+        throw new BadRequestException('Index must be a valid number');
+      }
+
+      const currentDate = Math.floor(Date.now() / 1000);
+      const checkExists = await this.prisma.offer.findFirst({
+        where: {
+          // sig: input?.sig,
+          // index: index,
+          AND: [
+            { index: index },
+            { sig: input.sig },
+            { offerStatus: ORDERSTATUS.OPEN },
+            {
+              start: {
+                lte: currentDate,
+              },
+              end: {
+                gte: currentDate,
+              },
+            },
+          ],
+        },
+        select: OfferSelect,
+      });
+      if (!checkExists) {
+        throw new NotFoundException();
+      }
+
+      // Custom error throw if the makerId matches the user's id
+      if (checkExists.makerId === user.id) {
+        throw new ForbiddenException('You cannot verify your own offer');
+      }
+    } catch (error) {
+      const statusCode = error?.response?.statusCode || HttpStatus.BAD_REQUEST;
+      throw new HttpException(
+        `Verify Offer Failed: ${error.message}`,
         statusCode,
       );
     }
