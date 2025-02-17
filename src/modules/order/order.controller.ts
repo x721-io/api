@@ -10,16 +10,23 @@ import {
   Query,
 } from '@nestjs/common';
 import { OrderService } from './order.service';
-import { CreateBulkDto, CreateSingleDto } from './dto/create-order.dto';
+import {
+  CreateBulkDto,
+  CreateOfferDto,
+  CreateSingleDto,
+} from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { AuthenticationGuard } from '../auth/guards/auth.guard';
 import { GetCurrentUser } from 'src/decorators/get-current-user.decorator';
 import { User } from '@prisma/client';
 import {
   ActionOrderDto,
+  GetListOfferDto,
+  VerifyOfferDto,
   VerifyOrderDto,
   VerifyOrdersDto,
 } from './dto/get-order.dto';
+import { AuthenticationCustomizeGuard } from '../auth/guards/authCustomize.guard';
 
 @Controller('order')
 export class OrderController {
@@ -68,5 +75,33 @@ export class OrderController {
     @GetCurrentUser() user: User,
   ) {
     return this.orderService.createBulk(createOrderBulkDto, user);
+  }
+
+  @Post('/offer-collection')
+  @UseGuards(AuthenticationGuard)
+  createOffer(
+    @Body() createOfferDto: CreateOfferDto,
+    @GetCurrentUser() user: User,
+  ) {
+    return this.orderService.createOffer(createOfferDto, user);
+  }
+  @Get('/offer-collections')
+  @UseGuards(AuthenticationCustomizeGuard)
+  getSweepOrders(
+    @Query() query: GetListOfferDto,
+    @GetCurrentUser() user: User,
+  ) {
+    return this.orderService.getListOffer(query, user);
+  }
+
+  @Get('/offer-detail')
+  getDetailOffer(@Query() query: VerifyOfferDto) {
+    return this.orderService.getDetailOffer(query);
+  }
+
+  @Post('/verify-offer')
+  @UseGuards(AuthenticationGuard)
+  verifyOffer(@Body() input: VerifyOfferDto, @GetCurrentUser() user: User) {
+    return this.orderService.verifyOffer(input, user);
   }
 }

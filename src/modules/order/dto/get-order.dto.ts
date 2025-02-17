@@ -1,4 +1,4 @@
-import { InputType } from '@nestjs/graphql';
+import { extend, InputType } from '@nestjs/graphql';
 import { ORDERSTATUS, ORDERTYPE } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
@@ -11,6 +11,7 @@ import {
   ArrayNotEmpty,
   ValidateNested,
 } from 'class-validator';
+import { OffsetPaginationDto } from 'src/commons/definitions/OffsetPagination.input';
 import { makeTakeType } from 'src/constants/enums/order.enum';
 
 @InputType()
@@ -36,4 +37,25 @@ export class ActionOrderDto {
   @IsString()
   @IsNotEmpty()
   tx: string;
+}
+
+export class GetListOfferDto extends OffsetPaginationDto {
+  @IsOptional()
+  @IsString()
+  collection: string;
+
+  @IsOptional()
+  @IsString()
+  search: string;
+}
+
+@InputType()
+export class VerifyOfferDto {
+  @IsString()
+  @IsNotEmpty()
+  sig: string;
+
+  @IsString()
+  @IsNotEmpty()
+  index: string;
 }

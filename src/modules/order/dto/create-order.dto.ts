@@ -4,11 +4,13 @@ import { stringList } from 'aws-sdk/clients/datapipeline';
 import {
   IsArray,
   IsEnum,
+  IsIn,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   IsUUID,
+  ValidateIf,
 } from 'class-validator';
 import { makeTakeType } from 'src/constants/enums/order.enum';
 
@@ -101,4 +103,71 @@ export class ItemBulkDto extends CreateSingleDto {
   @IsString()
   @IsOptional()
   sig: string;
+}
+
+@InputType()
+export class CreateOfferDto {
+  @IsString()
+  @IsNotEmpty()
+  sig: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  index: number;
+
+  @IsEnum(makeTakeType)
+  @IsNotEmpty()
+  makeAssetType: makeTakeType;
+
+  @IsString()
+  @IsNotEmpty()
+  makeAssetAddress: string;
+
+  @IsString()
+  @IsNotEmpty()
+  makeAssetValue: string;
+
+  @IsString()
+  @IsNotEmpty()
+  makeAssetId: string;
+
+  @IsEnum(makeTakeType)
+  @IsNotEmpty()
+  takeAssetType: makeTakeType;
+
+  @IsString()
+  @IsNotEmpty()
+  takeAssetAddress: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
+  takeAssetValue: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
+  takeAssetId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  salt: string;
+
+  @IsNotEmpty()
+  start: number;
+
+  @IsNotEmpty()
+  end: number;
+
+  @IsIn(['BID_COLLECTION'])
+  @IsNotEmpty()
+  offerType: ORDERTYPE;
+
+  @IsString()
+  @IsNotEmpty()
+  price: string;
+
+  @IsString()
+  @IsNotEmpty()
+  netPrice: string;
 }
